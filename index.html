@@ -2,336 +2,520 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Treatment Survey</title>
 <style>
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: fixed;
-  background: #e8e8e8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  touch-action: none;
-  overscroll-behavior: none;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #e5e5e5;
+  color: #1a1a1a;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-#app {
-  width: 100%;
-  height: 100%;
+.container {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
   padding: 20px;
-  pointer-events: none;
 }
 
 .card {
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 480px;
-  min-height: 420px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 48px 32px;
-  pointer-events: auto;
+  max-width: 500px;
+  padding: 40px 28px;
+  position: relative;
+  touch-action: pan-y pinch-zoom;
+}
+
+.question {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+.instruction {
+  font-size: 15px;
+  color: #666666;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.swipe-zone {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 16px;
+  padding: 60px 20px;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
   touch-action: none;
   position: relative;
 }
 
-.question-text {
-  font-size: 22px;
-  font-weight: 500;
-  color: #2c2c2c;
-  line-height: 1.5;
-  text-align: center;
-  margin-bottom: 32px;
-  max-width: 380px;
-}
-
-.instruction {
-  font-size: 14px;
-  color: #7a7a7a;
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.swipe-legend {
+.options {
   font-size: 13px;
-  color: #9a9a9a;
-  line-height: 1.6;
+  color: #888888;
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  line-height: 1.8;
+  margin-bottom: 16px;
+  word-wrap: break-word;
 }
 
-.status-message {
-  position: absolute;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 18px;
+.textarea-wrapper {
+  margin-bottom: 24px;
+}
+
+.textarea-label {
+  display: block;
+  font-size: 15px;
   font-weight: 500;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
+  color: #1a1a1a;
+  margin-bottom: 10px;
 }
 
-.status-message.visible {
+textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px;
+  font-size: 15px;
+  font-family: inherit;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  border-color: #6366f1;
+}
+
+.summary-box {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.summary-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+}
+
+.summary-item {
+  font-size: 14px;
+  color: #4a4a4a;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.summary-item:last-child {
+  margin-bottom: 0;
+}
+
+.confirm-instruction {
+  font-size: 14px;
+  color: #6366f1;
+  text-align: center;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.edit-instruction {
+  font-size: 14px;
+  color: #888888;
+  text-align: center;
+}
+
+.success-message {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.success-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.success-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #10b981;
+  margin-bottom: 12px;
+}
+
+.success-text {
+  font-size: 15px;
+  color: #666666;
+  line-height: 1.6;
+}
+
+.status-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  background: #3b82f6;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.status-indicator.visible {
   opacity: 1;
 }
 
-.status-message.success {
-  color: #4a4a4a;
+.status-indicator.success {
+  background: #10b981;
 }
 
-.status-message.error {
-  color: #d32f2f;
+.status-indicator.error {
+  background: #ef4444;
 }
 
 .hidden {
-  display: none !important;
+  display: none;
 }
 
 @media (max-width: 480px) {
   .card {
-    padding: 40px 28px;
-    min-height: 400px;
+    padding: 32px 20px;
   }
   
-  .question-text {
+  .question {
     font-size: 20px;
-    margin-bottom: 28px;
   }
   
-  .swipe-legend {
+  .swipe-zone {
+    padding: 50px 16px;
+    font-size: 16px;
+  }
+  
+  .options {
     font-size: 12px;
+    line-height: 2;
+  }
+  
+  .status-indicator {
+    top: 10px;
+    right: 10px;
+    font-size: 12px;
+    padding: 10px 16px;
   }
 }
 
-@media (max-height: 600px) {
-  .card {
-    min-height: 360px;
-    padding: 36px 28px;
+@media (max-width: 360px) {
+  .question {
+    font-size: 18px;
   }
   
-  .question-text {
-    font-size: 19px;
-    margin-bottom: 24px;
+  .options {
+    font-size: 11px;
   }
 }
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="card" class="card">
-    <div id="questionText" class="question-text"></div>
-    <div id="instruction" class="instruction">Swipe to answer</div>
-    <div id="swipeLegend" class="swipe-legend"></div>
-    <div id="statusMessage" class="status-message"></div>
+
+<div class="status-indicator" id="statusIndicator"></div>
+
+<div class="container">
+  <div class="card">
+    
+    <!-- Step 1: Primary Question -->
+    <div id="step1" class="step">
+      <div class="question">How has your condition changed since starting treatment?</div>
+      <div class="instruction">Swipe to answer</div>
+      <div class="swipe-zone" id="swipeZone1">Swipe here</div>
+      <div class="options">
+        ↑ Slight improvement   → Moderate improvement   ↓ Major improvement   ← No noticeable change
+      </div>
+    </div>
+
+    <!-- Step 2: Follow-up Question -->
+    <div id="step2" class="step hidden">
+      <div class="question" id="followUpQuestion"></div>
+      <div class="instruction">Swipe to answer</div>
+      <div class="swipe-zone" id="swipeZone2">Swipe here</div>
+      <div class="options" id="followUpOptions"></div>
+    </div>
+
+    <!-- Step 3: Text Input -->
+    <div id="step3" class="step hidden">
+      <div class="question" id="textInputQuestion"></div>
+      <div class="textarea-wrapper">
+        <label class="textarea-label" for="detailsInput" id="textInputLabel"></label>
+        <textarea id="detailsInput" placeholder="Type your response here..."></textarea>
+      </div>
+      <div class="instruction">Swipe right when done</div>
+      <div class="swipe-zone" id="swipeZone3">Swipe right to continue →</div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div id="step4" class="step hidden">
+      <div class="summary-box">
+        <div class="summary-title">Summary:</div>
+        <div class="summary-item" id="summaryChange"></div>
+        <div class="summary-item" id="summaryFactor"></div>
+      </div>
+      <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
+      <div class="swipe-zone" id="swipeZone4">Swipe to confirm →</div>
+      <div class="edit-instruction">Swipe LEFT to go back and edit</div>
+    </div>
+
+    <!-- Step 5: Success -->
+    <div id="step5" class="step hidden">
+      <div class="success-message">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Submitted successfully</div>
+        <div class="success-text">Thank you for completing the survey. Your responses have been recorded.</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-// Configuration: Replace with your Google Apps Script Web App URL
-const SHEET_ENDPOINT = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLg7qh_yx-n_wZu3KY0gdggBCZ7jPVIK-H2t-nKQkEMoQ0sUyw7pU6qB54gHESAsfZqYqFzfoGRSHVbfkGv9rGiBLQ2vmFV4XoJFYbQfTuiNRJIZGZXLSuHNWKYe18tULF8W5Dcg214juxl5e-uboa_Agm1nYWpyLsyZ37S_2JiglRHFPq9zPUTYwfHgyI0_OG9EKuDO_hXto58uQJ6z6WGY6OXIY1_g5-7PkI9yNxaoXaMcH83NnekoUKqpLCs6TMkiDM81Krg6VVexvHaibzijd69IRdt1u41ok4-q&lib=MUqFmX3xhxFDzBtrCsRU7H_m8FswXrvlL";
+// Google Apps Script endpoint
+const GOOGLE_SCRIPT_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLg7qh_yx-n_wZu3KY0gdggBCZ7jPVIK-H2t-nKQkEMoQ0sUyw7pU6qB54gHESAsfZqYqFzfoGRSHVbfkGv9rGiBLQ2vmFV4XoJFYbQfTuiNRJIZGZXLSuHNWKYe18tULF8W5Dcg214juxl5e-uboa_Agm1nYWpyLsyZ37S_2JiglRHFPq9zPUTYwfHgyI0_OG9EKuDO_hXto58uQJ6z6WGY6OXIY1_g5-7PkI9yNxaoXaMcH83NnekoUKqpLCs6TMkiDM81Krg6VVexvHaibzijd69IRdt1u41ok4-q&lib=MUqFmX3xhxFDzBtrCsRU7H_m8FswXrvlL';
 
-// Survey state machine
-const STATE = {
-  current: 'Q1',
-  q1Answer: null,
-  q1Direction: null,
-  completed: false
-};
-
-// Question configurations
-const QUESTIONS = {
-  Q1: {
-    text: 'How has your condition changed since starting treatment?',
-    legend: '↑ Slight improvement   → Moderate improvement   ↓ Major improvement   ← No noticeable change',
-    mapping: {
-      up: 'Slight improvement',
-      right: 'Moderate improvement',
-      down: 'Major improvement',
-      left: 'No noticeable change'
-    }
-  },
-  Q2: {
-    text: 'How much did it improve?',
-    legend: '↑ Slight   → Moderate   ↓ Major   ← Prefer not to say',
-    mapping: {
-      up: 'Slight',
-      right: 'Moderate',
-      down: 'Major',
-      left: 'Prefer not to say'
-    }
+// State management
+const state = {
+  currentStep: 1,
+  answers: {
+    primaryAnswer: null,
+    followUpAnswer: null,
+    textInput: ''
   }
 };
 
-// DOM elements
-const card = document.getElementById('card');
-const questionText = document.getElementById('questionText');
-const instruction = document.getElementById('instruction');
-const swipeLegend = document.getElementById('swipeLegend');
-const statusMessage = document.getElementById('statusMessage');
+// Question configurations
+const questions = {
+  followUp: {
+    'Slight improvement': {
+      question: 'What contributed to this slight improvement?',
+      options: '↑ Medication   → Lifestyle changes   ↓ Both   ← Other factors',
+      mapping: {
+        up: 'Medication',
+        right: 'Lifestyle changes',
+        down: 'Both',
+        left: 'Other factors'
+      }
+    },
+    'Moderate improvement': {
+      question: 'What was the main factor in your improvement?',
+      options: '↑ Medication consistency   → Diet changes   ↓ Exercise routine   ← Stress reduction',
+      mapping: {
+        up: 'Medication consistency',
+        right: 'Diet changes',
+        down: 'Exercise routine',
+        left: 'Stress reduction'
+      }
+    },
+    'Major improvement': {
+      question: 'What made the biggest difference?',
+      options: '↑ Treatment effectiveness   → Support system   ↓ Lifestyle overhaul   ← Medical intervention',
+      mapping: {
+        up: 'Treatment effectiveness',
+        right: 'Support system',
+        down: 'Lifestyle overhaul',
+        left: 'Medical intervention'
+      }
+    },
+    'No noticeable change': {
+      question: 'Why do you think there has been no change?',
+      options: '↑ Too early to tell   → Treatment not effective   ↓ Inconsistent adherence   ← Other reasons',
+      mapping: {
+        up: 'Too early to tell',
+        right: 'Treatment not effective',
+        down: 'Inconsistent adherence',
+        left: 'Other reasons'
+      }
+    }
+  },
+  textInput: {
+    'Slight improvement': 'Please describe the slight improvement in more detail:',
+    'Moderate improvement': 'Please elaborate on what helped you improve:',
+    'Major improvement': 'Please share more about your significant progress:',
+    'No noticeable change': 'Please explain what you\'ve observed:'
+  },
+  textInputLabel: {
+    'Slight improvement': 'Details about your progress',
+    'Moderate improvement': 'What helped most',
+    'Major improvement': 'Your success story',
+    'No noticeable change': 'Your observations'
+  }
+};
 
-// Touch tracking
+// Primary question mapping
+const primaryMapping = {
+  up: 'Slight improvement',
+  right: 'Moderate improvement',
+  down: 'Major improvement',
+  left: 'No noticeable change'
+};
+
+// Touch handling
 let touchStartX = 0;
 let touchStartY = 0;
 let touchEndX = 0;
 let touchEndY = 0;
+const minSwipeDistance = 50;
 
-// Initialize survey
-function init() {
-  renderQuestion('Q1');
-  attachSwipeListeners();
-}
-
-// Attach swipe event listeners to card
-function attachSwipeListeners() {
-  card.addEventListener('touchstart', handleTouchStart, { passive: true });
-  card.addEventListener('touchend', handleTouchEnd, { passive: true });
-}
-
-// Handle touch start
 function handleTouchStart(e) {
-  if (STATE.completed) return;
-  
   touchStartX = e.changedTouches[0].screenX;
   touchStartY = e.changedTouches[0].screenY;
 }
 
-// Handle touch end
 function handleTouchEnd(e) {
-  if (STATE.completed) return;
-  
   touchEndX = e.changedTouches[0].screenX;
   touchEndY = e.changedTouches[0].screenY;
-  
-  const direction = detectSwipeDirection();
-  if (direction) {
-    handleSwipe(direction);
-  }
+  handleSwipe();
 }
 
-// Detect swipe direction based on touch delta
-function detectSwipeDirection() {
+function handleSwipe() {
   const deltaX = touchEndX - touchStartX;
   const deltaY = touchEndY - touchStartY;
   const absDeltaX = Math.abs(deltaX);
   const absDeltaY = Math.abs(deltaY);
-  
-  const THRESHOLD = 50;
-  
-  // Insufficient movement
-  if (absDeltaX < THRESHOLD && absDeltaY < THRESHOLD) {
-    return null;
+
+  if (absDeltaX < minSwipeDistance && absDeltaY < minSwipeDistance) {
+    return;
   }
-  
-  // Determine primary direction
+
+  let direction;
   if (absDeltaX > absDeltaY) {
-    return deltaX > 0 ? 'right' : 'left';
+    direction = deltaX > 0 ? 'right' : 'left';
   } else {
-    return deltaY < 0 ? 'up' : 'down';
+    direction = deltaY < 0 ? 'up' : 'down';
+  }
+
+  handleSwipeDirection(direction);
+}
+
+function handleSwipeDirection(direction) {
+  if (state.currentStep === 1) {
+    handleStep1Swipe(direction);
+  } else if (state.currentStep === 2) {
+    handleStep2Swipe(direction);
+  } else if (state.currentStep === 3) {
+    handleStep3Swipe(direction);
+  } else if (state.currentStep === 4) {
+    handleStep4Swipe(direction);
   }
 }
 
-// Handle swipe action
-function handleSwipe(direction) {
-  const currentQuestion = QUESTIONS[STATE.current];
-  const answer = currentQuestion.mapping[direction];
-  
+function handleStep1Swipe(direction) {
+  const answer = primaryMapping[direction];
   if (!answer) return;
   
-  if (STATE.current === 'Q1') {
-    // Store Q1 response
-    STATE.q1Answer = answer;
-    STATE.q1Direction = direction;
-    
-    // Log Q1 to Google Sheets
-    logResponse('Q1', answer, direction);
-    
-    // Determine next state
-    if (direction === 'left') {
-      // Skip Q2 if "No noticeable change"
-      showFinalState();
-    } else {
-      // Show Q2
-      STATE.current = 'Q2';
-      renderQuestion('Q2');
-    }
-    
-  } else if (STATE.current === 'Q2') {
-    // Log Q2 to Google Sheets
-    logResponse('Q2', answer, direction);
-    
-    // Show final state
-    showFinalState();
+  state.answers.primaryAnswer = answer;
+  showStep2();
+}
+
+function handleStep2Swipe(direction) {
+  const config = questions.followUp[state.answers.primaryAnswer];
+  const answer = config.mapping[direction];
+  if (!answer) return;
+  
+  state.answers.followUpAnswer = answer;
+  showStep3();
+}
+
+function handleStep3Swipe(direction) {
+  if (direction === 'right') {
+    state.answers.textInput = document.getElementById('detailsInput').value.trim();
+    showStep4();
   }
 }
 
-// Render question to UI
-function renderQuestion(questionId) {
-  const question = QUESTIONS[questionId];
-  questionText.textContent = question.text;
-  swipeLegend.textContent = question.legend;
-  instruction.classList.remove('hidden');
-  swipeLegend.classList.remove('hidden');
-  statusMessage.classList.remove('visible');
+function handleStep4Swipe(direction) {
+  if (direction === 'right') {
+    submitSurvey();
+  } else if (direction === 'left') {
+    showStep3();
+  }
 }
 
-// Show final thank you state
-function showFinalState() {
-  STATE.completed = true;
-  STATE.current = 'DONE';
+function showStep2() {
+  const config = questions.followUp[state.answers.primaryAnswer];
+  document.getElementById('followUpQuestion').textContent = config.question;
+  document.getElementById('followUpOptions').textContent = config.options;
   
-  questionText.textContent = '';
-  instruction.classList.add('hidden');
-  swipeLegend.classList.add('hidden');
-  
-  statusMessage.textContent = 'Saved. Thank you.';
-  statusMessage.classList.add('success');
-  statusMessage.classList.remove('error');
-  statusMessage.classList.add('visible');
+  hideAllSteps();
+  document.getElementById('step2').classList.remove('hidden');
+  state.currentStep = 2;
 }
 
-// Show error state
-function showErrorState() {
-  statusMessage.textContent = 'Not saved';
-  statusMessage.classList.add('error');
-  statusMessage.classList.remove('success');
-  statusMessage.classList.add('visible');
+function showStep3() {
+  const question = questions.textInput[state.answers.primaryAnswer];
+  const label = questions.textInputLabel[state.answers.primaryAnswer];
   
-  // Hide error after 3 seconds
+  document.getElementById('textInputQuestion').textContent = question;
+  document.getElementById('textInputLabel').textContent = label;
+  document.getElementById('detailsInput').value = state.answers.textInput;
+  
+  hideAllSteps();
+  document.getElementById('step3').classList.remove('hidden');
+  state.currentStep = 3;
+}
+
+function showStep4() {
+  document.getElementById('summaryChange').textContent = '• Overall change: ' + state.answers.primaryAnswer;
+  document.getElementById('summaryFactor').textContent = '• Key factor: ' + state.answers.followUpAnswer;
+  
+  hideAllSteps();
+  document.getElementById('step4').classList.remove('hidden');
+  state.currentStep = 4;
+}
+
+function showStatus(message, type) {
+  const indicator = document.getElementById('statusIndicator');
+  indicator.textContent = message;
+  indicator.className = 'status-indicator visible ' + type;
+  
   setTimeout(() => {
-    statusMessage.classList.remove('visible');
+    indicator.classList.remove('visible');
   }, 3000);
 }
 
-// Log response to Google Sheets
-function logResponse(questionId, answerText, swipeDirection) {
+function submitSurvey() {
+  showStatus('Submitting...', '');
+  
   const payload = {
     timestamp: new Date().toISOString(),
-    question_id: questionId,
-    answer_text: answerText,
-    swipe_direction: swipeDirection
+    primaryAnswer: state.answers.primaryAnswer,
+    followUpAnswer: state.answers.followUpAnswer,
+    textInput: state.answers.textInput
   };
   
-  // Send to Google Apps Script endpoint
-  fetch(SHEET_ENDPOINT, {
+  fetch(GOOGLE_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: {
@@ -340,20 +524,38 @@ function logResponse(questionId, answerText, swipeDirection) {
     body: JSON.stringify(payload)
   })
   .then(() => {
-    console.log('Response logged:', payload);
-  })
-  .catch(err => {
-    console.error('Failed to log response:', err);
+    console.log('Survey submitted:', payload);
+    showStatus('Saved successfully', 'success');
     
-    // Only show error if this is the final submission
-    if (STATE.current === 'DONE') {
-      showErrorState();
-    }
+    hideAllSteps();
+    document.getElementById('step5').classList.remove('hidden');
+    state.currentStep = 5;
+  })
+  .catch((error) => {
+    console.error('Submission error:', error);
+    showStatus('Failed to save', 'error');
   });
 }
 
-// Start survey on page load
-init();
+function hideAllSteps() {
+  document.querySelectorAll('.step').forEach(step => {
+    step.classList.add('hidden');
+  });
+}
+
+// Attach event listeners
+document.getElementById('swipeZone1').addEventListener('touchstart', handleTouchStart, { passive: true });
+document.getElementById('swipeZone1').addEventListener('touchend', handleTouchEnd, { passive: true });
+
+document.getElementById('swipeZone2').addEventListener('touchstart', handleTouchStart, { passive: true });
+document.getElementById('swipeZone2').addEventListener('touchend', handleTouchEnd, { passive: true });
+
+document.getElementById('swipeZone3').addEventListener('touchstart', handleTouchStart, { passive: true });
+document.getElementById('swipeZone3').addEventListener('touchend', handleTouchEnd, { passive: true });
+
+document.getElementById('swipeZone4').addEventListener('touchstart', handleTouchStart, { passive: true });
+document.getElementById('swipeZone4').addEventListener('touchend', handleTouchEnd, { passive: true });
 </script>
+
 </body>
 </html>
