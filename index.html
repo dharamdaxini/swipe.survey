@@ -1,66 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Swipe Survey</title>
 
 <style>
-body {
-  margin: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f5f6f8;
-  font-family: system-ui, -apple-system, sans-serif;
-}
+  body {
+    margin: 0;
+    background: #f4f5f7;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
 
-.card {
-  width: 92%;
-  max-width: 420px;
-  min-height: 60vh;
-  background: #fff;
-  border-radius: 22px;
-  box-shadow: 0 20px 40px rgba(0,0,0,.1);
-  padding: 28px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  touch-action: none;
-}
+  .card {
+    width: 90%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 24px;
+    padding: 40px 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    text-align: center;
+  }
 
-h1 {
-  font-size: 22px;
-  margin-bottom: 10px;
-}
+  h1 {
+    font-size: 26px;
+    margin-bottom: 12px;
+  }
 
-.instructions {
-  color: #666;
-  font-size: 15px;
-  margin-top: 14px;
-  line-height: 1.8;
-}
+  .sub {
+    color: #666;
+    margin-bottom: 16px;
+  }
 
-.buttons {
-  display: none;
-  margin-top: 20px;
-}
+  .instructions {
+    font-size: 14px;
+    color: #888;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
 
-.buttons button {
-  width: 100%;
-  padding: 14px;
-  margin-bottom: 10px;
-  border-radius: 14px;
-  border: none;
-  font-size: 16px;
-  background: #f1f3f5;
-}
-
-.status {
-  margin-top: 20px;
-  font-weight: 600;
-}
+  .status {
+    margin-top: 24px;
+    font-weight: 600;
+    color: #222;
+  }
 </style>
 </head>
 
@@ -68,6 +55,7 @@ h1 {
 
 <div class="card" id="card">
   <h1 id="question">How are you feeling today?</h1>
+  <div class="sub">Swipe to answer</div>
 
   <div class="instructions" id="instructions">
     ↑ Better<br>
@@ -76,86 +64,113 @@ h1 {
     ← Skip
   </div>
 
-  <div class="buttons" id="followup"></div>
-
   <div class="status" id="status"></div>
 </div>
 
 <script>
-const ENDPOINT = "PASTE_YOUR_GOOGLE_SCRIPT_URL_HERE";
+/* ================= CONFIG ================= */
+const GOOGLE_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+
+/* ================= STATE ================= */
+let stage = "Q1";        // Q1 → Q2 → DONE
+let locked = false;
+let q1 = null;
+let q2 = null;
 
 let startX = 0;
 let startY = 0;
-let locked = false;
-let q1Answer = null;
 
+/* ================= ELEMENTS ================= */
 const card = document.getElementById("card");
 const question = document.getElementById("question");
 const instructions = document.getElementById("instructions");
-const followup = document.getElementById("followup");
 const status = document.getElementById("status");
 
+/* ================= TOUCH HANDLERS ================= */
 card.addEventListener("touchstart", e => {
-  if (locked || q1Answer) return;
+  if (locked) return;
   startX = e.touches[0].clientX;
   startY = e.touches[0].clientY;
 });
 
 card.addEventListener("touchend", e => {
-  if (locked || q1Answer) return;
+  if (locked) return;
 
-  let dx = e.changedTouches[0].clientX - startX;
-  let dy = e.changedTouches[0].clientY - startY;
+  const dx = e.changedTouches[0].clientX - startX;
+  const dy = e.changedTouches[0].clientY - startY;
 
   if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
 
+  let dir;
   if (Math.abs(dx) > Math.abs(dy)) {
-    q1Answer = dx > 0 ? "SAME" : "SKIP";
+    dir = dx > 0 ? "RIGHT" : "LEFT";
   } else {
-    q1Answer = dy < 0 ? "BETTER" : "WORSE";
+    dir = dy < 0 ? "UP" : "DOWN";
   }
 
-  handleQ1(q1Answer);
+  if (stage === "Q1") handleQ1(dir);
+  else if (stage === "Q2") handleQ2(dir);
 });
 
-function handleQ1(answer) {
-  if (answer === "SKIP") {
-    save(answer, "SKIPPED");
+/* ================= LOGIC ================= */
+function handleQ1(dir) {
+  q1 = {
+    UP: "BETTER",
+    RIGHT: "SAME",
+    DOWN: "WORSE",
+    LEFT: "SKIP"
+  }[dir];
+
+  if (!q1) return;
+
+  if (q1 === "SKIP") {
+    save("SKIP", "NA");
     return;
   }
 
-  instructions.style.display = "none";
-  followup.style.display = "block";
+  stage = "Q2";
 
-  let q2Text = {
-    BETTER: "What improved?",
-    SAME: "Why no change?",
-    WORSE: "What got worse?"
-  }[answer];
+  question.innerText = {
+    BETTER: "How much did it improve?",
+    SAME: "How stable are you?",
+    WORSE: "How bad is it?"
+  }[q1];
 
-  question.innerText = q2Text;
-
-  followup.innerHTML = `
-    <button onclick="save('${answer}','SLIGHT')">Slight</button>
-    <button onclick="save('${answer}','MODERATE')">Moderate</button>
-    <button onclick="save('${answer}','MAJOR')">Major</button>
+  instructions.innerHTML = `
+    ↑ Slight<br>
+    → Moderate<br>
+    ↓ Major<br>
+    ← Skip detail
   `;
 }
 
-function save(q1, q2) {
+function handleQ2(dir) {
+  q2 = {
+    UP: "SLIGHT",
+    RIGHT: "MODERATE",
+    DOWN: "MAJOR",
+    LEFT: "SKIP_DETAIL"
+  }[dir];
+
+  save(q1, q2);
+}
+
+function save(a, b) {
   locked = true;
-  followup.style.display = "none";
+  stage = "DONE";
+
+  instructions.style.display = "none";
   status.innerText = "Saved. Thank you.";
 
-  fetch(ENDPOINT, {
+  fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     body: JSON.stringify({
-      q1: q1,
-      q2: q2,
+      primary: a,
+      secondary: b,
       timestamp: new Date().toISOString(),
-      ua: navigator.userAgent
+      device: navigator.userAgent
     })
-  }).catch(()=>{});
+  }).catch(() => {});
 }
 </script>
 
