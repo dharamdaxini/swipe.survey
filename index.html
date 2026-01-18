@@ -1,776 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Treatment Survey</title>
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #e5e5e5;
-  color: #1a1a1a;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.card {
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  width: 100%;
-  max-width: 500px;
-  min-height: 600px;
-  padding: 40px 28px 28px 28px;
-  position: relative;
-  touch-action: pan-y pinch-zoom;
-  display: flex;
-  flex-direction: column;
-}
-
-.question {
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.4;
-  margin-bottom: 20px;
-  text-align: center;
-  color: #1a1a1a;
-}
-
-.instruction {
-  font-size: 15px;
-  color: #666666;
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding: 0 8px;
-  flex: 1;
-}
-
-.option-item {
-  font-size: 14px;
-  color: #666666;
-  text-align: left;
-  line-height: 1.6;
-  padding: 12px 14px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-}
-
-.swipe-zone {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 16px;
-  padding: 40px 20px; 
-  text-align: center;
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-  touch-action: none;
-  position: relative;
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Visual Arrow Grid Styles */
-.swipe-visual-grid {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.swipe-middle-row {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.swipe-arrow-icon {
-  font-size: 24px;
-  line-height: 1;
-  opacity: 0.9;
-  animation: pulse 2s infinite;
-}
-
-.swipe-text-label {
-  font-weight: 600;
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-
-.swipe-zone:active {
-  opacity: 0.9;
-}
-
-.textarea-wrapper {
-  margin-bottom: 24px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.textarea-label {
-  display: block;
-  font-size: 15px;
-  font-weight: 500;
-  color: #1a1a1a;
-  margin-bottom: 10px;
-}
-
-textarea {
-  width: 100%;
-  min-height: 180px;
-  padding: 14px;
-  font-size: 15px;
-  font-family: inherit;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.2s;
-  line-height: 1.5;
-  flex: 1;
-}
-
-textarea:focus {
-  border-color: #6366f1;
-}
-
-.summary-box {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
-  flex: 1;
-}
-
-.summary-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #1a1a1a;
-}
-
-.summary-item {
-  font-size: 14px;
-  color: #4a4a4a;
-  margin-bottom: 12px;
-  line-height: 1.6;
-}
-
-.summary-item:last-child {
-  margin-bottom: 0;
-}
-
-.summary-description {
-  font-size: 13px;
-  color: #666666;
-  margin-top: 8px;
-  padding: 10px;
-  background: #ffffff;
-  border-radius: 6px;
-  line-height: 1.5;
-  font-style: italic;
-}
-
-.confirm-instruction {
-  font-size: 14px;
-  color: #6366f1;
-  text-align: center;
-  margin-bottom: 12px;
-  font-weight: 500;
-}
-
-.edit-instruction {
-  font-size: 14px;
-  color: #888888;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.success-message {
-  text-align: center;
-  padding: 60px 20px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.success-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-}
-
-.success-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #10b981;
-  margin-bottom: 12px;
-}
-
-.success-text {
-  font-size: 15px;
-  color: #666666;
-  line-height: 1.6;
-}
-
-.status-indicator {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  background: #3b82f6;
-  color: #ffffff;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-  z-index: 1000;
-}
-
-.status-indicator.visible {
-  opacity: 1;
-}
-
-.status-indicator.success {
-  background: #10b981;
-}
-
-.status-indicator.error {
-  background: #ef4444;
-}
-
-.hidden {
-  display: none;
-}
-
-@media (max-width: 480px) {
-  .card {
-    padding: 32px 20px 20px 20px;
-    min-height: 580px;
-  }
-   
-  .question {
-    font-size: 20px;
-  }
-   
-  .swipe-zone {
-    padding: 30px 16px;
-    font-size: 18px;
-  }
-   
-  .option-item {
-    font-size: 13px;
-    min-height: 44px;
-  }
-   
-  .status-indicator {
-    top: 10px;
-    right: 10px;
-    font-size: 12px;
-    padding: 10px 16px;
-  }
-}
-
-@media (max-width: 360px) {
-  .question {
-    font-size: 18px;
-  }
-   
-  .option-item {
-    font-size: 12px;
-  }
-   
-  .card {
-    min-height: 560px;
-  }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Treatment Survey</title>
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="status-indicator" id="statusIndicator"></div>
+    <div class="status-indicator" id="statusIndicator"></div>
 
-<div class="container">
-  <div class="card">
-    
-    <div id="step1" class="step">
-      <div class="question">How has your condition changed since starting treatment?</div>
-      <div class="instruction">Swipe to answer</div>
-      <div class="options">
-        <div class="option-item">⬆️ Slight improvement</div>
-        <div class="option-item">➡️ Moderate improvement</div>
-        <div class="option-item">⬇️ Major improvement</div>
-        <div class="option-item">⬅️ No noticeable change</div>
-      </div>
-      
-      <div class="swipe-zone" id="swipeZone1">
-        <div class="swipe-visual-grid">
-           <div class="swipe-arrow-icon">⬆️</div>
-           <div class="swipe-middle-row">
-              <div class="swipe-arrow-icon">⬅️</div>
-              <div class="swipe-text-label">Swipe</div>
-              <div class="swipe-arrow-icon">➡️</div>
-           </div>
-           <div class="swipe-arrow-icon">⬇️</div>
+    <div class="container">
+        <div class="card">
+            
+            <div id="step1" class="step fade-in">
+                <div class="question">How has your condition changed since starting treatment?</div>
+                <div class="instruction">Swipe to answer</div>
+                <div class="options">
+                    <div class="option-item">⬆️ Slight improvement</div>
+                    <div class="option-item">➡️ Moderate improvement</div>
+                    <div class="option-item">⬇️ Major improvement</div>
+                    <div class="option-item">⬅️ No noticeable change</div>
+                </div>
+                
+                <div class="swipe-zone" id="swipeZone1">
+                    <div class="swipe-visual-grid">
+                        <div class="swipe-arrow-icon">⬆️</div>
+                        <div class="swipe-middle-row">
+                            <div class="swipe-arrow-icon">⬅️</div>
+                            <div class="swipe-text-label">Swipe</div>
+                            <div class="swipe-arrow-icon">➡️</div>
+                        </div>
+                        <div class="swipe-arrow-icon">⬇️</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="step2" class="step hidden">
+                <div class="question" id="followUpQuestion"></div>
+                <div class="instruction">Swipe to answer</div>
+                <div class="options" id="followUpOptions"></div>
+                
+                <div class="swipe-zone" id="swipeZone2">
+                    <div class="swipe-visual-grid">
+                        <div class="swipe-arrow-icon">⬆️</div>
+                        <div class="swipe-middle-row">
+                            <div class="swipe-arrow-icon">⬅️</div>
+                            <div class="swipe-text-label">Swipe</div>
+                            <div class="swipe-arrow-icon">➡️</div>
+                        </div>
+                        <div class="swipe-arrow-icon">⬇️</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="step3" class="step hidden">
+                <div class="question" id="textInputQuestion"></div>
+                <div class="textarea-wrapper">
+                    <label class="textarea-label" for="detailsInput" id="textInputLabel"></label>
+                    <textarea id="detailsInput" placeholder="Type your response here..."></textarea>
+                </div>
+                <div class="instruction">Swipe right when done</div>
+                <div class="swipe-zone" id="swipeZone3">
+                     <div class="swipe-visual-grid">
+                        <div class="swipe-middle-row">
+                            <div class="swipe-text-label">Swipe Right ➡️</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="step4" class="step hidden">
+                <div class="summary-box">
+                    <div class="summary-title">Summary</div>
+                    <div class="summary-item" id="summaryChange"></div>
+                    <div class="summary-item" id="summaryFactor"></div>
+                    <div class="summary-description" id="summaryDescription"></div>
+                </div>
+                <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
+                <div class="edit-instruction">Swipe LEFT to go back and edit</div>
+                
+                <div class="swipe-zone" id="swipeZone4">
+                    <div class="swipe-visual-grid">
+                        <div class="swipe-middle-row">
+                            <div class="swipe-arrow-icon">⬅️</div>
+                            <div class="swipe-text-label">Confirm</div>
+                            <div class="swipe-arrow-icon">➡️</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="step5" class="step hidden">
+                <div class="success-message">
+                    <div class="success-icon">✓</div>
+                    <div class="success-title">Submitted successfully</div>
+                    <div class="success-text">Thank you for completing the survey. Your responses have been recorded.</div>
+                </div>
+            </div>
+
         </div>
-      </div>
     </div>
 
-    <div id="step2" class="step hidden">
-      <div class="question" id="followUpQuestion"></div>
-      <div class="instruction">Swipe to answer</div>
-      <div class="options" id="followUpOptions"></div>
-      
-      <div class="swipe-zone" id="swipeZone2">
-        <div class="swipe-visual-grid">
-           <div class="swipe-arrow-icon">⬆️</div>
-           <div class="swipe-middle-row">
-              <div class="swipe-arrow-icon">⬅️</div>
-              <div class="swipe-text-label">Swipe</div>
-              <div class="swipe-arrow-icon">➡️</div>
-           </div>
-           <div class="swipe-arrow-icon">⬇️</div>
-        </div>
-      </div>
-    </div>
-
-    <div id="step3" class="step hidden">
-      <div class="question" id="textInputQuestion"></div>
-      <div class="textarea-wrapper">
-        <label class="textarea-label" for="detailsInput" id="textInputLabel"></label>
-        <textarea id="detailsInput" placeholder="Type your response here..."></textarea>
-      </div>
-      <div class="instruction">Swipe right when done</div>
-      <div class="swipe-zone" id="swipeZone3">Swipe right to continue ➡️</div>
-    </div>
-
-    <div id="step4" class="step hidden">
-      <div class="summary-box">
-        <div class="summary-title">Summary:</div>
-        <div class="summary-item" id="summaryChange"></div>
-        <div class="summary-item" id="summaryFactor"></div>
-        <div class="summary-description" id="summaryDescription"></div>
-      </div>
-      <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
-      <div class="edit-instruction">Swipe LEFT to go back and edit</div>
-      <div class="swipe-zone" id="swipeZone4">
-         <div class="swipe-visual-grid">
-           <div class="swipe-middle-row">
-              <div class="swipe-arrow-icon">⬅️</div>
-              <div class="swipe-text-label">Confirm</div>
-              <div class="swipe-arrow-icon">➡️</div>
-           </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="step5" class="step hidden">
-      <div class="success-message">
-        <div class="success-icon">✓</div>
-        <div class="success-title">Submitted successfully</div>
-        <div class="success-text">Thank you for completing the survey. Your responses have been recorded.</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-// Prevent page refresh on mobile pull-to-refresh
-document.body.style.overscrollBehavior = 'none';
-document.addEventListener('touchmove', function(e) {
-  if (e.touches.length > 1) {
-    e.preventDefault();
-  }
-}, { passive: false });
-
-// Prevent accidental refresh
-let lastTouchY = 0;
-let preventPullToRefresh = false;
-
-document.addEventListener('touchstart', function(e) {
-  if (e.touches.length !== 1) { return; }
-  lastTouchY = e.touches[0].clientY;
-  preventPullToRefresh = window.pageYOffset === 0;
-}, { passive: false });
-
-document.addEventListener('touchmove', function(e) {
-  const touchY = e.touches[0].clientY;
-  const touchYDelta = touchY - lastTouchY;
-  lastTouchY = touchY;
-
-  if (preventPullToRefresh && touchYDelta > 0) {
-    e.preventDefault();
-    return;
-  }
-}, { passive: false });
-
-// ------------------------------------------------------------------
-// CONFIGURATION: Updated Google Script URL
-// ------------------------------------------------------------------
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx67DUtdzTR2uknSQ7oRMMRB1yXIPK13oPZ7k5um2rvoAFhzUfOS3pGTK3P9vJB5r2whg/exec';
-
-// State management
-const state = {
-  currentStep: 1,
-  answers: {
-    primaryAnswer: null,
-    followUpAnswer: null,
-    textInput: ''
-  }
-};
-
-// Question configurations with EMOJIS
-const questions = {
-  followUp: {
-    'Slight improvement': {
-      question: 'What contributed to this slight improvement?',
-      options: [
-        '⬆️ Medication',
-        '➡️ Lifestyle changes',
-        '⬇️ Both',
-        '⬅️ Other factors'
-      ],
-      mapping: {
-        up: 'Medication',
-        right: 'Lifestyle changes',
-        down: 'Both',
-        left: 'Other factors'
-      }
-    },
-    'Moderate improvement': {
-      question: 'What was the main factor in your improvement?',
-      options: [
-        '⬆️ Medication consistency',
-        '➡️ Diet changes',
-        '⬇️ Exercise routine',
-        '⬅️ Stress reduction'
-      ],
-      mapping: {
-        up: 'Medication consistency',
-        right: 'Diet changes',
-        down: 'Exercise routine',
-        left: 'Stress reduction'
-      }
-    },
-    'Major improvement': {
-      question: 'What made the biggest difference?',
-      options: [
-        '⬆️ Treatment effectiveness',
-        '➡️ Support system',
-        '⬇️ Lifestyle overhaul',
-        '⬅️ Medical intervention'
-      ],
-      mapping: {
-        up: 'Treatment effectiveness',
-        right: 'Support system',
-        down: 'Lifestyle overhaul',
-        left: 'Medical intervention'
-      }
-    },
-    'No noticeable change': {
-      question: 'Why do you think there has been no change?',
-      options: [
-        '⬆️ Too early to tell',
-        '➡️ Treatment not effective',
-        '⬇️ Inconsistent adherence',
-        '⬅️ Other reasons'
-      ],
-      mapping: {
-        up: 'Too early to tell',
-        right: 'Treatment not effective',
-        down: 'Inconsistent adherence',
-        left: 'Other reasons'
-      }
-    }
-  },
-  textInput: {
-    'Slight improvement': 'Please describe the slight improvement in more detail:',
-    'Moderate improvement': 'Please elaborate on what helped you improve:',
-    'Major improvement': 'Please share more about your significant progress:',
-    'No noticeable change': 'Please explain what you\'ve observed:'
-  },
-  textInputLabel: {
-    'Slight improvement': 'Details about your progress',
-    'Moderate improvement': 'What helped most',
-    'Major improvement': 'Your success story',
-    'No noticeable change': 'Your observations'
-  }
-};
-
-// Primary question mapping
-const primaryMapping = {
-  up: 'Slight improvement',
-  right: 'Moderate improvement',
-  down: 'Major improvement',
-  left: 'No noticeable change'
-};
-
-// Touch and mouse handling
-let startX = 0;
-let startY = 0;
-let endX = 0;
-let endY = 0;
-let isPointerDown = false;
-const minSwipeDistance = 50;
-
-function handlePointerStart(e) {
-  isPointerDown = true;
-   
-  if (e.type === 'touchstart') {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  } else {
-    startX = e.clientX;
-    startY = e.clientY;
-  }
-}
-
-function handlePointerEnd(e) {
-  if (!isPointerDown) return;
-  isPointerDown = false;
-   
-  if (e.type === 'touchend') {
-    endX = e.changedTouches[0].clientX;
-    endY = e.changedTouches[0].clientY;
-  } else {
-    endX = e.clientX;
-    endY = e.clientY;
-  }
-   
-  handleSwipe();
-}
-
-function handleSwipe() {
-  const deltaX = endX - startX;
-  const deltaY = endY - startY;
-  const absDeltaX = Math.abs(deltaX);
-  const absDeltaY = Math.abs(deltaY);
-
-  if (absDeltaX < minSwipeDistance && absDeltaY < minSwipeDistance) {
-    return;
-  }
-
-  let direction;
-  if (absDeltaX > absDeltaY) {
-    direction = deltaX > 0 ? 'right' : 'left';
-  } else {
-    direction = deltaY < 0 ? 'up' : 'down';
-  }
-
-  handleSwipeDirection(direction);
-}
-
-function handleSwipeDirection(direction) {
-  if (state.currentStep === 1) {
-    handleStep1Swipe(direction);
-  } else if (state.currentStep === 2) {
-    handleStep2Swipe(direction);
-  } else if (state.currentStep === 3) {
-    handleStep3Swipe(direction);
-  } else if (state.currentStep === 4) {
-    handleStep4Swipe(direction);
-  }
-}
-
-function handleStep1Swipe(direction) {
-  const answer = primaryMapping[direction];
-  if (!answer) return;
-   
-  state.answers.primaryAnswer = answer;
-  showStep2();
-}
-
-function handleStep2Swipe(direction) {
-  const config = questions.followUp[state.answers.primaryAnswer];
-  const answer = config.mapping[direction];
-  if (!answer) return;
-   
-  state.answers.followUpAnswer = answer;
-  showStep3();
-}
-
-function handleStep3Swipe(direction) {
-  if (direction === 'right') {
-    state.answers.textInput = document.getElementById('detailsInput').value.trim();
-    showStep4();
-  }
-}
-
-function handleStep4Swipe(direction) {
-  if (direction === 'right') {
-    submitSurvey();
-  } else if (direction === 'left') {
-    showStep3();
-  }
-}
-
-function showStep2() {
-  const config = questions.followUp[state.answers.primaryAnswer];
-  document.getElementById('followUpQuestion').textContent = config.question;
-   
-  // Create options as stacked list
-  const optionsContainer = document.getElementById('followUpOptions');
-  optionsContainer.innerHTML = '';
-  config.options.forEach(option => {
-    const optionDiv = document.createElement('div');
-    optionDiv.className = 'option-item';
-    optionDiv.textContent = option;
-    optionsContainer.appendChild(optionDiv);
-  });
-   
-  hideAllSteps();
-  document.getElementById('step2').classList.remove('hidden');
-  state.currentStep = 2;
-}
-
-function showStep3() {
-  const question = questions.textInput[state.answers.primaryAnswer];
-  const label = questions.textInputLabel[state.answers.primaryAnswer];
-   
-  document.getElementById('textInputQuestion').textContent = question;
-  document.getElementById('textInputLabel').textContent = label;
-  document.getElementById('detailsInput').value = state.answers.textInput;
-   
-  hideAllSteps();
-  document.getElementById('step3').classList.remove('hidden');
-  state.currentStep = 3;
-}
-
-function showStep4() {
-  document.getElementById('summaryChange').textContent = '• Overall change: ' + state.answers.primaryAnswer;
-  document.getElementById('summaryFactor').textContent = '• Key factor: ' + state.answers.followUpAnswer;
-   
-  // Add description from step 3
-  const descriptionElement = document.getElementById('summaryDescription');
-  if (state.answers.textInput) {
-    descriptionElement.textContent = '"' + state.answers.textInput + '"';
-    descriptionElement.style.display = 'block';
-  } else {
-    descriptionElement.style.display = 'none';
-  }
-   
-  hideAllSteps();
-  document.getElementById('step4').classList.remove('hidden');
-  state.currentStep = 4;
-}
-
-function showStatus(message, type) {
-  const indicator = document.getElementById('statusIndicator');
-  indicator.textContent = message;
-  indicator.className = 'status-indicator visible ' + type;
-   
-  setTimeout(() => {
-    indicator.classList.remove('visible');
-  }, 3000);
-}
-
-function getDeviceType() {
-  const ua = navigator.userAgent;
-  if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-    return "Tablet";
-  }
-  if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-    return "Mobile";
-  }
-  return "Desktop";
-}
-
-function submitSurvey() {
-  showStatus('Submitting...', '');
-   
-  // Match the Google Sheet column structure: timestamp, q1, q2, device
-  const payload = {
-    timestamp: new Date().toISOString(),
-    q1: state.answers.primaryAnswer,
-    q2: state.answers.followUpAnswer + (state.answers.textInput ? ' - ' + state.answers.textInput : ''),
-    device: getDeviceType()
-  };
-   
-  console.log('Submitting payload:', payload);
-   
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(() => {
-    console.log('Survey submitted successfully:', payload);
-    showStatus('Saved successfully', 'success');
-     
-    hideAllSteps();
-    document.getElementById('step5').classList.remove('hidden');
-    state.currentStep = 5;
-  })
-  .catch((error) => {
-    console.error('Submission error:', error);
-    showStatus('Failed to save', 'error');
-  });
-}
-
-function hideAllSteps() {
-  document.querySelectorAll('.step').forEach(step => {
-    step.classList.add('hidden');
-  });
-}
-
-function attachSwipeListeners(element) {
-  // Touch events
-  element.addEventListener('touchstart', handlePointerStart, { passive: true });
-  element.addEventListener('touchend', handlePointerEnd, { passive: true });
-   
-  // Mouse events for desktop testing
-  element.addEventListener('mousedown', handlePointerStart);
-  element.addEventListener('mouseup', handlePointerEnd);
-}
-
-// Attach event listeners to all swipe zones
-attachSwipeListeners(document.getElementById('swipeZone1'));
-attachSwipeListeners(document.getElementById('swipeZone2'));
-attachSwipeListeners(document.getElementById('swipeZone3'));
-attachSwipeListeners(document.getElementById('swipeZone4'));
-</script>
-
+    <script src="swipe.js" defer></script>
 </body>
 </html>
