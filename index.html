@@ -3,124 +3,120 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Swipe Survey</title>
+
 <style>
-body{
-  margin:0;
-  height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#f5f6f8;
-  font-family:sans-serif;
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6f8;
+  font-family: system-ui, -apple-system, sans-serif;
 }
-.card{
-  width:92%;
-  max-width:420px;
-  height:75vh;
-  background:#fff;
-  border-radius:22px;
-  box-shadow:0 20px 40px rgba(0,0,0,.1);
-  padding:28px;
-  text-align:center;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  touch-action:none;
+
+.card {
+  width: 92%;
+  max-width: 420px;
+  height: 70vh;
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.1);
+  padding: 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  touch-action: none;
 }
-h1{font-size:24px}
-.hint{color:#777;margin-top:10px}
+
+h1 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.instructions {
+  color: #666;
+  font-size: 15px;
+  margin-top: 14px;
+  line-height: 1.8;
+}
+
+.status {
+  margin-top: 24px;
+  font-weight: 600;
+  font-size: 16px;
+}
 </style>
 </head>
 
 <body>
+
 <div class="card" id="card">
-  <h1 id="title">How are you feeling today?</h1>
-  <div class="hint" id="hint">Swipe to answer</div>
+  <h1 id="question">How are you feeling today?</h1>
+
+  <div class="instructions">
+    ↑ Better<br>
+    → Same<br>
+    ↓ Worse<br>
+    ← Skip
+  </div>
+
+  <div class="status" id="status"></div>
 </div>
 
 <script>
-const ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_URL";
+const ENDPOINT = "PASTE_YOUR_GOOGLE_SCRIPT_URL_HERE";
 
-let state = "Q1";
-let q1 = null;
-let q2 = null;
-let sx=0, sy=0;
+let locked = false;
+let startX = 0;
+let startY = 0;
 
-const title = document.getElementById("title");
-const hint = document.getElementById("hint");
 const card = document.getElementById("card");
+const status = document.getElementById("status");
 
-card.addEventListener("touchstart",e=>{
-  sx=e.touches[0].clientX;
-  sy=e.touches[0].clientY;
+card.addEventListener("touchstart", e => {
+  if (locked) return;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
 });
 
-card.addEventListener("touchend",e=>{
-  let dx=e.changedTouches[0].clientX-sx;
-  let dy=e.changedTouches[0].clientY-sy;
+card.addEventListener("touchend", e => {
+  if (locked) return;
 
-  if(Math.abs(dx)<40 && Math.abs(dy)<40) return;
+  let dx = e.changedTouches[0].clientX - startX;
+  let dy = e.changedTouches[0].clientY - startY;
 
-  let dir;
-  if(Math.abs(dx)>Math.abs(dy)){
-    dir = dx>0?"RIGHT":"LEFT";
-  }else{
-    dir = dy<0?"UP":"DOWN";
+  if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
+
+  let answer;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    answer = dx > 0 ? "SAME" : "SKIP";
+  } else {
+    answer = dy < 0 ? "BETTER" : "WORSE";
   }
 
-  handleSwipe(dir);
+  saveAnswer(answer);
 });
 
-function handleSwipe(dir){
-  if(state==="Q1"){
-    q1 = mapQ1(dir);
-    if(!q1) return;
-    state="Q2";
-    title.innerText="What affected it most?";
-    hint.innerText="↑ Physical  → Mental  ↓ Lifestyle  ← Skip";
-  }
+function saveAnswer(answer) {
+  locked = true;
 
-  else if(state==="Q2"){
-    q2 = mapQ2(dir);
-    submit();
-  }
-}
+  status.innerText = "Saved. Thank you.";
 
-function mapQ1(d){
-  if(d==="UP") return "BETTER";
-  if(d==="RIGHT") return "SAME";
-  if(d==="DOWN") return "WORSE";
-  if(d==="LEFT") return "SKIP";
-}
-
-function mapQ2(d){
-  if(d==="UP") return "PHYSICAL";
-  if(d==="RIGHT") return "MENTAL";
-  if(d==="DOWN") return "LIFESTYLE";
-  if(d==="LEFT") return "SKIPPED";
-}
-
-function submit(){
-  fetch(ENDPOINT,{
-    method:"POST",
-    body:JSON.stringify({
-      q1:q1,
-      q2:q2,
-      ua:navigator.userAgent
+  fetch(ENDPOINT, {
+    method: "POST",
+    body: JSON.stringify({
+      answer: answer,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent
     })
+  }).catch(() => {
+    // Silent fail — UX must not break
   });
-
-  title.innerText="Saved. Thank you.";
-  hint.innerText="";
-  setTimeout(reset,1200);
-}
-
-function reset(){
-  state="Q1";
-  q1=null;q2=null;
-  title.innerText="How are you feeling today?";
-  hint.innerText="Swipe to answer";
 }
 </script>
+
 </body>
 </html>
