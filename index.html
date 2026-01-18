@@ -2,146 +2,147 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Swipe Survey</title>
 
 <style>
-  html, body {
-    height: 100%;
+  body {
     margin: 0;
-    background: #f5f5f5;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  }
-
-  .bg {
-    position: fixed;
-    inset: 0;
-    background: #f5f5f5;
+    height: 100vh;
+    background: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: system-ui, sans-serif;
   }
 
   .card {
-    position: relative;
+    width: 90%;
     max-width: 420px;
-    margin: auto;
-    top: 15vh;
-    background: white;
-    border-radius: 24px;
-    padding: 32px 24px;
+    background: #fff;
+    border-radius: 22px;
+    padding: 40px 24px;
     text-align: center;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
   }
 
   h1 {
     font-size: 28px;
-    margin-bottom: 8px;
-  }
-
-  .hint {
-    color: #888;
     margin-bottom: 12px;
   }
 
-  .arrows {
-    font-size: 20px;
-    color: #666;
-    margin-bottom: 20px;
+  .sub {
+    color: #777;
+    margin-bottom: 24px;
+    line-height: 1.6;
   }
 
   .status {
-    margin-top: 20px;
+    margin-top: 24px;
     font-weight: 600;
+  }
+
+  .error {
+    color: #c62828;
+  }
+
+  .success {
+    color: #2e7d32;
   }
 </style>
 </head>
 
 <body>
-<div class="bg"></div>
 
 <div class="card" id="card">
   <h1 id="question">How are you feeling today?</h1>
-  <div class="hint">Swipe to answer</div>
-  <div class="arrows">
-    ↑ Better &nbsp; → Same &nbsp; ↓ Worse &nbsp; ← Skip
+
+  <div class="sub">
+    Swipe to answer<br><br>
+    ⬆️ Better<br>
+    ➡️ Same<br>
+    ⬇️ Worse<br>
+    ⬅️ Skip
   </div>
-  <div class="status" id="status"></div>
+
+  <div id="status" class="status"></div>
 </div>
 
 <script>
-const ENDPOINT = "const ENDPOINT = "https://script.googleusercontent.com/macros/s/AKfycbyYGG7Fw6H1xuKppS9PoH_lbGuUdSRpwC5zorwd-hjRZtcOA9pjcl024t4b0VXqP3fN9Q";";
+const ENDPOINT = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLh1U482h7l2JJPozMZ_6r3wkYM7KGDLVSfd5WMtG_rYWhiz-Z7Pf8xPW_RYdvFYgQMJHlnobvQS_EB95U4B5DDhVZGYjwyajlaX9-n-ALkrTB8rrXni8RwyPy3_Z4J6RZOCF0U13EYDhwsVYCEAzkNcU4iwrZ91yLa9QgIoK1PoBALSJafN_mb8nPknjDLpkoJZxWqcwvshJMj15pY_d8jBQFO5EvzH9BzHcZRJyDgRNyP7QCb0Y9mY-VGFOBZmbAysHqmb2FPDJgFHyv3LLqLiJg_A4zQ6mj0AumVn&lib=MUqFmX3xhxFDzBtrCsRU7H_m8FswXrvlL";
 
 let step = 1;
-let answers = {};
+let q1 = null;
+let q2 = null;
 
 let startX = 0;
 let startY = 0;
 
-const card = document.getElementById("card");
-const question = document.getElementById("question");
-const status = document.getElementById("status");
-
-card.addEventListener("touchstart", e => {
+document.addEventListener("touchstart", e => {
   startX = e.touches[0].clientX;
   startY = e.touches[0].clientY;
 });
 
-card.addEventListener("touchend", e => {
+document.addEventListener("touchend", e => {
   const dx = e.changedTouches[0].clientX - startX;
   const dy = e.changedTouches[0].clientY - startY;
 
+  if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
+
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 40) handle("SAME");
-    else if (dx < -40) handle("SKIP");
+    handleSwipe(dx > 0 ? "right" : "left");
   } else {
-    if (dy < -40) handle("BETTER");
-    else if (dy > 40) handle("WORSE");
+    handleSwipe(dy < 0 ? "up" : "down");
   }
 });
 
-function handle(value) {
+function handleSwipe(dir) {
   if (step === 1) {
-    answers.q1 = value;
-
-    if (value === "BETTER") {
-      step = 2;
-      question.innerText = "How much did it improve?";
-      document.querySelector(".arrows").innerText =
-        "↑ Slight   → Moderate   ↓ Major   ← Skip";
-      status.innerText = "";
-    } else {
-      submit();
-    }
-
+    q1 = mapQ1(dir);
+    step = 2;
+    document.getElementById("question").innerText = "How much did it improve?";
+    document.querySelector(".sub").innerHTML = `
+      Swipe to answer<br><br>
+      ⬆️ Slight<br>
+      ➡️ Moderate<br>
+      ⬇️ Major<br>
+      ⬅️ Skip
+    `;
   } else if (step === 2) {
-    answers.q2 =
-      value === "BETTER" ? "SLIGHT" :
-      value === "SAME"   ? "MODERATE" :
-      value === "WORSE"  ? "MAJOR" :
-      "SKIP";
-
-    submit();
+    q2 = mapQ2(dir);
+    save();
   }
 }
 
-function submit() {
-  status.innerText = "Saving…";
+function mapQ1(d) {
+  return { up: "Better", right: "Same", down: "Worse", left: "Skip" }[d];
+}
 
+function mapQ2(d) {
+  return { up: "Slight", right: "Moderate", down: "Major", left: "Skip" }[d];
+}
+
+function save() {
   fetch(ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      q1: answers.q1 || "",
-      q2: answers.q2 || "",
-      ua: navigator.userAgent
-    })
+      q1,
+      q2,
+      userAgent: navigator.userAgent
+    }),
+    headers: { "Content-Type": "application/json" }
   })
   .then(r => r.json())
   .then(() => {
-    status.innerText = "Saved. Thank you.";
+    document.getElementById("status").innerHTML =
+      "<span class='success'>✓ Saved. Thank you.</span>";
   })
   .catch(() => {
-    status.innerText = "⚠ Not saved";
+    document.getElementById("status").innerHTML =
+      "<span class='error'>⚠ Not saved</span>";
   });
 }
 </script>
+
 </body>
 </html>
