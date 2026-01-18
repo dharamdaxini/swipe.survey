@@ -2,163 +2,177 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Swipe Survey</title>
 
 <style>
-html, body {
-  height: 100%;
-  margin: 0;
-  overscroll-behavior: none;
-  touch-action: none;
-}
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #f4f4f4;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    overscroll-behavior: none;
+  }
 
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #f6f6f6;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-/* fixed background */
-.bg {
-  position: fixed;
-  inset: 0;
-  background: #f6f6f6;
-  z-index: -1;
-}
+  .card {
+    background: white;
+    width: 90%;
+    max-width: 420px;
+    padding: 40px 24px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+    touch-action: none;
+  }
 
-/* swipe card */
-.card {
-  background: #ffffff;
-  width: 90%;
-  max-width: 420px;
-  padding: 48px 28px;
-  border-radius: 22px;
-  text-align: center;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
-}
+  h1 {
+    margin-bottom: 12px;
+    font-size: 26px;
+  }
 
-h1 {
-  margin: 0 0 12px;
-  font-size: 28px;
-}
+  .sub {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
 
-.sub {
-  color: #777;
-  margin-bottom: 20px;
-}
+  .status {
+    margin-top: 20px;
+    font-weight: 600;
+    min-height: 24px;
+  }
 
-.status {
-  margin-top: 24px;
-  font-weight: 600;
-}
+  .error {
+    color: #c0392b;
+  }
+
+  .success {
+    color: #27ae60;
+  }
 </style>
 </head>
 
 <body>
 
-<div class="bg"></div>
-
 <div class="card" id="card">
   <h1 id="question">How are you feeling today?</h1>
-  <div class="sub" id="hint">Swipe ↑ Better · → Same · ↓ Worse · ← Skip</div>
+
+  <div class="sub" id="hint">
+    Swipe to answer<br><br>
+    ⬆️ BETTER<br>
+    ➡️ SAME<br>
+    ⬇️ WORSE<br>
+    ⬅️ SKIP
+  </div>
+
   <div class="status" id="status"></div>
 </div>
 
 <script>
-/* ================= CONFIG ================= */
+const ENDPOINT = "PASTE_YOUR_EXEC_URL_HERE";
 
-// 🔴 PASTE YOUR *NEW* APPS SCRIPT WEB APP URL HERE
-const ENDPOINT = "PASTE_YOUR_WEB_APP_URL_HERE";
+let step = 1;
+let q1 = null;
+let q2 = null;
 
-/* ================= STATE ================= */
-
-let state = "Q1";
-let locked = false;
 let startX = 0;
 let startY = 0;
 
-let q1 = "";
-let q2 = "";
-
-/* ================= UI ================= */
-
+const card = document.getElementById("card");
 const question = document.getElementById("question");
 const hint = document.getElementById("hint");
 const status = document.getElementById("status");
-const card = document.getElementById("card");
-
-/* ================= TOUCH HANDLING ================= */
 
 card.addEventListener("touchstart", e => {
-  e.preventDefault();
-  if (locked) return;
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
-}, { passive: false });
+  const t = e.touches[0];
+  startX = t.clientX;
+  startY = t.clientY;
+});
 
 card.addEventListener("touchend", e => {
-  e.preventDefault();
-  if (locked) return;
-
-  const dx = e.changedTouches[0].clientX - startX;
-  const dy = e.changedTouches[0].clientY - startY;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - startX;
+  const dy = t.clientY - startY;
 
   if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
 
-  if (state === "Q1") handleQ1(dx, dy);
-  else if (state === "Q2") handleQ2(dx, dy);
-}, { passive: false });
-
-/* ================= LOGIC ================= */
-
-function handleQ1(dx, dy) {
+  let action;
   if (Math.abs(dx) > Math.abs(dy)) {
-    q1 = dx > 0 ? "SAME" : "SKIPPED";
+    action = dx > 0 ? "RIGHT" : "LEFT";
   } else {
-    q1 = dy < 0 ? "BETTER" : "WORSE";
+    action = dy < 0 ? "UP" : "DOWN";
   }
 
-  state = "Q2";
-  question.innerText = "How much did it improve?";
-  hint.innerText = "Swipe ↑ Slight · → Moderate · ↓ Major · ← Skip";
-}
+  handleSwipe(action);
+});
 
-function handleQ2(dx, dy) {
-  if (Math.abs(dx) > Math.abs(dy)) {
-    q2 = dx > 0 ? "MODERATE" : "SKIPPED";
-  } else {
-    q2 = dy < 0 ? "SLIGHT" : "MAJOR";
+function handleSwipe(dir) {
+  if (step === 1) {
+    q1 = mapQ1(dir);
+    if (!q1) return;
+    step = 2;
+    renderQ2();
+  } else if (step === 2) {
+    q2 = mapQ2(dir);
+    if (!q2) return;
+    saveData();
   }
-
-  save();
 }
 
-/* ================= SAVE ================= */
+function mapQ1(dir) {
+  if (dir === "UP") return "BETTER";
+  if (dir === "RIGHT") return "SAME";
+  if (dir === "DOWN") return "WORSE";
+  if (dir === "LEFT") return "SKIP";
+}
 
-function save() {
-  locked = true;
-  status.innerText = "Saving…";
+function mapQ2(dir) {
+  if (dir === "UP") return "SLIGHT";
+  if (dir === "RIGHT") return "MODERATE";
+  if (dir === "DOWN") return "MAJOR";
+  if (dir === "LEFT") return "SKIP";
+}
+
+function renderQ2() {
+  question.textContent = "How much did it improve?";
+  hint.innerHTML = `
+    Swipe to answer<br><br>
+    ⬆️ SLIGHT<br>
+    ➡️ MODERATE<br>
+    ⬇️ MAJOR<br>
+    ⬅️ SKIP
+  `;
+  status.textContent = "";
+}
+
+function saveData() {
+  status.textContent = "Saving...";
+  status.className = "status";
 
   fetch(ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      q1: q1,
-      q2: q2,
+      q1,
+      q2,
       ua: navigator.userAgent
     })
   })
-  .then(res => res.json())
+  .then(r => r.text())
   .then(() => {
-    status.innerText = "✓ Saved. Thank you.";
-    hint.innerText = "";
+    status.textContent = "✓ Saved. Thank you.";
+    status.className = "status success";
   })
   .catch(() => {
-    status.innerText = "⚠ Not saved";
+    status.textContent = "⚠ Not saved";
+    status.className = "status error";
   });
 }
 </script>
