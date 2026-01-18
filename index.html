@@ -1,11 +1,316 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Treatment Survey</title>
-    
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Treatment Survey</title>
+<style>
+/* =========================================
+   1. VARIABLES & RESET
+   ========================================= */
+:root {
+    --primary: #6366f1;
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --bg-color: #e5e5e5;
+    --card-bg: #ffffff;
+    --text-main: #1a1a1a;
+    --text-muted: #666666;
+    --border-color: #e0e0e0;
+    --success: #10b981;
+    --error: #ef4444;
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-main);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none; /* Disables pull-to-refresh */
+}
+
+/* =========================================
+   2. LAYOUT & CARD
+   ========================================= */
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 500px;
+    min-height: 650px; /* Taller for better breathing room */
+    padding: 40px 30px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
+}
+
+/* =========================================
+   3. TYPOGRAPHY & COMPONENTS
+   ========================================= */
+.question {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 24px;
+    text-align: center;
+    color: var(--text-main);
+}
+
+.instruction {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex: 1;
+}
+
+.option-item {
+    font-size: 15px;
+    color: var(--text-muted);
+    padding: 16px 18px;
+    background: #f8f9fa;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.option-item:hover {
+    background: #f0f2f5;
+    border-color: #e2e8f0;
+}
+
+/* =========================================
+   4. SWIPE ZONE (THE HERO)
+   ========================================= */
+.swipe-zone {
+    background: var(--primary-gradient);
+    border-radius: var(--radius-md);
+    padding: 40px 20px;
+    text-align: center;
+    color: #ffffff;
+    cursor: grab;
+    user-select: none;
+    touch-action: none; /* Critical for touch handling */
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.swipe-zone:active {
+    cursor: grabbing;
+    transform: scale(0.98);
+}
+
+/* Visual Arrow Grid */
+.swipe-visual-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.swipe-middle-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.swipe-arrow-icon {
+    font-size: 24px;
+    opacity: 0.9;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.swipe-text-label {
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.7; }
+}
+
+/* =========================================
+   5. INPUTS & SUMMARY
+   ========================================= */
+.textarea-wrapper {
+    margin-bottom: 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.textarea-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    display: block;
+}
+
+textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 16px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fafafa;
+}
+
+textarea:focus {
+    border-color: var(--primary);
+    background: #fff;
+}
+
+.summary-box {
+    background: #f8f9fa;
+    border-radius: var(--radius-md);
+    padding: 24px;
+    margin-bottom: 24px;
+    border-left: 4px solid var(--primary);
+}
+
+.summary-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.summary-item {
+    font-size: 15px;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.summary-description {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    font-style: italic;
+    padding-top: 12px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.confirm-instruction, .edit-instruction {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.confirm-instruction { color: var(--primary); }
+.edit-instruction { color: var(--text-muted); margin-bottom: 24px; }
+
+/* =========================================
+   6. UTILITIES (Success, Status, Hidden)
+   ========================================= */
+.hidden { display: none !important; }
+
+/* Simple fade animation for steps */
+.step { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.success-message {
+    text-align: center;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.success-icon {
+    font-size: 64px;
+    color: var(--success);
+    margin-bottom: 24px;
+}
+
+.success-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.status-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.status-indicator.visible { opacity: 1; transform: translateY(0); }
+.status-indicator.success { background: var(--success); }
+.status-indicator.error { background: var(--error); }
+.status-indicator.loading { background: var(--primary); }
+
+/* Mobile Optimizations */
+@media (max-width: 480px) {
+    .card {
+        border-radius: 0;
+        min-height: 100vh;
+        box-shadow: none;
+    }
+    .question { font-size: 20px; }
+}
+</style>
 </head>
 <body>
 
@@ -103,6 +408,326 @@
         </div>
     </div>
 
-    <script src="swipe.js" defer></script>
+<script>
+/**
+ * =========================================================
+ * CONFIGURATION
+ * =========================================================
+ */
+// The Backend Endpoint (Exec URL)
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzrsMsk3CUuWtRBuYRyrKHn5Mg_Ye5BSJG8xuVGKq9IwVaywMO3tY0AyES52kJNLHO0HA/exec';
+
+// Question Data & Logic
+const QUESTIONS = {
+    followUp: {
+        'Slight improvement': {
+            question: 'What contributed to this slight improvement?',
+            options: ['⬆️ Medication', '➡️ Lifestyle changes', '⬇️ Both', '⬅️ Other factors'],
+            mapping: { up: 'Medication', right: 'Lifestyle changes', down: 'Both', left: 'Other factors' }
+        },
+        'Moderate improvement': {
+            question: 'What was the main factor in your improvement?',
+            options: ['⬆️ Medication consistency', '➡️ Diet changes', '⬇️ Exercise routine', '⬅️ Stress reduction'],
+            mapping: { up: 'Medication consistency', right: 'Diet changes', down: 'Exercise routine', left: 'Stress reduction' }
+        },
+        'Major improvement': {
+            question: 'What made the biggest difference?',
+            options: ['⬆️ Treatment effectiveness', '➡️ Support system', '⬇️ Lifestyle overhaul', '⬅️ Medical intervention'],
+            mapping: { up: 'Treatment effectiveness', right: 'Support system', down: 'Lifestyle overhaul', left: 'Medical intervention' }
+        },
+        'No noticeable change': {
+            question: 'Why do you think there has been no change?',
+            options: ['⬆️ Too early to tell', '➡️ Treatment not effective', '⬇️ Inconsistent adherence', '⬅️ Other reasons'],
+            mapping: { up: 'Too early to tell', right: 'Treatment not effective', down: 'Inconsistent adherence', left: 'Other reasons' }
+        }
+    },
+    textInput: {
+        'Slight improvement': 'Please describe the slight improvement in more detail:',
+        'Moderate improvement': 'Please elaborate on what helped you improve:',
+        'Major improvement': 'Please share more about your significant progress:',
+        'No noticeable change': 'Please explain what you\'ve observed:'
+    },
+    textInputLabel: {
+        'Slight improvement': 'Details about your progress',
+        'Moderate improvement': 'What helped most',
+        'Major improvement': 'Your success story',
+        'No noticeable change': 'Your observations'
+    }
+};
+
+const PRIMARY_MAPPING = {
+    up: 'Slight improvement',
+    right: 'Moderate improvement',
+    down: 'Major improvement',
+    left: 'No noticeable change'
+};
+
+/**
+ * =========================================================
+ * STATE MANAGEMENT
+ * =========================================================
+ */
+const state = {
+    currentStep: 1,
+    answers: {
+        primaryAnswer: null,
+        followUpAnswer: null,
+        textInput: ''
+    }
+};
+
+/**
+ * =========================================================
+ * TOUCH & MOUSE HANDLING
+ * =========================================================
+ */
+let startX = 0;
+let startY = 0;
+let endX = 0;
+let endY = 0;
+let isPointerDown = false;
+const MIN_SWIPE_DISTANCE = 50;
+
+function handlePointerStart(e) {
+    isPointerDown = true;
+    // Get coordinates depending on touch or mouse
+    if (e.type === 'touchstart') {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    } else {
+        startX = e.clientX;
+        startY = e.clientY;
+    }
+}
+
+function handlePointerEnd(e) {
+    if (!isPointerDown) return;
+    isPointerDown = false;
+    
+    if (e.type === 'touchend') {
+        endX = e.changedTouches[0].clientX;
+        endY = e.changedTouches[0].clientY;
+    } else {
+        endX = e.clientX;
+        endY = e.clientY;
+    }
+    
+    processSwipe();
+}
+
+function processSwipe() {
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
+
+    // Filter out accidental taps
+    if (absDeltaX < MIN_SWIPE_DISTANCE && absDeltaY < MIN_SWIPE_DISTANCE) {
+        return;
+    }
+
+    let direction;
+    // Determine dominant direction
+    if (absDeltaX > absDeltaY) {
+        direction = deltaX > 0 ? 'right' : 'left';
+    } else {
+        direction = deltaY < 0 ? 'up' : 'down';
+    }
+
+    routeSwipeAction(direction);
+}
+
+function routeSwipeAction(direction) {
+    switch(state.currentStep) {
+        case 1: handleStep1(direction); break;
+        case 2: handleStep2(direction); break;
+        case 3: handleStep3(direction); break;
+        case 4: handleStep4(direction); break;
+    }
+}
+
+/**
+ * =========================================================
+ * LOGIC PER STEP
+ * =========================================================
+ */
+function handleStep1(direction) {
+    const answer = PRIMARY_MAPPING[direction];
+    if (!answer) return;
+    
+    state.answers.primaryAnswer = answer;
+    transitionToStep2();
+}
+
+function handleStep2(direction) {
+    const config = QUESTIONS.followUp[state.answers.primaryAnswer];
+    const answer = config.mapping[direction];
+    if (!answer) return;
+    
+    state.answers.followUpAnswer = answer;
+    transitionToStep3();
+}
+
+function handleStep3(direction) {
+    if (direction === 'right') {
+        state.answers.textInput = document.getElementById('detailsInput').value.trim();
+        transitionToStep4();
+    }
+}
+
+function handleStep4(direction) {
+    if (direction === 'right') {
+        submitSurvey();
+    } else if (direction === 'left') {
+        transitionToStep3(); // Go Back
+    }
+}
+
+/**
+ * =========================================================
+ * UI TRANSITIONS
+ * =========================================================
+ */
+function hideAllSteps() {
+    document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
+}
+
+function transitionToStep2() {
+    const config = QUESTIONS.followUp[state.answers.primaryAnswer];
+    document.getElementById('followUpQuestion').textContent = config.question;
+    
+    const optionsContainer = document.getElementById('followUpOptions');
+    optionsContainer.innerHTML = ''; // Clear previous options
+    config.options.forEach(option => {
+        const div = document.createElement('div');
+        div.className = 'option-item';
+        div.textContent = option;
+        optionsContainer.appendChild(div);
+    });
+    
+    hideAllSteps();
+    document.getElementById('step2').classList.remove('hidden');
+    state.currentStep = 2;
+}
+
+function transitionToStep3() {
+    const question = QUESTIONS.textInput[state.answers.primaryAnswer];
+    const label = QUESTIONS.textInputLabel[state.answers.primaryAnswer];
+    
+    document.getElementById('textInputQuestion').textContent = question;
+    document.getElementById('textInputLabel').textContent = label;
+    document.getElementById('detailsInput').value = state.answers.textInput;
+    
+    hideAllSteps();
+    document.getElementById('step3').classList.remove('hidden');
+    state.currentStep = 3;
+}
+
+function transitionToStep4() {
+    document.getElementById('summaryChange').textContent = `• Overall change: ${state.answers.primaryAnswer}`;
+    document.getElementById('summaryFactor').textContent = `• Key factor: ${state.answers.followUpAnswer}`;
+    
+    const descEl = document.getElementById('summaryDescription');
+    if (state.answers.textInput) {
+        descEl.textContent = `"${state.answers.textInput}"`;
+        descEl.style.display = 'block';
+    } else {
+        descEl.style.display = 'none';
+    }
+    
+    hideAllSteps();
+    document.getElementById('step4').classList.remove('hidden');
+    state.currentStep = 4;
+}
+
+/**
+ * =========================================================
+ * DATA SUBMISSION
+ * =========================================================
+ */
+function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "Tablet";
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return "Mobile";
+    return "Desktop";
+}
+
+function showStatus(message, type) {
+    const indicator = document.getElementById('statusIndicator');
+    indicator.textContent = message;
+    indicator.className = `status-indicator visible ${type}`;
+    
+    if (type !== 'loading') {
+        setTimeout(() => indicator.classList.remove('visible'), 3000);
+    }
+}
+
+function submitSurvey() {
+    showStatus('Submitting...', 'loading');
+    
+    const payload = {
+        timestamp: new Date().toISOString(),
+        q1: state.answers.primaryAnswer,
+        q2: `${state.answers.followUpAnswer}${state.answers.textInput ? ' - ' + state.answers.textInput : ''}`,
+        device: getDeviceType()
+    };
+    
+    console.log('Sending:', payload);
+    
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(() => {
+        showStatus('Saved successfully', 'success');
+        hideAllSteps();
+        document.getElementById('step5').classList.remove('hidden');
+        state.currentStep = 5;
+    })
+    .catch((error) => {
+        console.error('Submission error:', error);
+        showStatus('Failed to save. Check connection.', 'error');
+    });
+}
+
+/**
+ * =========================================================
+ * INITIALIZATION & EVENT LISTENERS
+ * =========================================================
+ */
+function attachSwipeListeners(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    // Touch
+    el.addEventListener('touchstart', handlePointerStart, { passive: true });
+    el.addEventListener('touchend', handlePointerEnd, { passive: true });
+    
+    // Mouse (for desktop testing)
+    el.addEventListener('mousedown', handlePointerStart);
+    el.addEventListener('mouseup', handlePointerEnd);
+}
+
+// Attach to all zones
+['swipeZone1', 'swipeZone2', 'swipeZone3', 'swipeZone4'].forEach(attachSwipeListeners);
+
+// Prevent Pull-to-Refresh on Mobile
+document.body.style.overscrollBehavior = 'none';
+let lastTouchY = 0;
+document.addEventListener('touchstart', e => {
+    if(e.touches.length === 1) lastTouchY = e.touches[0].clientY;
+}, { passive: false });
+
+document.addEventListener('touchmove', e => {
+    const touchY = e.touches[0].clientY;
+    const touchYDelta = touchY - lastTouchY;
+    if (window.pageYOffset === 0 && touchYDelta > 0) {
+        e.preventDefault();
+    }
+}, { passive: false });
+</script>
+
 </body>
 </html>
