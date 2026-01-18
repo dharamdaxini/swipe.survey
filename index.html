@@ -1,92 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Swipe Survey</title>
+  <meta charset="UTF-8" />
+  <title>Swipe Survey</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-  body {
-    margin: 0;
-    background: #f4f5f7;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-  }
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-  .card {
-    width: 90%;
-    max-width: 420px;
-    background: #fff;
-    border-radius: 24px;
-    padding: 40px 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-    text-align: center;
-  }
+    body {
+      margin: 0;
+      background: #f4f4f4;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  h1 {
-    font-size: 26px;
-    margin-bottom: 12px;
-  }
+    .card {
+      width: 92%;
+      max-width: 420px;
+      background: white;
+      border-radius: 22px;
+      padding: 40px 28px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      user-select: none;
+    }
 
-  .sub {
-    color: #666;
-    margin-bottom: 16px;
-  }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
 
-  .instructions {
-    font-size: 14px;
-    color: #888;
-    line-height: 1.6;
-    margin-bottom: 20px;
-  }
+    .hint {
+      color: #888;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
 
-  .status {
-    margin-top: 24px;
-    font-weight: 600;
-    color: #222;
-  }
-</style>
+    .directions {
+      color: #666;
+      font-size: 15px;
+      margin-bottom: 22px;
+    }
+
+    .status {
+      font-weight: 600;
+      margin-top: 20px;
+    }
+
+    .locked {
+      color: #666;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="card" id="card">
-  <h1 id="question">How are you feeling today?</h1>
-  <div class="sub">Swipe to answer</div>
-
-  <div class="instructions" id="instructions">
-    ↑ Better<br>
-    → Same<br>
-    ↓ Worse<br>
-    ← Skip
+  <div class="card" id="card">
+    <h1 id="question"></h1>
+    <div class="hint" id="hint"></div>
+    <div class="directions" id="directions"></div>
+    <div class="status" id="status"></div>
   </div>
 
-  <div class="status" id="status"></div>
-</div>
-
 <script>
-/* ================= CONFIG ================= */
-const GOOGLE_SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+/* ===============================
+   STATE
+================================ */
 
-/* ================= STATE ================= */
-let stage = "Q1";        // Q1 → Q2 → DONE
+let stage = null;
 let locked = false;
-let q1 = null;
-let q2 = null;
-
 let startX = 0;
 let startY = 0;
 
-/* ================= ELEMENTS ================= */
+/*
+States:
+NONE
+Q1_DONE
+Q2_DONE
+*/
+
+const savedState = localStorage.getItem("survey_state");
+
+/* ===============================
+   RENDER FUNCTIONS
+================================ */
+
+function renderQ1() {
+  stage = "Q1";
+  locked = false;
+
+  question.innerText = "How are you feeling today?";
+  hint.innerText = "Swipe to answer";
+  directions.innerText = "↑ Better   → Same   ↓ Worse   ← Skip";
+  status.innerText = "";
+}
+
+function renderQ2() {
+  stage = "Q2";
+  locked = false;
+
+  question.innerText = "How much did it improve?";
+  hint.innerText = "Swipe to answer";
+  directions.innerText = "↑ Slight   → Moderate   ↓ Major   ← Skip";
+  status.innerText = "";
+}
+
+function renderDone() {
+  stage = "DONE";
+  locked = true;
+
+  question.innerText = "Saved.";
+  hint.innerText = "Thank you.";
+  directions.innerText = "";
+  status.innerText = "Come back tomorrow";
+  status.classList.add("locked");
+}
+
+/* ===============================
+   INITIAL LOAD (IMPORTANT)
+================================ */
+
+if (savedState === "Q1_DONE") {
+  renderQ2();
+} else if (savedState === "Q2_DONE") {
+  renderDone();
+} else {
+  renderQ1();
+}
+
+/* ===============================
+   SWIPE HANDLING
+================================ */
+
 const card = document.getElementById("card");
 const question = document.getElementById("question");
-const instructions = document.getElementById("instructions");
+const hint = document.getElementById("hint");
+const directions = document.getElementById("directions");
 const status = document.getElementById("status");
 
-/* ================= TOUCH HANDLERS ================= */
 card.addEventListener("touchstart", e => {
   if (locked) return;
   startX = e.touches[0].clientX;
@@ -96,82 +152,79 @@ card.addEventListener("touchstart", e => {
 card.addEventListener("touchend", e => {
   if (locked) return;
 
-  const dx = e.changedTouches[0].clientX - startX;
-  const dy = e.changedTouches[0].clientY - startY;
+  const endX = e.changedTouches[0].clientX;
+  const endY = e.changedTouches[0].clientY;
 
-  if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
+  const dx = endX - startX;
+  const dy = endY - startY;
 
-  let dir;
+  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+
+  let answer = "";
+
   if (Math.abs(dx) > Math.abs(dy)) {
-    dir = dx > 0 ? "RIGHT" : "LEFT";
+    answer = dx > 0 ? "RIGHT" : "LEFT";
   } else {
-    dir = dy < 0 ? "UP" : "DOWN";
+    answer = dy < 0 ? "UP" : "DOWN";
   }
 
-  if (stage === "Q1") handleQ1(dir);
-  else if (stage === "Q2") handleQ2(dir);
+  handleAnswer(answer);
 });
 
-/* ================= LOGIC ================= */
-function handleQ1(dir) {
-  q1 = {
-    UP: "BETTER",
-    RIGHT: "SAME",
-    DOWN: "WORSE",
-    LEFT: "SKIP"
-  }[dir];
+/* ===============================
+   LOGIC
+================================ */
 
-  if (!q1) return;
+function handleAnswer(direction) {
+  if (stage === "Q1") {
+    const map = {
+      UP: "Better",
+      RIGHT: "Same",
+      DOWN: "Worse",
+      LEFT: "Skipped"
+    };
 
-  if (q1 === "SKIP") {
-    save("SKIP", "NA");
+    localStorage.setItem("q1", map[direction]);
+    localStorage.setItem("survey_state", "Q1_DONE");
+
+    renderQ2();
     return;
   }
 
-  stage = "Q2";
+  if (stage === "Q2") {
+    const map = {
+      UP: "Slight",
+      RIGHT: "Moderate",
+      DOWN: "Major",
+      LEFT: "Skipped"
+    };
 
-  question.innerText = {
-    BETTER: "How much did it improve?",
-    SAME: "How stable are you?",
-    WORSE: "How bad is it?"
-  }[q1];
+    localStorage.setItem("q2", map[direction]);
+    localStorage.setItem("survey_state", "Q2_DONE");
 
-  instructions.innerHTML = `
-    ↑ Slight<br>
-    → Moderate<br>
-    ↓ Major<br>
-    ← Skip detail
-  `;
+    // OPTIONAL: sendToSheet();
+    renderDone();
+  }
 }
 
-function handleQ2(dir) {
-  q2 = {
-    UP: "SLIGHT",
-    RIGHT: "MODERATE",
-    DOWN: "MAJOR",
-    LEFT: "SKIP_DETAIL"
-  }[dir];
+/* ===============================
+   OPTIONAL GOOGLE SHEET SENDER
+   (enable later)
+================================ */
 
-  save(q1, q2);
-}
-
-function save(a, b) {
-  locked = true;
-  stage = "DONE";
-
-  instructions.style.display = "none";
-  status.innerText = "Saved. Thank you.";
-
-  fetch(GOOGLE_SCRIPT_URL, {
+/*
+function sendToSheet() {
+  fetch("YOUR_GOOGLE_APPS_SCRIPT_URL", {
     method: "POST",
     body: JSON.stringify({
-      primary: a,
-      secondary: b,
-      timestamp: new Date().toISOString(),
-      device: navigator.userAgent
-    })
-  }).catch(() => {});
+      q1: localStorage.getItem("q1"),
+      q2: localStorage.getItem("q2"),
+      timestamp: new Date().toISOString()
+    }),
+    headers: { "Content-Type": "application/json" }
+  });
 }
+*/
 </script>
 
 </body>
