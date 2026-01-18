@@ -3,229 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <title>Swipe Survey</title>
+
+  <!-- Mobile-first -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      background: #f4f4f4;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .card {
-      width: 92%;
-      max-width: 420px;
-      background: white;
-      border-radius: 22px;
-      padding: 40px 28px;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-      user-select: none;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 12px;
-    }
-
-    .hint {
-      color: #888;
-      font-size: 16px;
-      margin-bottom: 20px;
-    }
-
-    .directions {
-      color: #666;
-      font-size: 15px;
-      margin-bottom: 22px;
-    }
-
-    .status {
-      font-weight: 600;
-      margin-top: 20px;
-    }
-
-    .locked {
-      color: #666;
-    }
-  </style>
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+  <!-- Survey Card -->
   <div class="card" id="card">
     <h1 id="question"></h1>
+
     <div class="hint" id="hint"></div>
+
     <div class="directions" id="directions"></div>
+
     <div class="status" id="status"></div>
   </div>
 
-<script>
-/* ===============================
-   STATE
-================================ */
-
-let stage = null;
-let locked = false;
-let startX = 0;
-let startY = 0;
-
-/*
-States:
-NONE
-Q1_DONE
-Q2_DONE
-*/
-
-const savedState = localStorage.getItem("survey_state");
-
-/* ===============================
-   RENDER FUNCTIONS
-================================ */
-
-function renderQ1() {
-  stage = "Q1";
-  locked = false;
-
-  question.innerText = "How are you feeling today?";
-  hint.innerText = "Swipe to answer";
-  directions.innerText = "↑ Better   → Same   ↓ Worse   ← Skip";
-  status.innerText = "";
-}
-
-function renderQ2() {
-  stage = "Q2";
-  locked = false;
-
-  question.innerText = "How much did it improve?";
-  hint.innerText = "Swipe to answer";
-  directions.innerText = "↑ Slight   → Moderate   ↓ Major   ← Skip";
-  status.innerText = "";
-}
-
-function renderDone() {
-  stage = "DONE";
-  locked = true;
-
-  question.innerText = "Saved.";
-  hint.innerText = "Thank you.";
-  directions.innerText = "";
-  status.innerText = "Come back tomorrow";
-  status.classList.add("locked");
-}
-
-/* ===============================
-   INITIAL LOAD (IMPORTANT)
-================================ */
-
-if (savedState === "Q1_DONE") {
-  renderQ2();
-} else if (savedState === "Q2_DONE") {
-  renderDone();
-} else {
-  renderQ1();
-}
-
-/* ===============================
-   SWIPE HANDLING
-================================ */
-
-const card = document.getElementById("card");
-const question = document.getElementById("question");
-const hint = document.getElementById("hint");
-const directions = document.getElementById("directions");
-const status = document.getElementById("status");
-
-card.addEventListener("touchstart", e => {
-  if (locked) return;
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
-});
-
-card.addEventListener("touchend", e => {
-  if (locked) return;
-
-  const endX = e.changedTouches[0].clientX;
-  const endY = e.changedTouches[0].clientY;
-
-  const dx = endX - startX;
-  const dy = endY - startY;
-
-  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
-
-  let answer = "";
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    answer = dx > 0 ? "RIGHT" : "LEFT";
-  } else {
-    answer = dy < 0 ? "UP" : "DOWN";
-  }
-
-  handleAnswer(answer);
-});
-
-/* ===============================
-   LOGIC
-================================ */
-
-function handleAnswer(direction) {
-  if (stage === "Q1") {
-    const map = {
-      UP: "Better",
-      RIGHT: "Same",
-      DOWN: "Worse",
-      LEFT: "Skipped"
-    };
-
-    localStorage.setItem("q1", map[direction]);
-    localStorage.setItem("survey_state", "Q1_DONE");
-
-    renderQ2();
-    return;
-  }
-
-  if (stage === "Q2") {
-    const map = {
-      UP: "Slight",
-      RIGHT: "Moderate",
-      DOWN: "Major",
-      LEFT: "Skipped"
-    };
-
-    localStorage.setItem("q2", map[direction]);
-    localStorage.setItem("survey_state", "Q2_DONE");
-
-    // OPTIONAL: sendToSheet();
-    renderDone();
-  }
-}
-
-/* ===============================
-   OPTIONAL GOOGLE SHEET SENDER
-   (enable later)
-================================ */
-
-/*
-function sendToSheet() {
-  fetch("YOUR_GOOGLE_APPS_SCRIPT_URL", {
-    method: "POST",
-    body: JSON.stringify({
-      q1: localStorage.getItem("q1"),
-      q2: localStorage.getItem("q2"),
-      timestamp: new Date().toISOString()
-    }),
-    headers: { "Content-Type": "application/json" }
-  });
-}
-*/
-</script>
+  <!-- Logic -->
+  <script src="script.js"></script>
 
 </body>
 </html>
