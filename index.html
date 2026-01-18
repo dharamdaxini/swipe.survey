@@ -90,6 +90,10 @@ body {
   margin-top: auto;
 }
 
+.swipe-zone:active {
+  opacity: 0.9;
+}
+
 .textarea-wrapper {
   margin-bottom: 24px;
   flex: 1;
@@ -419,31 +423,54 @@ const primaryMapping = {
   left: 'No noticeable change'
 };
 
-// Touch handling
-let touchStartX = 0;
-let touchStartY = 0;
-let touchEndX = 0;
-let touchEndY = 0;
+// Touch and mouse handling
+let startX = 0;
+let startY = 0;
+let endX = 0;
+let endY = 0;
+let isPointerDown = false;
 const minSwipeDistance = 50;
 
-function handleTouchStart(e) {
-  touchStartX = e.changedTouches[0].screenX;
-  touchStartY = e.changedTouches[0].screenY;
+function handlePointerStart(e) {
+  isPointerDown = true;
+  
+  if (e.type === 'touchstart') {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  } else {
+    startX = e.clientX;
+    startY = e.clientY;
+  }
+  
+  console.log('Pointer start:', startX, startY);
 }
 
-function handleTouchEnd(e) {
-  touchEndX = e.changedTouches[0].screenX;
-  touchEndY = e.changedTouches[0].screenY;
+function handlePointerEnd(e) {
+  if (!isPointerDown) return;
+  isPointerDown = false;
+  
+  if (e.type === 'touchend') {
+    endX = e.changedTouches[0].clientX;
+    endY = e.changedTouches[0].clientY;
+  } else {
+    endX = e.clientX;
+    endY = e.clientY;
+  }
+  
+  console.log('Pointer end:', endX, endY);
   handleSwipe();
 }
 
 function handleSwipe() {
-  const deltaX = touchEndX - touchStartX;
-  const deltaY = touchEndY - touchStartY;
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
   const absDeltaX = Math.abs(deltaX);
   const absDeltaY = Math.abs(deltaY);
 
+  console.log('Delta X:', deltaX, 'Delta Y:', deltaY);
+
   if (absDeltaX < minSwipeDistance && absDeltaY < minSwipeDistance) {
+    console.log('Swipe too short');
     return;
   }
 
@@ -454,6 +481,7 @@ function handleSwipe() {
     direction = deltaY < 0 ? 'up' : 'down';
   }
 
+  console.log('Swipe direction:', direction);
   handleSwipeDirection(direction);
 }
 
@@ -464,4 +492,169 @@ function handleSwipeDirection(direction) {
     handleStep2Swipe(direction);
   } else if (state.currentStep === 3) {
     handleStep3Swipe(direction);
-  } else if (state.currentSt
+  } else if (state.currentStep === 4) {
+    handleStep4Swipe(direction);
+  }
+}
+
+function handleStep1Swipe(direction) {
+  const answer = primaryMapping[direction];
+  if (!answer) return;
+  
+  console.log('Step 1 answer:', answer);
+  state.answers.primaryAnswer = answer;
+  showStep2();
+}
+
+function handleStep2Swipe(direction) {
+  const config = questions.followUp[state.answers.primaryAnswer];
+  const answer = config.mapping[direction];
+  if (!answer) return;
+  
+  console.log('Step 2 answer:', answer);
+  state.answers.followUpAnswer = answer;
+  showStep3();
+}
+
+function handleStep3Swipe(direction) {
+  if (direction === 'right') {
+    state.answers.textInput = document.getElementById('detailsInput').value.trim();
+    console.log('Step 3 text:', state.answers.textInput);
+    showStep4();
+  }
+}
+
+function handleStep4Swipe(direction) {
+  if (direction === 'right') {
+    submitSurvey();
+  } else if (direction === 'left') {
+    showStep3();
+  }
+}
+
+function showStep2() {
+  const config = questions.followUp[state.answers.primaryAnswer];
+  document.getElementById('followUpQuestion').textContent = config.question;
+  
+  // Create options as stacked list
+  const optionsContainer = document.getElementById('followUpOptions');
+  optionsContainer.innerHTML = '';
+  config.options.forEach(option => {
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'option-item';
+    optionDiv.textContent = option;
+    optionsContainer.appendChild(optionDiv);
+  });
+  
+  hideAllSteps();
+  document.getElementById('step2').classList.remove('hidden');
+  state.currentStep = 2;
+}
+
+function showStep3() {
+  const question = questions.textInput[state.answers.primaryAnswer];
+  const label = questions.textInputLabel[state.answers.primaryAnswer];
+  
+  document.getElementById('textInputQuestion').textContent = question;
+  document.getElementById('textInputLabel').textContent = label;
+  document.getElementById('detailsInput').value = state.answers.textInput;
+  
+  hideAllSteps();
+  document.getElementById('step3').classList.remove('hidden');
+  state.currentStep = 3;
+}
+
+function showStep4() {
+  document.getElementById('summaryChange').textContent = '• Overall change: ' + state.answers.primaryAnswer;
+  document.getElementById('summaryFactor').textContent = '• Key factor: ' + state.answers.followUpAnswer;
+  
+  hideAllSteps();
+  document.getElementById('step4').classList.remove('hidden');
+  state.currentStep = 4;
+}
+
+function showStatus(message, type) {
+  const indicator = document.getElementById('statusIndicator');
+  indicator.textContent = message;
+  indicator.className = 'status-indicator visible ' + type;
+  
+  setTimeout(() => {
+    indicator.classList.remove('visible');
+  }, 3000);
+}
+
+function getDeviceType() {
+  const ua = navigator.userAgent;
+  if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+    return "Tablet";
+  }
+  if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+    return "Mobile";
+  }
+  return "Desktop";
+}
+
+function submitSurvey() {
+  showStatus('Submitting...', '');
+  
+  // Match the Google Sheet column structure: timestamp, q1, q2, device
+  const payload = {
+    timestamp: new Date().toISOString(),
+    q1: state.answers.primaryAnswer,
+    q2: state.answers.followUpAnswer + ' - ' + state.answers.textInput,
+    device: getDeviceType()
+  };
+  
+  console.log('Submitting payload:', payload);
+  
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    console.log('Survey submitted successfully:', payload);
+    showStatus('Saved successfully', 'success');
+    
+    hideAllSteps();
+    document.getElementById('step5').classList.remove('hidden');
+    state.currentStep = 5;
+  })
+  .catch((error) => {
+    console.error('Submission error:', error);
+    showStatus('Failed to save', 'error');
+  });
+}
+
+function hideAllSteps() {
+  document.querySelectorAll('.step').forEach(step => {
+    step.classList.add('hidden');
+  });
+}
+
+function attachSwipeListeners(element) {
+  // Touch events
+  element.addEventListener('touchstart', handlePointerStart, { passive: true });
+  element.addEventListener('touchend', handlePointerEnd, { passive: true });
+  
+  // Mouse events for desktop testing
+  element.addEventListener('mousedown', handlePointerStart);
+  element.addEventListener('mouseup', handlePointerEnd);
+  
+  console.log('Listeners attached to:', element.id);
+}
+
+// Attach event listeners to all swipe zones
+attachSwipeListeners(document.getElementById('swipeZone1'));
+attachSwipeListeners(document.getElementById('swipeZone2'));
+attachSwipeListeners(document.getElementById('swipeZone3'));
+attachSwipeListeners(document.getElementById('swipeZone4'));
+
+console.log('Survey initialized, current step:', state.currentStep);
+</script>
+
+</body>
+</html>
