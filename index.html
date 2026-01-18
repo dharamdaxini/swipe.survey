@@ -1,101 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Swipe Survey</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f5f5f5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .card {
-      background: white;
-      padding: 32px;
-      border-radius: 20px;
-      width: 90%;
-      max-width: 360px;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    }
-    h1 { margin-bottom: 12px; }
-    p { color: #666; }
-    .confirm {
-      margin-top: 20px;
-      font-weight: bold;
-    }
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swipe Survey</title>
+<style>
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f5f6f8;
+  font-family:sans-serif;
+}
+.card{
+  width:92%;
+  max-width:420px;
+  height:75vh;
+  background:#fff;
+  border-radius:22px;
+  box-shadow:0 20px 40px rgba(0,0,0,.1);
+  padding:28px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  touch-action:none;
+}
+h1{font-size:24px}
+.hint{color:#777;margin-top:10px}
+</style>
 </head>
 
 <body>
-
 <div class="card" id="card">
-  <h1>How are you feeling today?</h1>
-  <p>Swipe to answer</p>
-  <p>↑ Better · → Same · ↓ Worse · ← Skip</p>
-  <div class="confirm" id="status"></div>
+  <h1 id="title">How are you feeling today?</h1>
+  <div class="hint" id="hint">Swipe to answer</div>
 </div>
 
 <script>
-const ENDPOINT = "PASTE_WEB_APP_URL_HERE";
+const ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_URL";
 
-let startX = 0;
-let startY = 0;
-let answered = false;
+let state = "Q1";
+let q1 = null;
+let q2 = null;
+let sx=0, sy=0;
 
-document.addEventListener("touchstart", e => {
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
+const title = document.getElementById("title");
+const hint = document.getElementById("hint");
+const card = document.getElementById("card");
+
+card.addEventListener("touchstart",e=>{
+  sx=e.touches[0].clientX;
+  sy=e.touches[0].clientY;
 });
 
-document.addEventListener("touchend", e => {
-  if (answered) return;
+card.addEventListener("touchend",e=>{
+  let dx=e.changedTouches[0].clientX-sx;
+  let dy=e.changedTouches[0].clientY-sy;
 
-  const dx = e.changedTouches[0].clientX - startX;
-  const dy = e.changedTouches[0].clientY - startY;
+  if(Math.abs(dx)<40 && Math.abs(dy)<40) return;
 
-  let answer = null;
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 50) answer = "SAME";
-    if (dx < -50) answer = "SKIP";
-  } else {
-    if (dy < -50) answer = "BETTER";
-    if (dy > 50) answer = "WORSE";
+  let dir;
+  if(Math.abs(dx)>Math.abs(dy)){
+    dir = dx>0?"RIGHT":"LEFT";
+  }else{
+    dir = dy<0?"UP":"DOWN";
   }
 
-  if (answer) confirmAnswer(answer);
+  handleSwipe(dir);
 });
 
-function confirmAnswer(answer) {
-  answered = true;
-  document.getElementById("status").innerText =
-    `Recorded: ${answer}\nConfirming...`;
+function handleSwipe(dir){
+  if(state==="Q1"){
+    q1 = mapQ1(dir);
+    if(!q1) return;
+    state="Q2";
+    title.innerText="What affected it most?";
+    hint.innerText="↑ Physical  → Mental  ↓ Lifestyle  ← Skip";
+  }
 
-  setTimeout(() => {
-    sendData(answer, "confirmed");
-    document.getElementById("status").innerText =
-      `Saved. Thank you.`;
-  }, 800);
+  else if(state==="Q2"){
+    q2 = mapQ2(dir);
+    submit();
+  }
 }
 
-function sendData(answer, confirmation) {
-  fetch(ENDPOINT, {
-    method: "POST",
-    body: JSON.stringify({
-      answer,
-      confirmation,
-      userAgent: navigator.userAgent
+function mapQ1(d){
+  if(d==="UP") return "BETTER";
+  if(d==="RIGHT") return "SAME";
+  if(d==="DOWN") return "WORSE";
+  if(d==="LEFT") return "SKIP";
+}
+
+function mapQ2(d){
+  if(d==="UP") return "PHYSICAL";
+  if(d==="RIGHT") return "MENTAL";
+  if(d==="DOWN") return "LIFESTYLE";
+  if(d==="LEFT") return "SKIPPED";
+}
+
+function submit(){
+  fetch(ENDPOINT,{
+    method:"POST",
+    body:JSON.stringify({
+      q1:q1,
+      q2:q2,
+      ua:navigator.userAgent
     })
   });
+
+  title.innerText="Saved. Thank you.";
+  hint.innerText="";
+  setTimeout(reset,1200);
+}
+
+function reset(){
+  state="Q1";
+  q1=null;q2=null;
+  title.innerText="How are you feeling today?";
+  hint.innerText="Swipe to answer";
 }
 </script>
-
 </body>
 </html>
