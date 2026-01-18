@@ -34,16 +34,18 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 500px;
-  padding: 40px 28px;
+  padding: 40px 28px 28px 28px;
   position: relative;
   touch-action: pan-y pinch-zoom;
+  display: flex;
+  flex-direction: column;
 }
 
 .question {
   font-size: 22px;
   font-weight: 600;
   line-height: 1.4;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   text-align: center;
   color: #1a1a1a;
 }
@@ -52,35 +54,47 @@ body {
   font-size: 15px;
   color: #666666;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+.option-item {
+  font-size: 14px;
+  color: #666666;
+  text-align: left;
+  line-height: 1.6;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
 }
 
 .swipe-zone {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-radius: 16px;
-  padding: 60px 20px;
-  margin-bottom: 24px;
+  padding: 80px 20px;
   text-align: center;
   color: #ffffff;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
   cursor: pointer;
   user-select: none;
   touch-action: none;
   position: relative;
-}
-
-.options {
-  font-size: 13px;
-  color: #888888;
-  text-align: center;
-  line-height: 1.8;
-  margin-bottom: 16px;
-  word-wrap: break-word;
+  margin-top: auto;
 }
 
 .textarea-wrapper {
   margin-bottom: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .textarea-label {
@@ -93,7 +107,7 @@ body {
 
 textarea {
   width: 100%;
-  min-height: 120px;
+  min-height: 140px;
   padding: 14px;
   font-size: 15px;
   font-family: inherit;
@@ -103,6 +117,7 @@ textarea {
   outline: none;
   transition: border-color 0.2s;
   line-height: 1.5;
+  flex: 1;
 }
 
 textarea:focus {
@@ -146,11 +161,12 @@ textarea:focus {
   font-size: 14px;
   color: #888888;
   text-align: center;
+  margin-bottom: 20px;
 }
 
 .success-message {
   text-align: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
 }
 
 .success-icon {
@@ -205,7 +221,7 @@ textarea:focus {
 
 @media (max-width: 480px) {
   .card {
-    padding: 32px 20px;
+    padding: 32px 20px 20px 20px;
   }
   
   .question {
@@ -213,13 +229,12 @@ textarea:focus {
   }
   
   .swipe-zone {
-    padding: 50px 16px;
-    font-size: 16px;
+    padding: 70px 16px;
+    font-size: 18px;
   }
   
-  .options {
-    font-size: 12px;
-    line-height: 2;
+  .option-item {
+    font-size: 13px;
   }
   
   .status-indicator {
@@ -235,8 +250,8 @@ textarea:focus {
     font-size: 18px;
   }
   
-  .options {
-    font-size: 11px;
+  .option-item {
+    font-size: 12px;
   }
 }
 </style>
@@ -252,18 +267,21 @@ textarea:focus {
     <div id="step1" class="step">
       <div class="question">How has your condition changed since starting treatment?</div>
       <div class="instruction">Swipe to answer</div>
-      <div class="swipe-zone" id="swipeZone1">Swipe here</div>
       <div class="options">
-        ↑ Slight improvement   → Moderate improvement   ↓ Major improvement   ← No noticeable change
+        <div class="option-item">↑ Slight improvement</div>
+        <div class="option-item">→ Moderate improvement</div>
+        <div class="option-item">↓ Major improvement</div>
+        <div class="option-item">← No noticeable change</div>
       </div>
+      <div class="swipe-zone" id="swipeZone1">Swipe here</div>
     </div>
 
     <!-- Step 2: Follow-up Question -->
     <div id="step2" class="step hidden">
       <div class="question" id="followUpQuestion"></div>
       <div class="instruction">Swipe to answer</div>
-      <div class="swipe-zone" id="swipeZone2">Swipe here</div>
       <div class="options" id="followUpOptions"></div>
+      <div class="swipe-zone" id="swipeZone2">Swipe here</div>
     </div>
 
     <!-- Step 3: Text Input -->
@@ -285,8 +303,8 @@ textarea:focus {
         <div class="summary-item" id="summaryFactor"></div>
       </div>
       <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
-      <div class="swipe-zone" id="swipeZone4">Swipe to confirm →</div>
       <div class="edit-instruction">Swipe LEFT to go back and edit</div>
+      <div class="swipe-zone" id="swipeZone4">Swipe to confirm →</div>
     </div>
 
     <!-- Step 5: Success -->
@@ -320,7 +338,12 @@ const questions = {
   followUp: {
     'Slight improvement': {
       question: 'What contributed to this slight improvement?',
-      options: '↑ Medication   → Lifestyle changes   ↓ Both   ← Other factors',
+      options: [
+        '↑ Medication',
+        '→ Lifestyle changes',
+        '↓ Both',
+        '← Other factors'
+      ],
       mapping: {
         up: 'Medication',
         right: 'Lifestyle changes',
@@ -330,7 +353,12 @@ const questions = {
     },
     'Moderate improvement': {
       question: 'What was the main factor in your improvement?',
-      options: '↑ Medication consistency   → Diet changes   ↓ Exercise routine   ← Stress reduction',
+      options: [
+        '↑ Medication consistency',
+        '→ Diet changes',
+        '↓ Exercise routine',
+        '← Stress reduction'
+      ],
       mapping: {
         up: 'Medication consistency',
         right: 'Diet changes',
@@ -340,7 +368,12 @@ const questions = {
     },
     'Major improvement': {
       question: 'What made the biggest difference?',
-      options: '↑ Treatment effectiveness   → Support system   ↓ Lifestyle overhaul   ← Medical intervention',
+      options: [
+        '↑ Treatment effectiveness',
+        '→ Support system',
+        '↓ Lifestyle overhaul',
+        '← Medical intervention'
+      ],
       mapping: {
         up: 'Treatment effectiveness',
         right: 'Support system',
@@ -350,7 +383,12 @@ const questions = {
     },
     'No noticeable change': {
       question: 'Why do you think there has been no change?',
-      options: '↑ Too early to tell   → Treatment not effective   ↓ Inconsistent adherence   ← Other reasons',
+      options: [
+        '↑ Too early to tell',
+        '→ Treatment not effective',
+        '↓ Inconsistent adherence',
+        '← Other reasons'
+      ],
       mapping: {
         up: 'Too early to tell',
         right: 'Treatment not effective',
@@ -426,136 +464,4 @@ function handleSwipeDirection(direction) {
     handleStep2Swipe(direction);
   } else if (state.currentStep === 3) {
     handleStep3Swipe(direction);
-  } else if (state.currentStep === 4) {
-    handleStep4Swipe(direction);
-  }
-}
-
-function handleStep1Swipe(direction) {
-  const answer = primaryMapping[direction];
-  if (!answer) return;
-  
-  state.answers.primaryAnswer = answer;
-  showStep2();
-}
-
-function handleStep2Swipe(direction) {
-  const config = questions.followUp[state.answers.primaryAnswer];
-  const answer = config.mapping[direction];
-  if (!answer) return;
-  
-  state.answers.followUpAnswer = answer;
-  showStep3();
-}
-
-function handleStep3Swipe(direction) {
-  if (direction === 'right') {
-    state.answers.textInput = document.getElementById('detailsInput').value.trim();
-    showStep4();
-  }
-}
-
-function handleStep4Swipe(direction) {
-  if (direction === 'right') {
-    submitSurvey();
-  } else if (direction === 'left') {
-    showStep3();
-  }
-}
-
-function showStep2() {
-  const config = questions.followUp[state.answers.primaryAnswer];
-  document.getElementById('followUpQuestion').textContent = config.question;
-  document.getElementById('followUpOptions').textContent = config.options;
-  
-  hideAllSteps();
-  document.getElementById('step2').classList.remove('hidden');
-  state.currentStep = 2;
-}
-
-function showStep3() {
-  const question = questions.textInput[state.answers.primaryAnswer];
-  const label = questions.textInputLabel[state.answers.primaryAnswer];
-  
-  document.getElementById('textInputQuestion').textContent = question;
-  document.getElementById('textInputLabel').textContent = label;
-  document.getElementById('detailsInput').value = state.answers.textInput;
-  
-  hideAllSteps();
-  document.getElementById('step3').classList.remove('hidden');
-  state.currentStep = 3;
-}
-
-function showStep4() {
-  document.getElementById('summaryChange').textContent = '• Overall change: ' + state.answers.primaryAnswer;
-  document.getElementById('summaryFactor').textContent = '• Key factor: ' + state.answers.followUpAnswer;
-  
-  hideAllSteps();
-  document.getElementById('step4').classList.remove('hidden');
-  state.currentStep = 4;
-}
-
-function showStatus(message, type) {
-  const indicator = document.getElementById('statusIndicator');
-  indicator.textContent = message;
-  indicator.className = 'status-indicator visible ' + type;
-  
-  setTimeout(() => {
-    indicator.classList.remove('visible');
-  }, 3000);
-}
-
-function submitSurvey() {
-  showStatus('Submitting...', '');
-  
-  const payload = {
-    timestamp: new Date().toISOString(),
-    primaryAnswer: state.answers.primaryAnswer,
-    followUpAnswer: state.answers.followUpAnswer,
-    textInput: state.answers.textInput
-  };
-  
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(() => {
-    console.log('Survey submitted:', payload);
-    showStatus('Saved successfully', 'success');
-    
-    hideAllSteps();
-    document.getElementById('step5').classList.remove('hidden');
-    state.currentStep = 5;
-  })
-  .catch((error) => {
-    console.error('Submission error:', error);
-    showStatus('Failed to save', 'error');
-  });
-}
-
-function hideAllSteps() {
-  document.querySelectorAll('.step').forEach(step => {
-    step.classList.add('hidden');
-  });
-}
-
-// Attach event listeners
-document.getElementById('swipeZone1').addEventListener('touchstart', handleTouchStart, { passive: true });
-document.getElementById('swipeZone1').addEventListener('touchend', handleTouchEnd, { passive: true });
-
-document.getElementById('swipeZone2').addEventListener('touchstart', handleTouchStart, { passive: true });
-document.getElementById('swipeZone2').addEventListener('touchend', handleTouchEnd, { passive: true });
-
-document.getElementById('swipeZone3').addEventListener('touchstart', handleTouchStart, { passive: true });
-document.getElementById('swipeZone3').addEventListener('touchend', handleTouchEnd, { passive: true });
-
-document.getElementById('swipeZone4').addEventListener('touchstart', handleTouchStart, { passive: true });
-document.getElementById('swipeZone4').addEventListener('touchend', handleTouchEnd, { passive: true });
-</script>
-
-</body>
-</html>
+  } else if (state.currentSt
