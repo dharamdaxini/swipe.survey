@@ -34,6 +34,7 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 500px;
+  min-height: 600px;
   padding: 40px 28px 28px 28px;
   position: relative;
   touch-action: pan-y pinch-zoom;
@@ -63,6 +64,7 @@ body {
   gap: 12px;
   margin-bottom: 24px;
   padding: 0 8px;
+  flex: 1;
 }
 
 .option-item {
@@ -70,9 +72,12 @@ body {
   color: #666666;
   text-align: left;
   line-height: 1.6;
-  padding: 8px 12px;
+  padding: 12px 14px;
   background: #f8f9fa;
   border-radius: 8px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
 }
 
 .swipe-zone {
@@ -111,7 +116,7 @@ body {
 
 textarea {
   width: 100%;
-  min-height: 140px;
+  min-height: 180px;
   padding: 14px;
   font-size: 15px;
   font-family: inherit;
@@ -133,24 +138,36 @@ textarea:focus {
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
+  flex: 1;
 }
 
 .summary-title {
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: #1a1a1a;
 }
 
 .summary-item {
   font-size: 14px;
   color: #4a4a4a;
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 12px;
+  line-height: 1.6;
 }
 
 .summary-item:last-child {
   margin-bottom: 0;
+}
+
+.summary-description {
+  font-size: 13px;
+  color: #666666;
+  margin-top: 8px;
+  padding: 10px;
+  background: #ffffff;
+  border-radius: 6px;
+  line-height: 1.5;
+  font-style: italic;
 }
 
 .confirm-instruction {
@@ -171,6 +188,10 @@ textarea:focus {
 .success-message {
   text-align: center;
   padding: 60px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .success-icon {
@@ -226,6 +247,7 @@ textarea:focus {
 @media (max-width: 480px) {
   .card {
     padding: 32px 20px 20px 20px;
+    min-height: 580px;
   }
   
   .question {
@@ -239,6 +261,7 @@ textarea:focus {
   
   .option-item {
     font-size: 13px;
+    min-height: 44px;
   }
   
   .status-indicator {
@@ -256,6 +279,10 @@ textarea:focus {
   
   .option-item {
     font-size: 12px;
+  }
+  
+  .card {
+    min-height: 560px;
   }
 }
 </style>
@@ -305,6 +332,7 @@ textarea:focus {
         <div class="summary-title">Summary:</div>
         <div class="summary-item" id="summaryChange"></div>
         <div class="summary-item" id="summaryFactor"></div>
+        <div class="summary-description" id="summaryDescription"></div>
       </div>
       <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
       <div class="edit-instruction">Swipe LEFT to go back and edit</div>
@@ -324,6 +352,35 @@ textarea:focus {
 </div>
 
 <script>
+// Prevent page refresh on mobile pull-to-refresh
+document.body.style.overscrollBehavior = 'none';
+document.addEventListener('touchmove', function(e) {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// Prevent accidental refresh
+let lastTouchY = 0;
+let preventPullToRefresh = false;
+
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length !== 1) { return; }
+  lastTouchY = e.touches[0].clientY;
+  preventPullToRefresh = window.pageYOffset === 0;
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+  const touchY = e.touches[0].clientY;
+  const touchYDelta = touchY - lastTouchY;
+  lastTouchY = touchY;
+
+  if (preventPullToRefresh && touchYDelta > 0) {
+    e.preventDefault();
+    return;
+  }
+}, { passive: false });
+
 // Google Apps Script endpoint
 const GOOGLE_SCRIPT_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLg7qh_yx-n_wZu3KY0gdggBCZ7jPVIK-H2t-nKQkEMoQ0sUyw7pU6qB54gHESAsfZqYqFzfoGRSHVbfkGv9rGiBLQ2vmFV4XoJFYbQfTuiNRJIZGZXLSuHNWKYe18tULF8W5Dcg214juxl5e-uboa_Agm1nYWpyLsyZ37S_2JiglRHFPq9zPUTYwfHgyI0_OG9EKuDO_hXto58uQJ6z6WGY6OXIY1_g5-7PkI9yNxaoXaMcH83NnekoUKqpLCs6TMkiDM81Krg6VVexvHaibzijd69IRdt1u41ok4-q&lib=MUqFmX3xhxFDzBtrCsRU7H_m8FswXrvlL';
 
@@ -441,8 +498,6 @@ function handlePointerStart(e) {
     startX = e.clientX;
     startY = e.clientY;
   }
-  
-  console.log('Pointer start:', startX, startY);
 }
 
 function handlePointerEnd(e) {
@@ -457,7 +512,6 @@ function handlePointerEnd(e) {
     endY = e.clientY;
   }
   
-  console.log('Pointer end:', endX, endY);
   handleSwipe();
 }
 
@@ -467,10 +521,7 @@ function handleSwipe() {
   const absDeltaX = Math.abs(deltaX);
   const absDeltaY = Math.abs(deltaY);
 
-  console.log('Delta X:', deltaX, 'Delta Y:', deltaY);
-
   if (absDeltaX < minSwipeDistance && absDeltaY < minSwipeDistance) {
-    console.log('Swipe too short');
     return;
   }
 
@@ -481,7 +532,6 @@ function handleSwipe() {
     direction = deltaY < 0 ? 'up' : 'down';
   }
 
-  console.log('Swipe direction:', direction);
   handleSwipeDirection(direction);
 }
 
@@ -501,7 +551,6 @@ function handleStep1Swipe(direction) {
   const answer = primaryMapping[direction];
   if (!answer) return;
   
-  console.log('Step 1 answer:', answer);
   state.answers.primaryAnswer = answer;
   showStep2();
 }
@@ -511,7 +560,6 @@ function handleStep2Swipe(direction) {
   const answer = config.mapping[direction];
   if (!answer) return;
   
-  console.log('Step 2 answer:', answer);
   state.answers.followUpAnswer = answer;
   showStep3();
 }
@@ -519,7 +567,6 @@ function handleStep2Swipe(direction) {
 function handleStep3Swipe(direction) {
   if (direction === 'right') {
     state.answers.textInput = document.getElementById('detailsInput').value.trim();
-    console.log('Step 3 text:', state.answers.textInput);
     showStep4();
   }
 }
@@ -568,6 +615,15 @@ function showStep4() {
   document.getElementById('summaryChange').textContent = '• Overall change: ' + state.answers.primaryAnswer;
   document.getElementById('summaryFactor').textContent = '• Key factor: ' + state.answers.followUpAnswer;
   
+  // Add description from step 3
+  const descriptionElement = document.getElementById('summaryDescription');
+  if (state.answers.textInput) {
+    descriptionElement.textContent = '"' + state.answers.textInput + '"';
+    descriptionElement.style.display = 'block';
+  } else {
+    descriptionElement.style.display = 'none';
+  }
+  
   hideAllSteps();
   document.getElementById('step4').classList.remove('hidden');
   state.currentStep = 4;
@@ -601,7 +657,7 @@ function submitSurvey() {
   const payload = {
     timestamp: new Date().toISOString(),
     q1: state.answers.primaryAnswer,
-    q2: state.answers.followUpAnswer + ' - ' + state.answers.textInput,
+    q2: state.answers.followUpAnswer + (state.answers.textInput ? ' - ' + state.answers.textInput : ''),
     device: getDeviceType()
   };
   
@@ -643,8 +699,6 @@ function attachSwipeListeners(element) {
   // Mouse events for desktop testing
   element.addEventListener('mousedown', handlePointerStart);
   element.addEventListener('mouseup', handlePointerEnd);
-  
-  console.log('Listeners attached to:', element.id);
 }
 
 // Attach event listeners to all swipe zones
@@ -652,8 +706,6 @@ attachSwipeListeners(document.getElementById('swipeZone1'));
 attachSwipeListeners(document.getElementById('swipeZone2'));
 attachSwipeListeners(document.getElementById('swipeZone3'));
 attachSwipeListeners(document.getElementById('swipeZone4'));
-
-console.log('Survey initialized, current step:', state.currentStep);
 </script>
 
 </body>
