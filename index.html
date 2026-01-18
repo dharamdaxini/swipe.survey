@@ -83,7 +83,8 @@ body {
 .swipe-zone {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-radius: 16px;
-  padding: 80px 20px;
+  /* Reduced padding to fit the arrows comfortably */
+  padding: 40px 20px; 
   text-align: center;
   color: #ffffff;
   font-size: 20px;
@@ -93,6 +94,43 @@ body {
   touch-action: none;
   position: relative;
   margin-top: auto;
+  display: flex; /* Flexbox for centering content */
+  align-items: center;
+  justify-content: center;
+}
+
+/* New styles for the Directional Arrows inside swipe box */
+.swipe-visual-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.swipe-middle-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.swipe-arrow-icon {
+  font-size: 24px;
+  line-height: 1;
+  opacity: 0.9;
+  animation: pulse 2s infinite;
+}
+
+.swipe-text-label {
+  font-weight: 600;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
 }
 
 .swipe-zone:active {
@@ -249,21 +287,21 @@ textarea:focus {
     padding: 32px 20px 20px 20px;
     min-height: 580px;
   }
-  
+   
   .question {
     font-size: 20px;
   }
-  
+   
   .swipe-zone {
-    padding: 70px 16px;
+    padding: 30px 16px; /* Adjusted for mobile with new arrows */
     font-size: 18px;
   }
-  
+   
   .option-item {
     font-size: 13px;
     min-height: 44px;
   }
-  
+   
   .status-indicator {
     top: 10px;
     right: 10px;
@@ -276,11 +314,11 @@ textarea:focus {
   .question {
     font-size: 18px;
   }
-  
+   
   .option-item {
     font-size: 12px;
   }
-  
+   
   .card {
     min-height: 560px;
   }
@@ -294,28 +332,47 @@ textarea:focus {
 <div class="container">
   <div class="card">
     
-    <!-- Step 1: Primary Question -->
     <div id="step1" class="step">
       <div class="question">How has your condition changed since starting treatment?</div>
       <div class="instruction">Swipe to answer</div>
       <div class="options">
-        <div class="option-item">↑ Slight improvement</div>
-        <div class="option-item">→ Moderate improvement</div>
-        <div class="option-item">↓ Major improvement</div>
-        <div class="option-item">← No noticeable change</div>
+        <div class="option-item">⬆️ Slight improvement</div>
+        <div class="option-item">➡️ Moderate improvement</div>
+        <div class="option-item">⬇️ Major improvement</div>
+        <div class="option-item">⬅️ No noticeable change</div>
       </div>
-      <div class="swipe-zone" id="swipeZone1">Swipe here</div>
+      
+      <div class="swipe-zone" id="swipeZone1">
+        <div class="swipe-visual-grid">
+           <div class="swipe-arrow-icon">⬆️</div>
+           <div class="swipe-middle-row">
+              <div class="swipe-arrow-icon">⬅️</div>
+              <div class="swipe-text-label">Swipe</div>
+              <div class="swipe-arrow-icon">➡️</div>
+           </div>
+           <div class="swipe-arrow-icon">⬇️</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Step 2: Follow-up Question -->
     <div id="step2" class="step hidden">
       <div class="question" id="followUpQuestion"></div>
       <div class="instruction">Swipe to answer</div>
       <div class="options" id="followUpOptions"></div>
-      <div class="swipe-zone" id="swipeZone2">Swipe here</div>
+      
+      <div class="swipe-zone" id="swipeZone2">
+        <div class="swipe-visual-grid">
+           <div class="swipe-arrow-icon">⬆️</div>
+           <div class="swipe-middle-row">
+              <div class="swipe-arrow-icon">⬅️</div>
+              <div class="swipe-text-label">Swipe</div>
+              <div class="swipe-arrow-icon">➡️</div>
+           </div>
+           <div class="swipe-arrow-icon">⬇️</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Step 3: Text Input -->
     <div id="step3" class="step hidden">
       <div class="question" id="textInputQuestion"></div>
       <div class="textarea-wrapper">
@@ -323,10 +380,9 @@ textarea:focus {
         <textarea id="detailsInput" placeholder="Type your response here..."></textarea>
       </div>
       <div class="instruction">Swipe right when done</div>
-      <div class="swipe-zone" id="swipeZone3">Swipe right to continue →</div>
+      <div class="swipe-zone" id="swipeZone3">Swipe right to continue ➡️</div>
     </div>
 
-    <!-- Step 4: Confirmation -->
     <div id="step4" class="step hidden">
       <div class="summary-box">
         <div class="summary-title">Summary:</div>
@@ -336,10 +392,17 @@ textarea:focus {
       </div>
       <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
       <div class="edit-instruction">Swipe LEFT to go back and edit</div>
-      <div class="swipe-zone" id="swipeZone4">Swipe to confirm →</div>
+      <div class="swipe-zone" id="swipeZone4">
+         <div class="swipe-visual-grid">
+           <div class="swipe-middle-row">
+              <div class="swipe-arrow-icon">⬅️</div>
+              <div class="swipe-text-label">Confirm</div>
+              <div class="swipe-arrow-icon">➡️</div>
+           </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Step 5: Success -->
     <div id="step5" class="step hidden">
       <div class="success-message">
         <div class="success-icon">✓</div>
@@ -394,16 +457,16 @@ const state = {
   }
 };
 
-// Question configurations
+// Question configurations with EMOJIS
 const questions = {
   followUp: {
     'Slight improvement': {
       question: 'What contributed to this slight improvement?',
       options: [
-        '↑ Medication',
-        '→ Lifestyle changes',
-        '↓ Both',
-        '← Other factors'
+        '⬆️ Medication',
+        '➡️ Lifestyle changes',
+        '⬇️ Both',
+        '⬅️ Other factors'
       ],
       mapping: {
         up: 'Medication',
@@ -415,10 +478,10 @@ const questions = {
     'Moderate improvement': {
       question: 'What was the main factor in your improvement?',
       options: [
-        '↑ Medication consistency',
-        '→ Diet changes',
-        '↓ Exercise routine',
-        '← Stress reduction'
+        '⬆️ Medication consistency',
+        '➡️ Diet changes',
+        '⬇️ Exercise routine',
+        '⬅️ Stress reduction'
       ],
       mapping: {
         up: 'Medication consistency',
@@ -430,10 +493,10 @@ const questions = {
     'Major improvement': {
       question: 'What made the biggest difference?',
       options: [
-        '↑ Treatment effectiveness',
-        '→ Support system',
-        '↓ Lifestyle overhaul',
-        '← Medical intervention'
+        '⬆️ Treatment effectiveness',
+        '➡️ Support system',
+        '⬇️ Lifestyle overhaul',
+        '⬅️ Medical intervention'
       ],
       mapping: {
         up: 'Treatment effectiveness',
@@ -445,10 +508,10 @@ const questions = {
     'No noticeable change': {
       question: 'Why do you think there has been no change?',
       options: [
-        '↑ Too early to tell',
-        '→ Treatment not effective',
-        '↓ Inconsistent adherence',
-        '← Other reasons'
+        '⬆️ Too early to tell',
+        '➡️ Treatment not effective',
+        '⬇️ Inconsistent adherence',
+        '⬅️ Other reasons'
       ],
       mapping: {
         up: 'Too early to tell',
@@ -490,7 +553,7 @@ const minSwipeDistance = 50;
 
 function handlePointerStart(e) {
   isPointerDown = true;
-  
+   
   if (e.type === 'touchstart') {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
@@ -503,7 +566,7 @@ function handlePointerStart(e) {
 function handlePointerEnd(e) {
   if (!isPointerDown) return;
   isPointerDown = false;
-  
+   
   if (e.type === 'touchend') {
     endX = e.changedTouches[0].clientX;
     endY = e.changedTouches[0].clientY;
@@ -511,7 +574,7 @@ function handlePointerEnd(e) {
     endX = e.clientX;
     endY = e.clientY;
   }
-  
+   
   handleSwipe();
 }
 
@@ -550,7 +613,7 @@ function handleSwipeDirection(direction) {
 function handleStep1Swipe(direction) {
   const answer = primaryMapping[direction];
   if (!answer) return;
-  
+   
   state.answers.primaryAnswer = answer;
   showStep2();
 }
@@ -559,7 +622,7 @@ function handleStep2Swipe(direction) {
   const config = questions.followUp[state.answers.primaryAnswer];
   const answer = config.mapping[direction];
   if (!answer) return;
-  
+   
   state.answers.followUpAnswer = answer;
   showStep3();
 }
@@ -582,7 +645,7 @@ function handleStep4Swipe(direction) {
 function showStep2() {
   const config = questions.followUp[state.answers.primaryAnswer];
   document.getElementById('followUpQuestion').textContent = config.question;
-  
+   
   // Create options as stacked list
   const optionsContainer = document.getElementById('followUpOptions');
   optionsContainer.innerHTML = '';
@@ -592,7 +655,7 @@ function showStep2() {
     optionDiv.textContent = option;
     optionsContainer.appendChild(optionDiv);
   });
-  
+   
   hideAllSteps();
   document.getElementById('step2').classList.remove('hidden');
   state.currentStep = 2;
@@ -601,11 +664,11 @@ function showStep2() {
 function showStep3() {
   const question = questions.textInput[state.answers.primaryAnswer];
   const label = questions.textInputLabel[state.answers.primaryAnswer];
-  
+   
   document.getElementById('textInputQuestion').textContent = question;
   document.getElementById('textInputLabel').textContent = label;
   document.getElementById('detailsInput').value = state.answers.textInput;
-  
+   
   hideAllSteps();
   document.getElementById('step3').classList.remove('hidden');
   state.currentStep = 3;
@@ -614,7 +677,7 @@ function showStep3() {
 function showStep4() {
   document.getElementById('summaryChange').textContent = '• Overall change: ' + state.answers.primaryAnswer;
   document.getElementById('summaryFactor').textContent = '• Key factor: ' + state.answers.followUpAnswer;
-  
+   
   // Add description from step 3
   const descriptionElement = document.getElementById('summaryDescription');
   if (state.answers.textInput) {
@@ -623,7 +686,7 @@ function showStep4() {
   } else {
     descriptionElement.style.display = 'none';
   }
-  
+   
   hideAllSteps();
   document.getElementById('step4').classList.remove('hidden');
   state.currentStep = 4;
@@ -633,7 +696,7 @@ function showStatus(message, type) {
   const indicator = document.getElementById('statusIndicator');
   indicator.textContent = message;
   indicator.className = 'status-indicator visible ' + type;
-  
+   
   setTimeout(() => {
     indicator.classList.remove('visible');
   }, 3000);
@@ -652,7 +715,7 @@ function getDeviceType() {
 
 function submitSurvey() {
   showStatus('Submitting...', '');
-  
+   
   // Match the Google Sheet column structure: timestamp, q1, q2, device
   const payload = {
     timestamp: new Date().toISOString(),
@@ -660,9 +723,9 @@ function submitSurvey() {
     q2: state.answers.followUpAnswer + (state.answers.textInput ? ' - ' + state.answers.textInput : ''),
     device: getDeviceType()
   };
-  
+   
   console.log('Submitting payload:', payload);
-  
+   
   fetch(GOOGLE_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
@@ -674,7 +737,7 @@ function submitSurvey() {
   .then(() => {
     console.log('Survey submitted successfully:', payload);
     showStatus('Saved successfully', 'success');
-    
+     
     hideAllSteps();
     document.getElementById('step5').classList.remove('hidden');
     state.currentStep = 5;
@@ -695,7 +758,7 @@ function attachSwipeListeners(element) {
   // Touch events
   element.addEventListener('touchstart', handlePointerStart, { passive: true });
   element.addEventListener('touchend', handlePointerEnd, { passive: true });
-  
+   
   // Mouse events for desktop testing
   element.addEventListener('mousedown', handlePointerStart);
   element.addEventListener('mouseup', handlePointerEnd);
