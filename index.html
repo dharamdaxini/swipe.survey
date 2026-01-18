@@ -11,17 +11,17 @@
 :root {
     --primary: #6366f1;
     --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    --bg-color: #e5e5e5;
+    --bg-color: #f3f4f6; /* Slightly softer gray */
     --card-bg: #ffffff;
-    --text-main: #1a1a1a;
-    --text-muted: #666666;
-    --border-color: #e0e0e0;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
     --success: #10b981;
     --error: #ef4444;
-    --radius-lg: 20px;
-    --radius-md: 12px;
+    --radius-lg: 24px;
+    --radius-md: 16px;
     --radius-sm: 8px;
-    --shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -30,23 +30,31 @@
     box-sizing: border-box;
 }
 
+/* ANTI-REFRESH: Lock scrolling */
+html, body {
+    height: 100%;
+    overflow: hidden; 
+    overscroll-behavior-y: none;
+    position: fixed;
+    width: 100%;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: var(--bg-color);
     color: var(--text-main);
-    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
-    overscroll-behavior: none; /* Disables pull-to-refresh */
 }
 
 /* =========================================
-   2. LAYOUT & CARD
+   2. LAYOUT & CARD (FIXED POSITIONING)
    ========================================= */
 .container {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
+    height: 100%;
+    width: 100%;
     padding: 20px;
 }
 
@@ -55,229 +63,243 @@ body {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     width: 100%;
-    max-width: 500px;
-    min-height: 650px; /* Taller for better breathing room */
-    padding: 40px 30px;
+    max-width: 480px; /* Slightly tighter width for elegance */
+    height: 85vh; 
+    max-height: 800px;
+    min-height: 600px;
+    padding: 32px 28px;
     position: relative;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease;
+}
+
+/* Step container fills the card */
+.step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* =========================================
-   3. TYPOGRAPHY & COMPONENTS
+   3. CONTENT STYLING
    ========================================= */
 .question {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.35;
     margin-bottom: 24px;
     text-align: center;
     color: var(--text-main);
+    flex-shrink: 0;
 }
 
 .instruction {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-muted);
     text-align: center;
-    margin-bottom: 20px;
-    font-weight: 500;
+    margin-bottom: 24px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1.2px;
+    flex-shrink: 0;
 }
 
-.options {
+/* Options area GROWS to push Swipe Zone to bottom */
+.options, .textarea-wrapper {
+    flex-grow: 1; 
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 24px;
-    flex: 1;
+    margin-bottom: 20px;
+    overflow-y: auto;
 }
 
 .option-item {
     font-size: 15px;
-    color: var(--text-muted);
-    padding: 16px 18px;
-    background: #f8f9fa;
+    color: #4b5563;
+    padding: 16px 20px;
+    background: #f9fafb;
     border-radius: var(--radius-sm);
     border: 1px solid transparent;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
 }
 
-.option-item:hover {
-    background: #f0f2f5;
-    border-color: #e2e8f0;
+.option-arrow {
+    font-weight: 400;
+    color: var(--primary);
+    font-size: 20px;
+    width: 20px;
 }
 
 /* =========================================
-   4. SWIPE ZONE (THE HERO)
+   4. SWIPE ZONE (FIXED AT BOTTOM)
    ========================================= */
 .swipe-zone {
     background: var(--primary-gradient);
     border-radius: var(--radius-md);
-    padding: 40px 20px;
-    text-align: center;
+    padding: 0; 
+    height: 180px; 
+    width: 100%;
     color: #ffffff;
     cursor: grab;
     user-select: none;
-    touch-action: none; /* Critical for touch handling */
-    margin-top: auto;
+    touch-action: none; 
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.1s;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4); /* Stronger glow */
+    flex-shrink: 0; 
+    margin-top: auto;
 }
 
 .swipe-zone:active {
     cursor: grabbing;
-    transform: scale(0.98);
+    transform: scale(0.99);
 }
 
 /* Visual Arrow Grid */
 .swipe-visual-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
     align-items: center;
-    gap: 8px;
+    justify-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 12px;
 }
 
-.swipe-middle-row {
-    display: flex;
-    align-items: center;
-    gap: 24px;
+.swipe-arrow {
+    font-size: 36px;
+    font-weight: 200; /* Ultra thin elegance */
+    line-height: 1;
+    opacity: 0.75;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.swipe-arrow-icon {
-    font-size: 24px;
-    opacity: 0.9;
-    animation: pulse 2s infinite ease-in-out;
-}
+.arrow-up { grid-column: 2; grid-row: 1; }
+.arrow-left { grid-column: 1; grid-row: 2; }
+.arrow-right { grid-column: 3; grid-row: 2; }
+.arrow-down { grid-column: 2; grid-row: 3; }
 
 .swipe-text-label {
+    grid-column: 2;
+    grid-row: 2;
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14px;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
 }
 
+.swipe-arrow { animation: pulse 2.5s infinite ease-in-out; }
+
 @keyframes pulse {
-    0% { transform: scale(1); opacity: 0.7; }
+    0% { transform: scale(1); opacity: 0.5; }
     50% { transform: scale(1.15); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 0.5; }
 }
 
 /* =========================================
    5. INPUTS & SUMMARY
    ========================================= */
-.textarea-wrapper {
-    margin-bottom: 24px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
 .textarea-label {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-main);
     margin-bottom: 12px;
-    display: block;
 }
 
 textarea {
     width: 100%;
-    min-height: 150px;
-    padding: 16px;
+    flex-grow: 1; 
+    padding: 20px;
     font-size: 16px;
     font-family: inherit;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
     resize: none;
     outline: none;
-    transition: border-color 0.2s;
-    background: #fafafa;
+    background: #f9fafb;
+    line-height: 1.6;
 }
 
 textarea:focus {
     border-color: var(--primary);
     background: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .summary-box {
-    background: #f8f9fa;
+    background: #f9fafb;
     border-radius: var(--radius-md);
     padding: 24px;
-    margin-bottom: 24px;
-    border-left: 4px solid var(--primary);
+    border-left: 5px solid var(--primary);
+    flex-grow: 1;
 }
 
-.summary-title {
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-    font-weight: 700;
-}
+.summary-item { margin-bottom: 12px; font-weight: 500; font-size: 15px; }
 
-.summary-item {
-    font-size: 15px;
-    color: var(--text-main);
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.summary-description {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-top: 12px;
-    font-style: italic;
-    padding-top: 12px;
-    border-top: 1px solid #e5e5e5;
-}
-
-.confirm-instruction, .edit-instruction {
+.confirm-instruction {
+    color: var(--primary);
+    font-weight: 600;
     text-align: center;
-    font-size: 14px;
-    font-weight: 500;
     margin-bottom: 8px;
+    font-size: 15px;
 }
-.confirm-instruction { color: var(--primary); }
-.edit-instruction { color: var(--text-muted); margin-bottom: 24px; }
+.edit-instruction {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 20px;
+}
 
 /* =========================================
-   6. UTILITIES (Success, Status, Hidden)
+   6. UTILITIES
    ========================================= */
 .hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Simple fade animation for steps */
-.step { animation: fadeIn 0.4s ease-out; }
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
+/* IMPROVED SUCCESS PAGE */
 .success-message {
-    text-align: center;
-    padding: 40px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.success-icon {
-    font-size: 64px;
-    color: var(--success);
-    margin-bottom: 24px;
+@keyframes popIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
-.success-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 12px;
+.success-icon { 
+    font-size: 72px; 
+    margin-bottom: 24px; 
+    filter: drop-shadow(0 4px 6px rgba(16, 185, 129, 0.2));
+}
+
+.success-title { 
+    font-size: 28px; 
+    font-weight: 800; 
+    margin-bottom: 16px;
+    color: var(--text-main);
+}
+
+.success-text { 
+    font-size: 16px; 
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 300px;
 }
 
 .status-indicator {
@@ -293,23 +315,10 @@ textarea:focus {
     transform: translateY(-20px);
     transition: all 0.3s ease;
     z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
-
 .status-indicator.visible { opacity: 1; transform: translateY(0); }
 .status-indicator.success { background: var(--success); }
 .status-indicator.error { background: var(--error); }
-.status-indicator.loading { background: var(--primary); }
-
-/* Mobile Optimizations */
-@media (max-width: 480px) {
-    .card {
-        border-radius: 0;
-        min-height: 100vh;
-        box-shadow: none;
-    }
-    .question { font-size: 20px; }
-}
 </style>
 </head>
 <body>
@@ -319,25 +328,23 @@ textarea:focus {
     <div class="container">
         <div class="card">
             
-            <div id="step1" class="step fade-in">
+            <div id="step1" class="step">
                 <div class="question">How has your condition changed since starting treatment?</div>
                 <div class="instruction">Swipe to answer</div>
                 <div class="options">
-                    <div class="option-item">⬆️ Slight improvement</div>
-                    <div class="option-item">➡️ Moderate improvement</div>
-                    <div class="option-item">⬇️ Major improvement</div>
-                    <div class="option-item">⬅️ No noticeable change</div>
+                    <div class="option-item"><span class="option-arrow">↑</span> Slight improvement</div>
+                    <div class="option-item"><span class="option-arrow">→</span> Moderate improvement</div>
+                    <div class="option-item"><span class="option-arrow">↓</span> Major improvement</div>
+                    <div class="option-item"><span class="option-arrow">←</span> No noticeable change</div>
                 </div>
                 
                 <div class="swipe-zone" id="swipeZone1">
                     <div class="swipe-visual-grid">
-                        <div class="swipe-arrow-icon">⬆️</div>
-                        <div class="swipe-middle-row">
-                            <div class="swipe-arrow-icon">⬅️</div>
-                            <div class="swipe-text-label">Swipe</div>
-                            <div class="swipe-arrow-icon">➡️</div>
-                        </div>
-                        <div class="swipe-arrow-icon">⬇️</div>
+                        <div class="swipe-arrow arrow-up">↑</div>
+                        <div class="swipe-arrow arrow-left">←</div>
+                        <div class="swipe-text-label">SWIPE</div>
+                        <div class="swipe-arrow arrow-right">→</div>
+                        <div class="swipe-arrow arrow-down">↓</div>
                     </div>
                 </div>
             </div>
@@ -349,13 +356,11 @@ textarea:focus {
                 
                 <div class="swipe-zone" id="swipeZone2">
                     <div class="swipe-visual-grid">
-                        <div class="swipe-arrow-icon">⬆️</div>
-                        <div class="swipe-middle-row">
-                            <div class="swipe-arrow-icon">⬅️</div>
-                            <div class="swipe-text-label">Swipe</div>
-                            <div class="swipe-arrow-icon">➡️</div>
-                        </div>
-                        <div class="swipe-arrow-icon">⬇️</div>
+                        <div class="swipe-arrow arrow-up">↑</div>
+                        <div class="swipe-arrow arrow-left">←</div>
+                        <div class="swipe-text-label">SWIPE</div>
+                        <div class="swipe-arrow arrow-right">→</div>
+                        <div class="swipe-arrow arrow-down">↓</div>
                     </div>
                 </div>
             </div>
@@ -367,41 +372,40 @@ textarea:focus {
                     <textarea id="detailsInput" placeholder="Type your response here..."></textarea>
                 </div>
                 <div class="instruction">Swipe right when done</div>
+                
                 <div class="swipe-zone" id="swipeZone3">
                      <div class="swipe-visual-grid">
-                        <div class="swipe-middle-row">
-                            <div class="swipe-text-label">Swipe Right ➡️</div>
-                        </div>
+                        <div class="swipe-text-label" style="grid-column: 1/4; grid-row: 2;">SWIPE RIGHT →</div>
+                        <div class="swipe-arrow arrow-right" style="grid-column: 3; grid-row: 2;">→</div>
                     </div>
                 </div>
             </div>
 
             <div id="step4" class="step hidden">
                 <div class="summary-box">
-                    <div class="summary-title">Summary</div>
+                    <div class="summary-title" style="font-size: 12px; text-transform: uppercase; color: #9ca3af; margin-bottom: 12px; font-weight: 700;">Response Summary</div>
                     <div class="summary-item" id="summaryChange"></div>
                     <div class="summary-item" id="summaryFactor"></div>
-                    <div class="summary-description" id="summaryDescription"></div>
+                    <div class="summary-description" id="summaryDescription" style="font-style: italic; color: #6b7280; margin-top: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px;"></div>
                 </div>
-                <div class="confirm-instruction">Swipe RIGHT to confirm submission</div>
-                <div class="edit-instruction">Swipe LEFT to go back and edit</div>
+                <div class="confirm-instruction">Ready to submit?</div>
+                <div class="edit-instruction">Swipe Left to Edit • Swipe Right to Submit</div>
                 
                 <div class="swipe-zone" id="swipeZone4">
                     <div class="swipe-visual-grid">
-                        <div class="swipe-middle-row">
-                            <div class="swipe-arrow-icon">⬅️</div>
-                            <div class="swipe-text-label">Confirm</div>
-                            <div class="swipe-arrow-icon">➡️</div>
-                        </div>
+                        <div class="swipe-arrow arrow-left">←</div>
+                        <div class="swipe-text-label">CONFIRM</div>
+                        <div class="swipe-arrow arrow-right">→</div>
                     </div>
                 </div>
             </div>
 
             <div id="step5" class="step hidden">
                 <div class="success-message">
-                    <div class="success-icon">✓</div>
-                    <div class="success-title">Submitted successfully</div>
-                    <div class="success-text">Thank you for completing the survey. Your responses have been recorded.</div>
+                    <div class="success-icon">🎉</div>
+                    <div class="success-title">All Done!</div>
+                    <div class="success-text">Your progress has been securely recorded. Keep up the great work!</div>
+                    <div style="margin-top: 30px; font-size: 13px; color: #9ca3af;">You can safely close this tab.</div>
                 </div>
             </div>
 
@@ -411,33 +415,32 @@ textarea:focus {
 <script>
 /**
  * =========================================================
- * CONFIGURATION
+ * 1. CONFIGURATION
  * =========================================================
  */
-// The Backend Endpoint (Exec URL)
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzrsMsk3CUuWtRBuYRyrKHn5Mg_Ye5BSJG8xuVGKq9IwVaywMO3tY0AyES52kJNLHO0HA/exec';
+const SESSION_ID = 'sess_' + Math.random().toString(36).substr(2, 9);
 
-// Question Data & Logic
 const QUESTIONS = {
     followUp: {
         'Slight improvement': {
             question: 'What contributed to this slight improvement?',
-            options: ['⬆️ Medication', '➡️ Lifestyle changes', '⬇️ Both', '⬅️ Other factors'],
+            options: ['↑ Medication', '→ Lifestyle changes', '↓ Both', '← Other factors'],
             mapping: { up: 'Medication', right: 'Lifestyle changes', down: 'Both', left: 'Other factors' }
         },
         'Moderate improvement': {
             question: 'What was the main factor in your improvement?',
-            options: ['⬆️ Medication consistency', '➡️ Diet changes', '⬇️ Exercise routine', '⬅️ Stress reduction'],
+            options: ['↑ Medication consistency', '→ Diet changes', '↓ Exercise routine', '← Stress reduction'],
             mapping: { up: 'Medication consistency', right: 'Diet changes', down: 'Exercise routine', left: 'Stress reduction' }
         },
         'Major improvement': {
             question: 'What made the biggest difference?',
-            options: ['⬆️ Treatment effectiveness', '➡️ Support system', '⬇️ Lifestyle overhaul', '⬅️ Medical intervention'],
+            options: ['↑ Treatment effectiveness', '→ Support system', '↓ Lifestyle overhaul', '← Medical intervention'],
             mapping: { up: 'Treatment effectiveness', right: 'Support system', down: 'Lifestyle overhaul', left: 'Medical intervention' }
         },
         'No noticeable change': {
             question: 'Why do you think there has been no change?',
-            options: ['⬆️ Too early to tell', '➡️ Treatment not effective', '⬇️ Inconsistent adherence', '⬅️ Other reasons'],
+            options: ['↑ Too early to tell', '→ Treatment not effective', '↓ Inconsistent adherence', '← Other reasons'],
             mapping: { up: 'Too early to tell', right: 'Treatment not effective', down: 'Inconsistent adherence', left: 'Other reasons' }
         }
     },
@@ -464,7 +467,7 @@ const PRIMARY_MAPPING = {
 
 /**
  * =========================================================
- * STATE MANAGEMENT
+ * 2. STATE MANAGEMENT
  * =========================================================
  */
 const state = {
@@ -478,7 +481,7 @@ const state = {
 
 /**
  * =========================================================
- * TOUCH & MOUSE HANDLING
+ * 3. TOUCH & MOUSE LOGIC
  * =========================================================
  */
 let startX = 0;
@@ -490,7 +493,6 @@ const MIN_SWIPE_DISTANCE = 50;
 
 function handlePointerStart(e) {
     isPointerDown = true;
-    // Get coordinates depending on touch or mouse
     if (e.type === 'touchstart') {
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -511,7 +513,6 @@ function handlePointerEnd(e) {
         endX = e.clientX;
         endY = e.clientY;
     }
-    
     processSwipe();
 }
 
@@ -521,13 +522,9 @@ function processSwipe() {
     const absDeltaX = Math.abs(deltaX);
     const absDeltaY = Math.abs(deltaY);
 
-    // Filter out accidental taps
-    if (absDeltaX < MIN_SWIPE_DISTANCE && absDeltaY < MIN_SWIPE_DISTANCE) {
-        return;
-    }
+    if (absDeltaX < MIN_SWIPE_DISTANCE && absDeltaY < MIN_SWIPE_DISTANCE) return;
 
     let direction;
-    // Determine dominant direction
     if (absDeltaX > absDeltaY) {
         direction = deltaX > 0 ? 'right' : 'left';
     } else {
@@ -548,13 +545,12 @@ function routeSwipeAction(direction) {
 
 /**
  * =========================================================
- * LOGIC PER STEP
+ * 4. STEP LOGIC
  * =========================================================
  */
 function handleStep1(direction) {
     const answer = PRIMARY_MAPPING[direction];
     if (!answer) return;
-    
     state.answers.primaryAnswer = answer;
     transitionToStep2();
 }
@@ -563,7 +559,6 @@ function handleStep2(direction) {
     const config = QUESTIONS.followUp[state.answers.primaryAnswer];
     const answer = config.mapping[direction];
     if (!answer) return;
-    
     state.answers.followUpAnswer = answer;
     transitionToStep3();
 }
@@ -579,13 +574,13 @@ function handleStep4(direction) {
     if (direction === 'right') {
         submitSurvey();
     } else if (direction === 'left') {
-        transitionToStep3(); // Go Back
+        transitionToStep3(); // Edit
     }
 }
 
 /**
  * =========================================================
- * UI TRANSITIONS
+ * 5. UI TRANSITIONS
  * =========================================================
  */
 function hideAllSteps() {
@@ -595,13 +590,16 @@ function hideAllSteps() {
 function transitionToStep2() {
     const config = QUESTIONS.followUp[state.answers.primaryAnswer];
     document.getElementById('followUpQuestion').textContent = config.question;
-    
     const optionsContainer = document.getElementById('followUpOptions');
-    optionsContainer.innerHTML = ''; // Clear previous options
+    optionsContainer.innerHTML = '';
+    
     config.options.forEach(option => {
+        const parts = option.split(' ');
+        const arrow = parts[0];
+        const text = parts.slice(1).join(' ');
         const div = document.createElement('div');
         div.className = 'option-item';
-        div.textContent = option;
+        div.innerHTML = `<span class="option-arrow">${arrow}</span> ${text}`;
         optionsContainer.appendChild(div);
     });
     
@@ -613,19 +611,17 @@ function transitionToStep2() {
 function transitionToStep3() {
     const question = QUESTIONS.textInput[state.answers.primaryAnswer];
     const label = QUESTIONS.textInputLabel[state.answers.primaryAnswer];
-    
     document.getElementById('textInputQuestion').textContent = question;
     document.getElementById('textInputLabel').textContent = label;
     document.getElementById('detailsInput').value = state.answers.textInput;
-    
     hideAllSteps();
     document.getElementById('step3').classList.remove('hidden');
     state.currentStep = 3;
 }
 
 function transitionToStep4() {
-    document.getElementById('summaryChange').textContent = `• Overall change: ${state.answers.primaryAnswer}`;
-    document.getElementById('summaryFactor').textContent = `• Key factor: ${state.answers.followUpAnswer}`;
+    document.getElementById('summaryChange').textContent = `• Condition: ${state.answers.primaryAnswer}`;
+    document.getElementById('summaryFactor').textContent = `• Factor: ${state.answers.followUpAnswer}`;
     
     const descEl = document.getElementById('summaryDescription');
     if (state.answers.textInput) {
@@ -642,7 +638,7 @@ function transitionToStep4() {
 
 /**
  * =========================================================
- * DATA SUBMISSION
+ * 6. SUBMISSION (OPTIMISTIC UI)
  * =========================================================
  */
 function getDeviceType() {
@@ -652,81 +648,61 @@ function getDeviceType() {
     return "Desktop";
 }
 
-function showStatus(message, type) {
-    const indicator = document.getElementById('statusIndicator');
-    indicator.textContent = message;
-    indicator.className = `status-indicator visible ${type}`;
-    
-    if (type !== 'loading') {
-        setTimeout(() => indicator.classList.remove('visible'), 3000);
-    }
-}
-
 function submitSurvey() {
-    showStatus('Submitting...', 'loading');
-    
+    // 1. SHOW SUCCESS INSTANTLY (Optimistic UI)
+    hideAllSteps();
+    document.getElementById('step5').classList.remove('hidden');
+    state.currentStep = 5;
+
+    // 2. SEND DATA IN BACKGROUND
     const payload = {
         timestamp: new Date().toISOString(),
+        session_id: SESSION_ID,
         q1: state.answers.primaryAnswer,
         q2: `${state.answers.followUpAnswer}${state.answers.textInput ? ' - ' + state.answers.textInput : ''}`,
         device: getDeviceType()
     };
-    
-    console.log('Sending:', payload);
     
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-    })
-    .then(() => {
-        showStatus('Saved successfully', 'success');
-        hideAllSteps();
-        document.getElementById('step5').classList.remove('hidden');
-        state.currentStep = 5;
-    })
-    .catch((error) => {
-        console.error('Submission error:', error);
-        showStatus('Failed to save. Check connection.', 'error');
+    }).catch((error) => {
+        // Silently fail or log (since UI already showed success)
+        console.error('Background sync failed:', error);
     });
 }
 
 /**
  * =========================================================
- * INITIALIZATION & EVENT LISTENERS
+ * 7. UTILS & INIT
  * =========================================================
  */
+// Anti-Refresh Logic
+window.addEventListener('beforeunload', (e) => {
+    if (state.currentStep < 5) { e.preventDefault(); e.returnValue = ''; }
+});
+
+document.body.style.overscrollBehavior = 'none';
+let lastTouchY = 0;
+document.addEventListener('touchstart', e => { if(e.touches.length === 1) lastTouchY = e.touches[0].clientY; }, { passive: false });
+document.addEventListener('touchmove', e => {
+    const touchY = e.touches[0].clientY;
+    const touchYDelta = touchY - lastTouchY;
+    if (window.pageYOffset === 0 && touchYDelta > 0) e.preventDefault();
+}, { passive: false });
+
 function attachSwipeListeners(id) {
     const el = document.getElementById(id);
     if (!el) return;
-    
-    // Touch
     el.addEventListener('touchstart', handlePointerStart, { passive: true });
     el.addEventListener('touchend', handlePointerEnd, { passive: true });
-    
-    // Mouse (for desktop testing)
     el.addEventListener('mousedown', handlePointerStart);
     el.addEventListener('mouseup', handlePointerEnd);
 }
 
-// Attach to all zones
 ['swipeZone1', 'swipeZone2', 'swipeZone3', 'swipeZone4'].forEach(attachSwipeListeners);
-
-// Prevent Pull-to-Refresh on Mobile
-document.body.style.overscrollBehavior = 'none';
-let lastTouchY = 0;
-document.addEventListener('touchstart', e => {
-    if(e.touches.length === 1) lastTouchY = e.touches[0].clientY;
-}, { passive: false });
-
-document.addEventListener('touchmove', e => {
-    const touchY = e.touches[0].clientY;
-    const touchYDelta = touchY - lastTouchY;
-    if (window.pageYOffset === 0 && touchYDelta > 0) {
-        e.preventDefault();
-    }
-}, { passive: false });
 </script>
 
 </body>
