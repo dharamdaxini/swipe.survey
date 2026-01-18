@@ -1,148 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Swipe Survey</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Survey</title>
 <style>
-  body {
-    margin: 0;
-    height: 100vh;
-    background: #f4f4f4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: system-ui, sans-serif;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  .card {
-    width: 90%;
-    max-width: 420px;
-    background: #fff;
-    border-radius: 22px;
-    padding: 40px 24px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  background: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  touch-action: pan-y;
+}
 
-  h1 {
-    font-size: 28px;
-    margin-bottom: 12px;
-  }
+#app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
 
-  .sub {
-    color: #777;
-    margin-bottom: 24px;
-    line-height: 1.6;
-  }
+.container {
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
 
-  .status {
-    margin-top: 24px;
-    font-weight: 600;
-  }
+.question-card {
+  background: #ffffff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
 
-  .error {
-    color: #c62828;
-  }
+.question-text {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
 
-  .success {
-    color: #2e7d32;
+.instruction {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.swipe-indicators {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  font-size: 48px;
+  color: #999;
+  user-select: none;
+  margin-top: 20px;
+}
+
+.swipe-legend {
+  font-size: 13px;
+  color: #888;
+  margin-top: 25px;
+  line-height: 1.6;
+}
+
+.done-screen {
+  display: none;
+  font-size: 32px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.done-screen.active {
+  display: block;
+}
+
+.question-card.hidden {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .question-text {
+    font-size: 24px;
   }
+  
+  .swipe-indicators {
+    font-size: 40px;
+    gap: 20px;
+  }
+}
 </style>
 </head>
-
 <body>
-
-<div class="card" id="card">
-  <h1 id="question">How are you feeling today?</h1>
-
-  <div class="sub">
-    Swipe to answer<br><br>
-    ⬆️ Better<br>
-    ➡️ Same<br>
-    ⬇️ Worse<br>
-    ⬅️ Skip
+<div id="app">
+  <div class="container">
+    <div id="questionCard" class="question-card">
+      <div class="question-text" id="questionText"></div>
+      <div class="instruction">Swipe to answer</div>
+      <div class="swipe-indicators">
+        <span>↑</span>
+        <span>→</span>
+        <span>↓</span>
+        <span>←</span>
+      </div>
+      <div class="swipe-legend">
+        ↑ Slight improvement  •  → Moderate improvement  •  ↓ Major improvement  •  ← No noticeable change
+      </div>
+    </div>
+    <div id="doneScreen" class="done-screen">
+      Saved. Thank you.
+    </div>
   </div>
-
-  <div id="status" class="status"></div>
 </div>
 
 <script>
-const ENDPOINT = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLh1U482h7l2JJPozMZ_6r3wkYM7KGDLVSfd5WMtG_rYWhiz-Z7Pf8xPW_RYdvFYgQMJHlnobvQS_EB95U4B5DDhVZGYjwyajlaX9-n-ALkrTB8rrXni8RwyPy3_Z4J6RZOCF0U13EYDhwsVYCEAzkNcU4iwrZ91yLa9QgIoK1PoBALSJafN_mb8nPknjDLpkoJZxWqcwvshJMj15pY_d8jBQFO5EvzH9BzHcZRJyDgRNyP7QCb0Y9mY-VGFOBZmbAysHqmb2FPDJgFHyv3LLqLiJg_A4zQ6mj0AumVn&lib=MUqFmX3xhxFDzBtrCsRU7H_m8FswXrvlL";
+const APPS_SCRIPT_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgfGBwnqSgfxkTlIcceHcezrgloteDO6gs7NznjDMQF93yjV63FkDRTAQqOnKBimGsdINlZEeeLlwGPwP-J2MrQgJmJ30USM34EkD_iaY9rHEFGwwLYh3Lu-9KjvLjFYp3gXh0CpVrcKh-JccNwWWZKoVTC9dXy9WQFXsosBt0eE7_Kh0mmhjNjkGtFEuJOO6RASdo642UuyuKZtF9m0vTBiiM57JAQj2orAdabY0gf9v-p_2Gw0Lu7_zmeElEKYknbk1e_GGy4GxduuEoUi5UjmvTcWBvQ8y6Ru4WY&lib=MUqFmX3xhxFDzBtrCsRU7H_m8FswXrvlL';
 
-let step = 1;
-let q1 = null;
-let q2 = null;
+const SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
-let startX = 0;
-let startY = 0;
+const STATE = {
+  current: 'Q1',
+  q1Response: null
+};
 
-document.addEventListener("touchstart", e => {
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
-});
+const QUESTIONS = {
+  Q1: 'How has your condition changed since starting treatment?',
+  Q2_IMPROVED: 'What helped the most?',
+  Q2_WORSE: 'What made it worse?',
+  Q2_NO_CHANGE: 'Why no change?'
+};
 
-document.addEventListener("touchend", e => {
-  const dx = e.changedTouches[0].clientX - startX;
-  const dy = e.changedTouches[0].clientY - startY;
+const SWIPE_LABELS = {
+  up: 'Slight improvement',
+  right: 'Moderate improvement',
+  down: 'Major improvement',
+  left: 'No noticeable change'
+};
 
-  if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
-    handleSwipe(dx > 0 ? "right" : "left");
+function init() {
+  showQuestion('Q1', QUESTIONS.Q1);
+  document.getElementById('questionCard').addEventListener('touchstart', handleTouchStart, { passive: true });
+  document.getElementById('questionCard').addEventListener('touchend', handleTouchEnd, { passive: true });
+}
+
+function handleTouchStart(e) {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+}
+
+function handleTouchEnd(e) {
+  touchEndX = e.changedTouches[0].screenX;
+  touchEndY = e.changedTouches[0].screenY;
+  handleSwipe();
+}
+
+function handleSwipe() {
+  const deltaX = touchEndX - touchStartX;
+  const deltaY = touchEndY - touchStartY;
+  const absDeltaX = Math.abs(deltaX);
+  const absDeltaY = Math.abs(deltaY);
+  
+  const THRESHOLD = 50;
+  
+  if (absDeltaX < THRESHOLD && absDeltaY < THRESHOLD) {
+    return;
+  }
+  
+  let direction = null;
+  
+  if (absDeltaX > absDeltaY) {
+    direction = deltaX > 0 ? 'right' : 'left';
   } else {
-    handleSwipe(dy < 0 ? "up" : "down");
+    direction = deltaY > 0 ? 'down' : 'up';
   }
-});
-
-function handleSwipe(dir) {
-  if (step === 1) {
-    q1 = mapQ1(dir);
-    step = 2;
-    document.getElementById("question").innerText = "How much did it improve?";
-    document.querySelector(".sub").innerHTML = `
-      Swipe to answer<br><br>
-      ⬆️ Slight<br>
-      ➡️ Moderate<br>
-      ⬇️ Major<br>
-      ⬅️ Skip
-    `;
-  } else if (step === 2) {
-    q2 = mapQ2(dir);
-    save();
+  
+  if (direction) {
+    handleAnswer(direction);
   }
 }
 
-function mapQ1(d) {
-  return { up: "Better", right: "Same", down: "Worse", left: "Skip" }[d];
+function handleAnswer(direction) {
+  if (STATE.current === 'Q1') {
+    STATE.q1Response = direction;
+    logResponse('Q1', direction);
+    
+    let nextQuestion = '';
+    if (direction === 'up' || direction === 'right') {
+      nextQuestion = QUESTIONS.Q2_IMPROVED;
+    } else if (direction === 'down') {
+      nextQuestion = QUESTIONS.Q2_WORSE;
+    } else if (direction === 'left') {
+      nextQuestion = QUESTIONS.Q2_NO_CHANGE;
+    }
+    
+    STATE.current = 'Q2';
+    showQuestion('Q2', nextQuestion);
+    
+  } else if (STATE.current === 'Q2') {
+    logResponse('Q2', direction);
+    STATE.current = 'DONE';
+    showDone();
+  }
 }
 
-function mapQ2(d) {
-  return { up: "Slight", right: "Moderate", down: "Major", left: "Skip" }[d];
+function showQuestion(questionId, questionText) {
+  document.getElementById('questionText').textContent = questionText;
 }
 
-function save() {
-  fetch(ENDPOINT, {
-    method: "POST",
-    body: JSON.stringify({
-      q1,
-      q2,
-      userAgent: navigator.userAgent
-    }),
-    headers: { "Content-Type": "application/json" }
-  })
-  .then(r => r.json())
-  .then(() => {
-    document.getElementById("status").innerHTML =
-      "<span class='success'>✓ Saved. Thank you.</span>";
-  })
-  .catch(() => {
-    document.getElementById("status").innerHTML =
-      "<span class='error'>⚠ Not saved</span>";
+function showDone() {
+  document.getElementById('questionCard').classList.add('hidden');
+  document.getElementById('doneScreen').classList.add('active');
+}
+
+function logResponse(questionId, direction) {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    question_id: questionId,
+    swipe_direction: direction,
+    derived_label: SWIPE_LABELS[direction] || direction,
+    session_id: SESSION_ID
+  };
+  
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  }).catch(err => {
+    console.error('Logging failed:', err);
   });
 }
+
+init();
 </script>
-<div id="swipeLayer"></div>
 </body>
 </html>
