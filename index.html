@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Swipe Survey</title>
 
 <style>
@@ -10,44 +10,49 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    background: #f4f4f4;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont;
-    overscroll-behavior: none;
-  }
-
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .card {
-    background: white;
-    width: 90%;
-    max-width: 420px;
-    padding: 40px 24px;
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    text-align: center;
+    background: #f6f6f6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     touch-action: none;
   }
 
+  .wrapper {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .card {
+    width: 90%;
+    max-width: 420px;
+    background: white;
+    border-radius: 20px;
+    padding: 36px 24px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  }
+
   h1 {
-    margin-bottom: 12px;
+    margin: 0;
     font-size: 26px;
   }
 
-  .sub {
-    color: #666;
-    font-size: 16px;
-    margin-bottom: 24px;
+  .hint {
+    margin-top: 12px;
+    color: #777;
+    font-size: 15px;
+  }
+
+  .arrows {
+    margin-top: 18px;
+    font-size: 18px;
+    color: #555;
     line-height: 1.6;
   }
 
   .status {
-    margin-top: 20px;
+    margin-top: 24px;
     font-weight: 600;
-    min-height: 24px;
   }
 
   .error {
@@ -55,127 +60,122 @@
   }
 
   .success {
-    color: #27ae60;
+    color: #2e7d32;
   }
 </style>
 </head>
 
 <body>
+<div class="wrapper">
+  <div class="card">
+    <h1 id="question">How are you feeling today?</h1>
 
-<div class="card" id="card">
-  <h1 id="question">How are you feeling today?</h1>
+    <div class="hint">Swipe to answer</div>
 
-  <div class="sub" id="hint">
-    Swipe to answer<br><br>
-    ⬆️ BETTER<br>
-    ➡️ SAME<br>
-    ⬇️ WORSE<br>
-    ⬅️ SKIP
+    <div class="arrows" id="arrows">
+      ↑ Better<br>
+      → Same<br>
+      ↓ Worse<br>
+      ← Skip
+    </div>
+
+    <div class="status" id="status"></div>
   </div>
-
-  <div class="status" id="status"></div>
 </div>
 
 <script>
+/* ================= CONFIG ================= */
+
 const ENDPOINT = "PASTE_YOUR_EXEC_URL_HERE";
 
+/* ================= STATE ================= */
+
 let step = 1;
-let q1 = null;
-let q2 = null;
+let answer1 = null;
+let answer2 = null;
 
 let startX = 0;
 let startY = 0;
 
-const card = document.getElementById("card");
-const question = document.getElementById("question");
-const hint = document.getElementById("hint");
-const status = document.getElementById("status");
+/* ================= TOUCH ================= */
 
-card.addEventListener("touchstart", e => {
-  const t = e.touches[0];
-  startX = t.clientX;
-  startY = t.clientY;
+document.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
 });
 
-card.addEventListener("touchend", e => {
-  const t = e.changedTouches[0];
-  const dx = t.clientX - startX;
-  const dy = t.clientY - startY;
+document.addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - startX;
+  const dy = e.changedTouches[0].clientY - startY;
 
   if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
 
-  let action;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    action = dx > 0 ? "RIGHT" : "LEFT";
+  if (Math.abs(dy) > Math.abs(dx)) {
+    dy < 0 ? handleSwipe("up") : handleSwipe("down");
   } else {
-    action = dy < 0 ? "UP" : "DOWN";
+    dx > 0 ? handleSwipe("right") : handleSwipe("left");
   }
-
-  handleSwipe(action);
 });
+
+/* ================= LOGIC ================= */
 
 function handleSwipe(dir) {
   if (step === 1) {
-    q1 = mapQ1(dir);
-    if (!q1) return;
-    step = 2;
-    renderQ2();
-  } else if (step === 2) {
-    q2 = mapQ2(dir);
-    if (!q2) return;
-    saveData();
+    if (dir === "up") answer1 = "BETTER";
+    if (dir === "right") answer1 = "SAME";
+    if (dir === "down") answer1 = "WORSE";
+    if (dir === "left") answer1 = "SKIPPED";
+
+    if (answer1 === "BETTER") {
+      step = 2;
+      showFollowup();
+    } else {
+      submit();
+    }
+  }
+
+  else if (step === 2) {
+    if (dir === "up") answer2 = "SLIGHT";
+    if (dir === "right") answer2 = "MODERATE";
+    if (dir === "down") answer2 = "MAJOR";
+    if (dir === "left") answer2 = "SKIPPED";
+
+    submit();
   }
 }
 
-function mapQ1(dir) {
-  if (dir === "UP") return "BETTER";
-  if (dir === "RIGHT") return "SAME";
-  if (dir === "DOWN") return "WORSE";
-  if (dir === "LEFT") return "SKIP";
-}
-
-function mapQ2(dir) {
-  if (dir === "UP") return "SLIGHT";
-  if (dir === "RIGHT") return "MODERATE";
-  if (dir === "DOWN") return "MAJOR";
-  if (dir === "LEFT") return "SKIP";
-}
-
-function renderQ2() {
-  question.textContent = "How much did it improve?";
-  hint.innerHTML = `
-    Swipe to answer<br><br>
-    ⬆️ SLIGHT<br>
-    ➡️ MODERATE<br>
-    ⬇️ MAJOR<br>
-    ⬅️ SKIP
+function showFollowup() {
+  document.getElementById("question").innerText = "How much did it improve?";
+  document.getElementById("arrows").innerHTML = `
+    ↑ Slight<br>
+    → Moderate<br>
+    ↓ Major<br>
+    ← Skip
   `;
-  status.textContent = "";
 }
 
-function saveData() {
-  status.textContent = "Saving...";
-  status.className = "status";
+/* ================= SUBMIT ================= */
+
+function submit() {
+  document.getElementById("status").innerText = "Saving…";
 
   fetch(ENDPOINT, {
     method: "POST",
     body: JSON.stringify({
-      q1,
-      q2,
+      q1: answer1,
+      q2: answer2 || "",
       ua: navigator.userAgent
     })
   })
-  .then(r => r.text())
   .then(() => {
-    status.textContent = "✓ Saved. Thank you.";
-    status.className = "status success";
+    document.getElementById("status").innerText = "Saved. Thank you.";
+    document.getElementById("status").className = "status success";
   })
   .catch(() => {
-    status.textContent = "⚠ Not saved";
-    status.className = "status error";
+    document.getElementById("status").innerText = "Not saved";
+    document.getElementById("status").className = "status error";
   });
 }
 </script>
-
 </body>
 </html>
