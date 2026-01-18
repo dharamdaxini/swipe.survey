@@ -1,30 +1,111 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Swipe Survey</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Check</title>
 
-  <!-- Mobile-first -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css" />
+<style>
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background:#f6f6f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+}
+.card {
+  background:#fff;
+  width:90%;
+  max-width:420px;
+  padding:40px 24px;
+  border-radius:20px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+h1 { margin-bottom:10px; }
+.hint { color:#777; margin-bottom:16px; }
+.status { margin-top:16px; font-weight:600; }
+</style>
 </head>
+
 <body>
 
-  <!-- Survey Card -->
-  <div class="card" id="card">
-    <h1 id="question"></h1>
-
-    <div class="hint" id="hint"></div>
-
-    <div class="directions" id="directions"></div>
-
-    <div class="status" id="status"></div>
+<div class="card" id="card">
+  <h1 id="question">How are you feeling today?</h1>
+  <div class="hint" id="hint">
+    ↑ Better · → Same · ↓ Worse · ← Skip
   </div>
+  <div class="status" id="status"></div>
+</div>
 
-  <!-- Logic -->
-  <script src="script.js"></script>
+<script>
+const ENDPOINT = "PASTE_YOUR_WEB_APP_URL_HERE";
+
+let state = "Q1";
+let q1 = null;
+let q2 = null;
+let locked = false;
+
+let startX, startY;
+
+document.addEventListener("touchstart", e => {
+  if (locked) return;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+});
+
+document.addEventListener("touchend", e => {
+  if (locked) return;
+  const dx = e.changedTouches[0].clientX - startX;
+  const dy = e.changedTouches[0].clientY - startY;
+
+  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+
+  if (state === "Q1") handleQ1(dx, dy);
+  else if (state === "Q2") handleQ2(dx, dy);
+});
+
+function handleQ1(dx, dy) {
+  if (dy < -30) q1 = "Better";
+  else if (dy > 30) q1 = "Worse";
+  else if (dx > 30) q1 = "Same";
+  else if (dx < -30) q1 = "Skip";
+
+  if (q1 === "Better" || q1 === "Worse") {
+    state = "Q2";
+    document.getElementById("question").innerText =
+      q1 === "Better" ? "How much did it improve?" : "How much did it worsen?";
+    document.getElementById("hint").innerText =
+      "↑ Slight · → Moderate · ↓ Major · ← Skip";
+  } else {
+    save();
+  }
+}
+
+function handleQ2(dx, dy) {
+  if (dy < -30) q2 = "Slight";
+  else if (dy > 30) q2 = "Major";
+  else if (dx > 30) q2 = "Moderate";
+  else if (dx < -30) q2 = "Skip";
+
+  save();
+}
+
+function save() {
+  locked = true;
+  document.getElementById("status").innerText = "✓ Saved";
+
+  fetch(ENDPOINT, {
+    method: "POST",
+    body: JSON.stringify({
+      q1: q1,
+      q2: q2,
+      ua: navigator.userAgent
+    })
+  }).catch(()=>{});
+}
+</script>
 
 </body>
 </html>
