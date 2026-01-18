@@ -7,173 +7,139 @@
 
 <style>
   html, body {
-    margin: 0;
-    padding: 0;
     height: 100%;
-    background: #f6f6f6;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    touch-action: none;
+    margin: 0;
+    background: #f5f5f5;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
-  .wrapper {
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .bg {
+    position: fixed;
+    inset: 0;
+    background: #f5f5f5;
   }
 
   .card {
-    width: 90%;
+    position: relative;
     max-width: 420px;
+    margin: auto;
+    top: 15vh;
     background: white;
-    border-radius: 20px;
-    padding: 36px 24px;
+    border-radius: 24px;
+    padding: 32px 24px;
     text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
   }
 
   h1 {
-    margin: 0;
-    font-size: 26px;
+    font-size: 28px;
+    margin-bottom: 8px;
   }
 
   .hint {
-    margin-top: 12px;
-    color: #777;
-    font-size: 15px;
+    color: #888;
+    margin-bottom: 12px;
   }
 
   .arrows {
-    margin-top: 18px;
-    font-size: 18px;
-    color: #555;
-    line-height: 1.6;
+    font-size: 20px;
+    color: #666;
+    margin-bottom: 20px;
   }
 
   .status {
-    margin-top: 24px;
+    margin-top: 20px;
     font-weight: 600;
-  }
-
-  .error {
-    color: #c0392b;
-  }
-
-  .success {
-    color: #2e7d32;
   }
 </style>
 </head>
 
 <body>
-<div class="wrapper">
-  <div class="card">
-    <h1 id="question">How are you feeling today?</h1>
+<div class="bg"></div>
 
-    <div class="hint">Swipe to answer</div>
-
-    <div class="arrows" id="arrows">
-      ↑ Better<br>
-      → Same<br>
-      ↓ Worse<br>
-      ← Skip
-    </div>
-
-    <div class="status" id="status"></div>
+<div class="card" id="card">
+  <h1 id="question">How are you feeling today?</h1>
+  <div class="hint">Swipe to answer</div>
+  <div class="arrows">
+    ↑ Better &nbsp; → Same &nbsp; ↓ Worse &nbsp; ← Skip
   </div>
+  <div class="status" id="status"></div>
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-
 const ENDPOINT = "PASTE_YOUR_EXEC_URL_HERE";
 
-/* ================= STATE ================= */
-
 let step = 1;
-let answer1 = null;
-let answer2 = null;
+let answers = {};
 
 let startX = 0;
 let startY = 0;
 
-/* ================= TOUCH ================= */
+const card = document.getElementById("card");
+const question = document.getElementById("question");
+const status = document.getElementById("status");
 
-document.addEventListener("touchstart", e => {
+card.addEventListener("touchstart", e => {
   startX = e.touches[0].clientX;
   startY = e.touches[0].clientY;
 });
 
-document.addEventListener("touchend", e => {
+card.addEventListener("touchend", e => {
   const dx = e.changedTouches[0].clientX - startX;
   const dy = e.changedTouches[0].clientY - startY;
 
-  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
-
-  if (Math.abs(dy) > Math.abs(dx)) {
-    dy < 0 ? handleSwipe("up") : handleSwipe("down");
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 40) handle("SAME");
+    else if (dx < -40) handle("SKIP");
   } else {
-    dx > 0 ? handleSwipe("right") : handleSwipe("left");
+    if (dy < -40) handle("BETTER");
+    else if (dy > 40) handle("WORSE");
   }
 });
 
-/* ================= LOGIC ================= */
-
-function handleSwipe(dir) {
+function handle(value) {
   if (step === 1) {
-    if (dir === "up") answer1 = "BETTER";
-    if (dir === "right") answer1 = "SAME";
-    if (dir === "down") answer1 = "WORSE";
-    if (dir === "left") answer1 = "SKIPPED";
+    answers.q1 = value;
 
-    if (answer1 === "BETTER") {
+    if (value === "BETTER") {
       step = 2;
-      showFollowup();
+      question.innerText = "How much did it improve?";
+      document.querySelector(".arrows").innerText =
+        "↑ Slight   → Moderate   ↓ Major   ← Skip";
+      status.innerText = "";
     } else {
       submit();
     }
-  }
 
-  else if (step === 2) {
-    if (dir === "up") answer2 = "SLIGHT";
-    if (dir === "right") answer2 = "MODERATE";
-    if (dir === "down") answer2 = "MAJOR";
-    if (dir === "left") answer2 = "SKIPPED";
+  } else if (step === 2) {
+    answers.q2 =
+      value === "BETTER" ? "SLIGHT" :
+      value === "SAME"   ? "MODERATE" :
+      value === "WORSE"  ? "MAJOR" :
+      "SKIP";
 
     submit();
   }
 }
 
-function showFollowup() {
-  document.getElementById("question").innerText = "How much did it improve?";
-  document.getElementById("arrows").innerHTML = `
-    ↑ Slight<br>
-    → Moderate<br>
-    ↓ Major<br>
-    ← Skip
-  `;
-}
-
-/* ================= SUBMIT ================= */
-
 function submit() {
-  document.getElementById("status").innerText = "Saving…";
+  status.innerText = "Saving…";
 
   fetch(ENDPOINT, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      q1: answer1,
-      q2: answer2 || "",
+      q1: answers.q1 || "",
+      q2: answers.q2 || "",
       ua: navigator.userAgent
     })
   })
+  .then(r => r.json())
   .then(() => {
-    document.getElementById("status").innerText = "Saved. Thank you.";
-    document.getElementById("status").className = "status success";
+    status.innerText = "Saved. Thank you.";
   })
   .catch(() => {
-    document.getElementById("status").innerText = "Not saved";
-    document.getElementById("status").className = "status error";
+    status.innerText = "⚠ Not saved";
   });
 }
 </script>
