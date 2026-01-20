@@ -1,0 +1,228 @@
+:root {
+    --color-bg: #f4f4f5;
+    --color-card: #ffffff;
+    --color-text: #18181b;
+    --color-subtext: #71717a;
+    --color-true: #22c55e;
+    --color-false: #ef4444;
+    --color-plausible: #eab308;
+    --color-skip: #64748b;
+    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                   0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --font-stack: -apple-system, BlinkMacSystemFont,
+                  "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ================= RESET ================= */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ================= BODY LOCK ================= */
+body {
+    font-family: var(--font-stack);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+
+    height: 100svh;
+    width: 100vw;
+
+    overflow: hidden;              /* HARD LOCK */
+    overscroll-behavior: none;     /* Disable pull-to-refresh */
+    touch-action: none;            /* Prevent browser gesture hijack */
+
+    display: flex;
+    flex-direction: column;
+
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ================= LEGEND ================= */
+.legend {
+    display: flex;
+    justify-content: space-around;
+    padding: 1rem;
+    font-size: 0.75rem;
+    color: var(--color-subtext);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    z-index: 10;
+}
+
+.legend-item .icon {
+    display: block;
+    text-align: center;
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+}
+
+/* ================= APP CONTAINER ================= */
+#app-container {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+
+    overflow: hidden; /* prevents internal drift */
+}
+
+/* ================= CARD STACK ================= */
+#card-stack {
+    position: relative;
+    width: 90%;
+    aspect-ratio: 3 / 4;
+    max-height: 60svh;
+
+    overflow: visible;
+}
+
+/* ================= CARD ================= */
+.card {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: var(--color-card);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    padding: 2rem;
+    text-align: center;
+
+    cursor: grab;
+
+    /* CRITICAL FOR SWIPE */
+    touch-action: none;
+    will-change: transform;
+    transform-origin: 50% 100%;
+
+    
+    will-change: transform;
+    transform: translate3d(0, 0, 0); /* Force GPU Acceleration */
+    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1); /* Faster snap */
+    touch-action: none;
+    user-select: none;
+}
+
+/* Remove rotation to stop the "wobble" lag */
+.card.dragging {
+    transition: none !important;
+}
+}
+
+.card:active {
+    cursor: grabbing;
+}
+
+.card h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--color-subtext);
+    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+}
+
+.card p {
+    font-size: 1.25rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* ================= CONTROLS ================= */
+.controls {
+    display: flex;
+    gap: 0.5rem;
+
+    margin-top: 2rem;
+    width: 90%;
+
+    justify-content: space-between;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px 0;
+
+    background: white;
+    border-radius: 8px;
+
+    font-weight: 600;
+    font-size: 0.85rem;
+
+    cursor: pointer;
+
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    transition: transform 0.1s ease;
+}
+
+.btn:active {
+    transform: scale(0.96);
+}
+
+.btn-skip {
+    color: var(--color-skip);
+    border: 1px solid var(--color-skip);
+}
+
+.btn-false {
+    color: var(--color-false);
+    border: 1px solid var(--color-false);
+}
+
+.btn-plausible {
+    color: var(--color-plausible);
+    border: 1px solid var(--color-plausible);
+}
+
+.btn-true {
+    color: var(--color-true);
+    border: 1px solid var(--color-true);
+}
+
+/* ================= SUMMARY (UNCHANGED, STABLE) ================= */
+#summary-view {
+    position: fixed;
+    inset: 0;
+
+    background: var(--color-bg);
+    z-index: 100;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 2rem;
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity 0.3s ease;
+}
+
+#summary-view.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hidden {
+    display: none;
+}
