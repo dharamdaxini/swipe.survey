@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V102 | Atomic Stream</title>
+    <title>Alchemist V103.2 | Final</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -12,28 +13,30 @@
         sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.4em; }
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; display: none; }
-        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; }
+        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
         #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: none; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
-        #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; display: none; align-items: center; justify-content: center; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); }
+        .log-item { margin-bottom: 4px; color: #333; text-transform: uppercase; transition: 0.3s; }
+        .log-item.active { color: var(--green); font-weight: 900; }
+        #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; display: none; align-items: center; justify-content: center; perspective: 1500px; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform; }
         .card-q { font-family: var(--font-chem); font-size: clamp(22px, 5.5vmin, 30px); line-height: 1.35; font-weight: 600; color: #fff; overflow-y: auto; scrollbar-width: none; }
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); color: #fff; font-weight: 900; font-size: clamp(1rem, 4vw, 1.8rem); text-transform: uppercase; border-radius: 44px; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 3px solid var(--gold); padding: 20px; }
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); color: #fff; font-weight: 900; font-size: clamp(1rem, 4vw, 1.8rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 3px solid var(--gold); padding: 20px; text-align: center; }
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #dddddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; }
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
         #portal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
-        #portal textarea { width: 100%; height: 200px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 12px; }
+        #portal textarea { width: 100%; height: 200px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 12px; outline: none; }
     </style>
 </head>
 <body>
     <div id="portal">
-        <h1 style="color:var(--gold); font-weight:900; letter-spacing:5px;">ALCHEMIST V102</h1>
-        <p style="color:#666">READY FOR ATOMIC INJECTION</p>
-        <textarea id="raw-input" placeholder="Paste all 1,400+ rows here..."></textarea>
-        <button class="btn" onclick="startAtomicInjection()" style="background:var(--gold)">INJECT & START</button>
+        <h1 style="color:var(--gold); font-weight:900; letter-spacing:5px;">ALCHEMIST V103</h1>
+        <p style="color:#666">DIRECT DATA INJECTION</p>
+        <textarea id="raw-input" placeholder="Paste all rows here..."></textarea>
+        <button class="btn" id="inj-btn" onclick="titanInject()" style="background:var(--gold)">INJECT & START</button>
     </div>
     <div id="header">
         <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
@@ -47,51 +50,47 @@
     let MODE = "MENU_DIFF", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
     const NEXT_MAP = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-    function startAtomicInjection() {
-        const rawText = document.getElementById('raw-input').value.trim();
-        if(!rawText) return;
-        const lines = rawText.split('\n');
-        
-        // Instant UI Transition
-        document.getElementById('portal').style.display = 'none';
-        document.getElementById('header').style.display = 'block';
-        document.getElementById('history-tape').style.display = 'flex';
-        document.getElementById('stack').style.display = 'flex';
+    function titanInject() {
+        const raw = document.getElementById('raw-input').value.trim();
+        if(!raw) return;
+        const lines = raw.split('\n');
+        let cursor = 0;
+        const batchSize = 60;
 
-        // Background Batch Processing (Prevents Freeze)
-        let i = 0;
-        function processBatch() {
-            const batchSize = 150; 
-            const end = Math.min(i + batchSize, lines.length);
-            for(; i < end; i++) {
-                const line = lines[i];
+        function stream() {
+            const end = Math.min(cursor + batchSize, lines.length);
+            for(; cursor < end; cursor++) {
+                const line = lines[cursor];
                 if (!line.includes('❌')) continue;
                 try {
                     const id = line.substring(0, 10), ds = id.substring(0, 5);
                     const type = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"].find(t => line.includes(t)) || "CONCEPT";
                     const explStart = line.indexOf('❌'), weight = (line.match(/(\d\.\d+)$/) || [null, "0.5"])[1];
                     const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
-                    const directions = ["UP", "RIGHT", "LEFT", "DOWN"];
-                    const correct = directions.find(d => middle.endsWith(d)) || "RIGHT";
+                    const dirs = ["UP", "RIGHT", "LEFT", "DOWN"];
+                    const correct = dirs.find(d => middle.endsWith(d)) || "RIGHT";
                     const qAndO = middle.substring(0, middle.length - correct.length).trim();
                     const qSplit = qAndO.split('?'), question = qSplit[0] + "?", optsRaw = (qSplit[1] || "").trim();
-                    
-                    const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
+
+                    /* FIXED RIP LOGIC: Ensures actual text is extracted */
+                    const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim()).filter(s => s.length > 1);
+
                     const cleanEx = line.substring(explStart, line.lastIndexOf(weight)).replace(/[❌✅]/g, '').trim();
-                    
-                    DATABASE.push({ id, ds, ty: type, q: question, u: opts[0]||"A", r: opts[1]||"B", l: opts[2]||"C", c: correct, ex: cleanEx });
+                    DATABASE.push({ id, ds, ty: type, q: question, u: opts[0]||"Opt A", r: opts[1]||"Opt B", l: opts[2]||"Opt C", c: correct, ex: cleanEx });
                 } catch (e) {}
             }
-            if (i < lines.length) {
-                requestAnimationFrame(processBatch);
-            } else {
+            if (cursor < lines.length) requestAnimationFrame(stream);
+            else {
+                document.getElementById('portal').style.display = 'none';
+                document.getElementById('header').style.display = 'block';
+                document.getElementById('history-tape').style.display = 'flex';
+                document.getElementById('stack').style.display = 'flex';
                 renderDiff();
             }
         }
-        processBatch();
+        stream();
     }
 
-    /* --- GESTURE & UI CORE --- */
     const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
     function updateHUD() { document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`; document.getElementById('progress-bar').style.width = `${(CUR_INDEX / SESSION_LIMIT) * 100}%`; }
     function addToLog(msg, action) { const tape = document.getElementById('history-tape'); tape.querySelectorAll('.active').forEach(el => el.classList.remove('active')); const div = document.createElement('div'); div.className = "log-item active"; div.innerHTML = `> ${msg}`; if (action) div.onclick = action; tape.prepend(div); }
@@ -101,10 +100,41 @@
     function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; addToLog(tp, () => renderTopic(CUR_DATASET)); renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
     function renderVolume(genre) { MODE = "MENU_VOLUME"; CUR_GENRE = genre; addToLog(genre, () => renderDepth(CUR_TOPIC)); renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
     function startQuiz(limit) { SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; MISTAKES = []; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => Math.random() - 0.5).slice(0, SESSION_LIMIT); MODE = "QUIZ"; renderNext(); }
-    function renderNext() { const s = document.getElementById('stack'); s.innerHTML = ""; if (!POOL.length) { renderEnd(); return; } updateHUD(); const q = { ...POOL[0] }; const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5); q.u = items[0].t; q.r = items[1].t; q.l = items[2].t; q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT"); const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ VIEW LOGIC</div><div class="overlay"><div class="overlay-meta">${q.id} | ANALYSIS</div><div class="overlay-body">${format(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`; s.appendChild(c); bindPhysics(c, q); }
-    function renderEnd() { MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`; s.appendChild(c); bindPhysics(c, {}); }
-    function bindPhysics(el, data) { let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null; const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') }; el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; }; window.onmousemove = window.ontouchmove = e => { if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy; el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`; const ang = Math.atan2(-y, x) * (180 / Math.PI); Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; }); if (Math.abs(x) > 20 || Math.abs(y) > 20) { let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt"; if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase(); } }; window.onmouseup = window.ontouchend = () => { if (!active) return; active = false; if (Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, td); else { el.style.transition = "0.4s"; el.style.transform = "none"; } }; }
-    function handleAction(el, data, dir) { if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D"); else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical"); else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC"); else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50); else if (MODE === "END") { if (dir === "UP") startQuiz(SESSION_LIMIT); else if (dir === "LT") renderDiff(); else if (dir === "RT") { CUR_DATASET = NEXT_MAP[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); } else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); } } else { if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; } const ad = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT'); if (ad === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; } else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); } POOL.shift(); CUR_INDEX++; renderNext(); } }
+
+    function renderNext() {
+        const s = document.getElementById('stack'); s.innerHTML = "";
+        if (!POOL.length) { renderEnd(); return; }
+        updateHUD(); const q = { ...POOL[0] };
+        const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
+        q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
+        q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
+        const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ VIEW LOGIC</div><div class="overlay"><div class="overlay-meta">${q.id} | ANALYSIS</div><div class="overlay-body">${format(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
+        s.appendChild(c); bindPhysics(c, q);
+    }
+
+    function renderEnd() {
+        MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`;
+        s.appendChild(c); bindPhysics(c, {});
+    }
+
+    function bindPhysics(el, data) {
+        let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
+        const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
+        el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; };
+        window.onmousemove = window.ontouchmove = e => { if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy; el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`; const ang = Math.atan2(-y, x) * (180 / Math.PI); Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; }); if (Math.abs(x) > 20 || Math.abs(y) > 20) { let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt"; if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase(); } };
+        window.onmouseup = window.ontouchend = () => { if (!active) return; active = false; if (Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, td); else { el.style.transition = "0.4s"; el.style.transform = "none"; } };
+    }
+
+    function handleAction(el, data, dir) {
+        if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D");
+        else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical");
+        else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC");
+        else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
+        else if (MODE === "END") { if (dir === "UP") startQuiz(SESSION_LIMIT); else if (dir === "LT") renderDiff(); else if (dir === "RT") { CUR_DATASET = NEXT_MAP[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); } else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); } }
+        else { if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; } const ad = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT'); if (ad === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; } else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); } POOL.shift(); CUR_INDEX++; renderNext(); }
+    }
 </script>
 </body>
 </html>
