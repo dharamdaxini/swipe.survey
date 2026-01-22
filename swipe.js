@@ -5,7 +5,7 @@ const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx
 const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
 /* 2. DATA SOURCE - PASTE YOUR FULL DATASET BELOW */
-const RAW_PASTE_DATA = 
+const RAW_PASTE_DATA = '
 
 id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
@@ -1408,7 +1408,7 @@ SET_D_0347	SET_D	Kinetics	MATH	The 'Salt Effect' on neutral molecules (z=0) is:	
 SET_D_0348	SET_D	Thermodynamics	CONCEPT	Why is the 'Triple Point' unique?	F = C - P + 2 = 0 (Invariant)	It is at 0C	It is at 1 atm	UP	❌ 0C/1atm is Melting. || ✅ Degrees of Freedom is zero. You cannot change T or P without losing a phase.	Fixed point.	0.55														
 SET_D_0349	SET_D	Quantum	CONCEPT	Why is 'Spin' half-integer for Fermions?	Relativistic Quantum Mechanics (Dirac Equation)	Experiment only	It is integer	UP	❌ Experiment matches theory. || ❌ Integer is Boson. || ✅ Dirac's derivation of the electron requires a 4-component spinor, leading naturally to s=1/2.	Dirac math.	0.8														
 SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is proportional to:	Heat Capacity Cv	Temperature	Pressure	UP	❌ Temp is driver. || ❌ Pressure is wrong. || ✅ Systems with high ability to store heat (Cv) also show large spontaneous energy fluctuations.	Energy noise.	0.75														
-																									
+'																									
 																									
 																									
 																									
