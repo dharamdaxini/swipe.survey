@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V106.7 | Persistent</title>
+    <title>Alchemist V106.8 | Persistent</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -30,7 +30,6 @@
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
         
-        /* DATA PORTAL UI */
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
         #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.5rem; }
         #portal textarea { width: 100%; height: 250px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 10px; outline: none; }
@@ -42,11 +41,10 @@
 <body>
 
 <div id="portal">
-    <h1>ALCHEMIST_V106.7</h1>
-    <p style="color: #666; font-size: 0.8rem;">DATASET PERSISTENCE ENABLED</p>
-    <textarea id="data-input" placeholder="Paste your 1,400 rows here..."></textarea>
+    <h1>ALCHEMIST_V106.8</h1>
+    <p style="color: #666; font-size: 0.8rem;">SAFE-ZONE PARSER ENABLED</p>
+    <textarea id="data-input" placeholder="Paste data here..."></textarea>
     <button class="btn btn-gold" onclick="saveAndInject()">INJECT & SAVE</button>
-    <button class="btn" onclick="clearSavedData()" style="background: transparent; color: #444; margin-top: 10px; font-size: 0.7rem;">CLEAR SAVED DATA</button>
 </div>
 
 <div id="header">
@@ -64,30 +62,16 @@
 
     window.onload = () => {
         const saved = localStorage.getItem('alchemist_vault');
-        if (saved) {
-            document.getElementById('data-input').value = saved;
-            // Optionally auto-inject if data exists
-            // saveAndInject(); 
-        }
+        if (saved) document.getElementById('data-input').value = saved;
     };
 
     function saveAndInject() {
         const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return alert("VAULT_EMPTY: Please paste data.");
-        
+        if (!raw) return alert("VAULT_EMPTY");
         localStorage.setItem('alchemist_vault', raw);
         processData(raw);
-
         document.getElementById('portal').style.display = 'none';
-        document.getElementById('header').style.display = 'block';
-        document.getElementById('history-tape').style.display = 'flex';
-        document.getElementById('stack').style.display = 'flex';
-    }
-
-    function clearSavedData() {
-        localStorage.removeItem('alchemist_vault');
-        document.getElementById('data-input').value = "";
-        alert("VAULT_CLEARED");
+        ['header', 'history-tape', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
     }
 
     function processData(raw) {
@@ -103,27 +87,22 @@
                 const correct = ["UP", "RIGHT", "LEFT", "DOWN"].find(d => middle.endsWith(d)) || "RIGHT";
                 const content = middle.substring(0, middle.length - correct.length).trim();
                 
-                let question = "", optsRaw = "";
+                // STAGE 1: Anchor Discovery
                 const qBreak = content.lastIndexOf('?');
+                let question = content, optsRaw = "";
                 if (qBreak !== -1) {
                     question = content.substring(0, qBreak + 1);
                     optsRaw = content.substring(qBreak + 1).trim();
-                } else {
-                    const forceBreak = content.search(/(.{40,})([A-Z][a-z]+)/);
-                    if(forceBreak !== -1) {
-                        question = content.substring(0, forceBreak + 40).trim();
-                        optsRaw = content.substring(forceBreak + 40).trim();
-                    } else {
-                        question = content;
-                        optsRaw = "Data Missing Data Missing";
-                    }
                 }
 
-                // RIP ENGINE: Optimized for formulas and camelcase options
-                const opts = optsRaw.replace(/([a-z0-9\)])([A-Z])/g, '$1|$2').split('|').map(s => s.trim()).filter(s => s.length > 0);
+                // STAGE 2: Safe-Zone Option Ripping
+                // This regex ONLY splits if a lowercase letter is followed by an uppercase one.
+                // It ignores formulas like NaCl, H2O, or (CH3)3.
+                const opts = optsRaw.split(/(?<=[a-z])(?=[A-Z])/)
+                    .map(s => s.trim()).filter(s => s.length > 0);
 
                 const cleanEx = line.substring(explStart, line.lastIndexOf(weight)).replace(/[❌✅]/g, '').trim();
-                return { id, ds, ty: type, q: question, u: opts[0]||"Opt A", r: opts[1]||"Opt B", l: opts[2]||"Opt C", c: correct, ex: cleanEx };
+                return { id, ds, ty: type, q: question, u: opts[0]||"Check Data", r: opts[1]||"Check Data", l: opts[2]||"Check Data", c: correct, ex: cleanEx };
             } catch (e) { return null; }
         }).filter(x => x !== null);
         renderDiff();
@@ -154,16 +133,14 @@
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW MISTAKES</div>`;
+        c.innerHTML = `<div class="card-q">COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    /* V81.1 MAGNETIC PHYSICS */
     function bindPhysics(el, data) {
         let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
         const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
         const MAX_RADIUS = 38; 
-
         el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; };
         window.onmousemove = window.ontouchmove = e => { 
             if (!active) return; 
@@ -183,7 +160,7 @@
             if (!active) return; active = false; 
             const p = e.changedTouches ? e.changedTouches[0] : e;
             const finalDist = Math.sqrt(Math.pow(p.clientX - sx, 2) + Math.pow(p.clientY - sy, 2));
-            if (finalDist > 30) { handleAction(el, data, td); } 
+            if (finalDist > 30) handleAction(el, data, td); 
             else { el.style.transition = "transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } 
         };
     }
