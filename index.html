@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V116.0 | DUAL-CORE</title>
+    <title>ALCHEMIST V117.0 | DUAL-PATH</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -14,6 +14,7 @@
 
         .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #444; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
 
+        /* PORTAL UI */
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
         #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.6rem; text-transform: uppercase; font-weight: 900; }
         #portal textarea { width: 100%; height: 320px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 25px; border-radius: 12px; margin: 25px 0; font-size: 14px; outline: none; line-height: 1.5; }
@@ -23,32 +24,35 @@
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
+        /* STACK & CARD */
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; transform-origin: center center; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; }
         .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.5vmin, 26px); line-height: 1.45; font-weight: 600; color: #ffffff; width: 100%; max-height: 90%; overflow-y: auto; scrollbar-width: none; }
 
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.96); color: #fff; font-weight: 900; font-size: clamp(0.9rem, 3.5vw, 1.5rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); padding: 20px; text-align: center; }
 
-        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
-        .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-        .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
-        
-        .review-content { text-align: left; width: 100%; height: 100%; overflow-y: auto; scrollbar-width: none; }
+        /* FULL-STACK REVIEW */
+        .review-content { text-align: left; width: 100%; height: 100%; overflow-y: auto; scrollbar-width: none; padding-top: 10px; }
         .review-label { font-family: var(--font-code); font-size: 0.7rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
-        .review-text { font-family: var(--font-chem); font-size: 1.1rem; line-height: 1.5; color: #eee; margin-bottom: 25px; display: block; }
+        .review-text { font-family: var(--font-chem); font-size: 1.15rem; line-height: 1.5; color: #eee; margin-bottom: 25px; display: block; }
+        .review-ans { color: var(--green); font-weight: 900; border-left: 2px solid var(--green); padding-left: 15px; }
 
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
         .btn-gold { background: var(--gold); }
+
+        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
+        .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
+        .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
     </style>
 </head>
 <body>
 
-<div class="v-tag">DUAL_CORE_V116.0</div>
+<div class="v-tag">DUAL_PATH_DEPLOY_V117.0</div>
 
 <div id="portal">
-    <h1>Alchemist_V116</h1>
+    <h1>Alchemist_V117</h1>
     <textarea id="data-input" placeholder="PASTE_CSV_DATA_HERE"></textarea>
-    <button class="btn btn-gold" onclick="masterInit()">SYNC & INITIALIZE</button>
+    <button class="btn btn-gold" onclick="masterInit()">INITIALIZE SESSION</button>
 </div>
 
 <div id="header">
@@ -61,17 +65,18 @@
 <script>
     let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0;
     let MODE = "INIT", INDEX = 1, IS_REVIEW = false;
-    let SEL_CORE = "", SEL_VOL = 20, SEL_DEPTH = "", SEL_DOMAIN = "", SEL_DIFF = "";
+    let SEL_PATH = "", SEL_VOL = 20, SEL_DEPTH = "", SEL_DOMAIN = "", SEL_DIFF = "";
 
     window.onload = () => {
-        const cached = localStorage.getItem('alch_v115_vault');
+        const cached = localStorage.getItem('alch_v117_vault');
         if (cached) document.getElementById('data-input').value = cached;
     };
 
     function masterInit() {
         const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return alert("VAULT EMPTY");
-        localStorage.setItem('alch_v115_vault', raw);
+        if (!raw) return alert("VAULT EMPTY: Paste dataset.");
+        localStorage.setItem('alch_v117_vault', raw);
+        
         const lines = raw.split(/\r?\n/);
         VAULT = lines.map(line => {
             const regex = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
@@ -83,17 +88,15 @@
         document.getElementById('portal').style.display = 'none';
         document.getElementById('header').style.display = 'block';
         document.getElementById('stack').style.display = 'flex';
-        renderCoreSelector();
+        renderSlide_1_Path();
     }
 
-    function renderCoreSelector() { 
-        MODE = "SEL_CORE"; 
-        renderSlide("SELECT CORE ENGINE", "RESERVED", "LEARN (V81.1)", "QUIZ (V111.0)", "RESERVED"); 
-    }
-    function renderFunnel_1() { MODE = "SEL_VOL"; renderSlide("TOTAL QUESTIONS", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
-    function renderFunnel_2() { MODE = "SEL_DEPTH"; renderSlide("SELECT DEPTH", "CONCEPT", "MATH", "APPLICATION", "LOGIC"); }
-    function renderFunnel_3() { MODE = "SEL_DOMAIN"; renderSlide("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-    function renderFunnel_4() { MODE = "SEL_DIFF"; renderSlide("DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+    /* --- FUNNEL SLIDES --- */
+    function renderSlide_1_Path() { MODE = "SEL_PATH"; renderSlide("CHOOSE YOUR PATH", "---", "LEARN (V81.1)", "QUIZ (V111.0)", "---"); }
+    function renderSlide_2_Vol() { MODE = "SEL_VOL"; renderSlide("TOTAL QUESTIONS", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
+    function renderSlide_3_Depth() { MODE = "SEL_DEPTH"; renderSlide("SELECT DEPTH", "CONCEPT", "MATH", "APPLICATION", "LOGIC"); }
+    function renderSlide_4_Domain() { MODE = "SEL_DOMAIN"; renderSlide("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+    function renderSlide_5_Diff() { MODE = "SEL_DIFF"; renderSlide("DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
 
     function startSession() {
         MODE = "ACTIVE"; IS_REVIEW = false; INDEX = 1; SCORE = 0; MISTAKES = [];
@@ -118,35 +121,41 @@
 
         if (MODE === "REVIEW") {
             const correctText = q.ans === "UP" ? q.u : (q.ans === "RIGHT" ? q.r : q.l);
-            c.innerHTML = `<div class="review-content">
-                <span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span>
-                <span class="review-label">CORRECT ANSWER</span><span class="review-text" style="color:var(--green)">${format(correctText)}</span>
-                <span class="review-label">LOGIC ANALYSIS</span><span class="review-text">${format(q.expl)}</span>
-            </div><div class="swipe-label sl-rt">NEXT ENTRY</div>`;
+            c.innerHTML = `
+                <div class="review-content">
+                    <span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span>
+                    <span class="review-label">CORRECT ANSWER</span><span class="review-text review-ans">${format(correctText)}</span>
+                    <span class="review-label">ANALYSIS</span><span class="review-text">${format(q.expl)}</span>
+                </div>
+                <div class="swipe-label sl-rt">NEXT ITEM</div>
+            `;
         } else {
             const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
             q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
             q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
 
-            let dnLabel = (SEL_CORE === "QUIZ") ? "⬇ MARK AS UNSURE" : "⬇ VIEW ANALYSIS";
-            c.innerHTML = `<div class="card-q">${format(q.q)}</div>
+            let dnLabel = (SEL_PATH === "QUIZ") ? "⬇ MARK AS UNSURE" : "⬇ VIEW ANALYSIS";
+            c.innerHTML = `
+                <div class="card-q">${format(q.q)}</div>
                 <div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${dnLabel}</div>
-                <div class="overlay"><div class="overlay-body">${format(q.expl)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
+                <div class="overlay"><div class="overlay-body">${format(q.expl)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>
+            `;
         }
         s.appendChild(c); bindPhysics(c, q); updateHUD();
     }
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">CORE MENU</div><div class="swipe-label sl-right">NEW NICHE</div><div class="swipe-label sl-down">${MISTAKES.length > 0 ? 'REVIEW MISTAKES' : ''}</div>`;
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">CORE MENU</div><div class="swipe-label sl-right">NEW NICHE</div><div class="swipe-label sl-down">${MISTAKES.length > 0 ? 'REVIEW ANALYSIS' : ''}</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/lambda/g,'&lambda;').replace(/theta/g,'&theta;') : "";
+    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/theta/g,'&theta;').replace(/lambda/g,'&lambda;') : "";
     function updateHUD() { document.getElementById('p-text').innerText = `${INDEX} / ${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, dir=null;
+        const lbs = { up: el.querySelector('.sl-up'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right'), dn: el.querySelector('.sl-down') };
         el.ontouchstart = e => { active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; el.style.transition="none"; };
         window.ontouchmove = e => { 
             if (!active) return; 
@@ -154,26 +163,26 @@
             if (dist > 38) { x=dx*(38/dist); y=dy*(38/dist); } else { x=dx; y=dy; }
             requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
             const ang = Math.atan2(-dy, dx)*(180/Math.PI);
-            el.querySelectorAll('.swipe-label').forEach(l => l.style.opacity=0);
+            Object.values(lbs).forEach(l => { if(l) l.style.opacity=0; });
             if (dist > 20) {
-                let d = (ang >= 45 && ang < 135) ? ".sl-up" : (ang >= 135 || ang < -135) ? ".sl-left" : (ang >= -135 && ang < -45) ? ".sl-down" : ".sl-right";
-                const targetLabel = el.querySelector(d); if (targetLabel) { targetLabel.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); }
+                let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
+                if (lbs[d]) lbs[d].style.opacity = 1; dir = d.toUpperCase();
             }
         };
         window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>30) route(el, data, dir); else { el.style.transition="0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform="none"; } };
     }
 
     function route(el, data, dir) {
-        if (MODE === "SEL_CORE") { SEL_CORE = (dir === "RT" ? "QUIZ" : "LEARN"); renderFunnel_1(); }
-        else if (MODE === "SEL_VOL") { SEL_VOL = parseInt(dir); renderFunnel_2(); }
-        else if (MODE === "SEL_DEPTH") { SEL_DEPTH = dir; renderFunnel_3(); }
-        else if (MODE === "SEL_DOMAIN") { SEL_DOMAIN = dir; renderFunnel_4(); }
+        if (MODE === "SEL_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ" : "LEARN"); renderSlide_2_Vol(); }
+        else if (MODE === "SEL_VOL") { SEL_VOL = parseInt(dir); renderSlide_3_Depth(); }
+        else if (MODE === "SEL_DEPTH") { SEL_DEPTH = dir; renderSlide_4_Domain(); }
+        else if (MODE === "SEL_DOMAIN") { SEL_DOMAIN = dir; renderSlide_5_Diff(); }
         else if (MODE === "SEL_DIFF") { SEL_DIFF = dir; startSession(); }
-        else if (MODE === "END") { if (dir === "UP") startSession(); else if (dir === "DN" && MISTAKES.length > 0) { IS_REVIEW=true; POOL=[...MISTAKES]; INDEX=1; MODE="REVIEW"; renderNext(); } else renderCoreSelector(); }
+        else if (MODE === "END") { if (dir === "UP") startSession(); else if (dir === "DN" && MISTAKES.length > 0) { IS_REVIEW=true; POOL=[...MISTAKES]; INDEX=1; MODE="REVIEW"; renderNext(); } else renderSlide_1_Path(); }
         else if (MODE === "REVIEW") { if (dir === "RT") { POOL.shift(); INDEX++; renderNext(); } }
         else {
             if (dir === "DN") {
-                if (SEL_CORE === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
+                if (SEL_PATH === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
                 else { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
             }
             if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; else if (!IS_REVIEW) MISTAKES.push(data);
