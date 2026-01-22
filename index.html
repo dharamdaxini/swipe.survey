@@ -3,44 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V91.1 | Omni-Loop Engine</title>
+    <title>Alchemist V94.0 | Production Runtime</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
     <style>
-        :root { --bg: #000; --card: #111; --border: #222; --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-        sub, sup { font-size: 0.7em; line-height: 0; vertical-align: baseline; position: relative; }
-        sup { top: -0.4em; } sub { bottom: -0.2em; }
-        #header { width: 90%; margin: 20px auto 5px; z-index: 100; flex-shrink: 0; }
+        :root {
+            --bg: #000; --card: #111; --border: #222; 
+            --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
+            --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
+        }
+
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
+        body { 
+            margin: 0; height: 100vh; background: var(--bg); color: #fff;
+            font-family: var(--font-ui); overflow: hidden; touch-action: none; 
+            display: flex; flex-direction: column;
+        }
+
+        /* Formula Scaling */
+        sub, sup { font-size: 0.75em; line-height: 0; vertical-align: baseline; position: relative; }
+        sup { top: -0.45em; } sub { bottom: -0.2em; }
+
+        /* --- HUD (Top Bar) --- */
+        #header { width: 90%; margin: 20px auto 5px; flex-shrink: 0; z-index: 1000; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; letter-spacing: 2px; }
         .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 10px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
-        #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.8rem; text-align: right; padding-right: 5px; border-right: 1px solid #333; mask-image: linear-gradient(to bottom, transparent 0%, black 20%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%); }
-        .log-item { margin-bottom: 3px; color: #444; cursor: pointer; }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* --- HISTORY TAPE (Active Log) --- */
+        #history-tape {
+            width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; 
+            overflow-y: auto; display: flex; flex-direction: column-reverse; 
+            font-family: var(--font-code); font-size: 0.8rem; text-align: right; 
+            padding-right: 5px; border-right: 1px solid #333;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
+        }
+        .log-item { margin-bottom: 3px; color: #444; cursor: pointer; transition: 0.2s; }
+        .log-item:hover { color: var(--gold); }
         .log-item.active { color: var(--green); font-weight: bold; }
-        #stack { position: relative; width: 92%; max-width: 400px; height: 65vh; margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9); will-change: transform, opacity; backface-visibility: hidden; align-items: center; text-align: center; }
-        .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.2vmin, 26px); line-height: 1.35; font-weight: 600; color: #f0f0f0; width: 100%; max-height: 70%; overflow-y: auto; scrollbar-width: none; }
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px; transition: opacity 0.1s; }
-        .overlay { position: absolute; inset: 0; background: #0a0a0a; z-index: 1100; padding: 40px; opacity: 0; pointer-events: auto; border-radius: 40px; transition: opacity 0.3s ease; display: none; flex-direction: column; justify-content: center; }
-        .overlay.active { display: flex; opacity: 1; }
+
+        /* --- STACK ENGINE --- */
+        #stack { 
+            position: relative; width: 92%; max-width: 400px; height: 65vh; 
+            margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center;
+        }
+        
+        .card { 
+            position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border);
+            padding: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.9); will-change: transform, opacity;
+            backface-visibility: hidden;
+        }
+
+        /* Liquid Typography */
+        .card-q { 
+            font-family: var(--font-chem); 
+            font-size: clamp(18px, 4.2vmin, 26px); 
+            line-height: 1.35; font-weight: 600; color: #f0f0f0; 
+            max-height: 75%; overflow-y: auto; scrollbar-width: none; 
+        }
+        .card-q::-webkit-scrollbar { display: none; }
+
+        /* Swipe UI Elements */
+        .swipe-label { 
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; 
+            background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; 
+            text-transform: uppercase; border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; 
+            transition: opacity 0.1s; 
+        }
+
+        /* --- LOGIC OVERLAY --- */
+        .overlay { 
+            position: absolute; inset: 0; background: #0a0a0a; z-index: 1100; 
+            padding: 40px; opacity: 0; border-radius: 40px; transition: opacity 0.3s ease; 
+            display: none; flex-direction: column; justify-content: center; 
+        }
+        .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
+        .overlay-label { font-size: 0.7rem; color: var(--gold); font-family: var(--font-code); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #ccc; margin-bottom: 30px; font-family: var(--font-chem); text-align: left; }
-        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
+        
+        .btn { 
+            width: 100%; padding: 18px; border-radius: 50px; border: none; 
+            background: #fff; color: #000; font-weight: 900; 
+            text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); 
+            transition: transform 0.2s;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        /* Initial Loader */
+        #loader { 
+            position: fixed; inset: 0; background: #000; z-index: 5000; 
+            display: flex; align-items: center; justify-content: center; 
+            font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; 
+        }
     </style>
 </head>
 <body>
+
+<div id="loader">ATOMIC_LOAD</div>
+
 <div id="header">
-    <div class="header-meta"><span id="rank-ui">ALCHEMIST</span><span id="xp-ui">0 XP</span></div>
+    <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
+
 <div id="history-tape"></div>
 <div id="stack"></div>
 
 <script>
     /* ----------------------------------------------------
-       DATA INTEGRATION: PASTE YOUR 1400 ROWS BELOW
+       DATA INTEGRATION
+       Paste your full 1400-line messy dataset inside the backticks.
     ---------------------------------------------------- */
-    const RAW_STRING = `id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
+    const RAW_DATA_BLOCK = `
+SET_A_0001SET_AThermodynamicsCONCEPTWhich law states that the entropy of the universe increases for any spontaneous process?First LawSecond LawZeroth LawRIGHT❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.Arrow of Time.0.3
+SET_A_0002SET_AKineticsMATHWhat is the order of a reaction where the rate unit is M/s (Molar per second)?Zero OrderFirst OrderSecond OrderUP❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).Rate = k.0.35
+`; // id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
 SET_A_0003	SET_A	Quantum	CONCEPT	Which quantum number defines the main energy shell and size of an orbital?	Principal (n)	Azimuthal (l)	Magnetic (m)	UP	❌ Azimuthal (l) determines shape. || ❌ Magnetic (m) determines orientation. || ✅ The Principal Quantum Number (n) corresponds to the radial distance from the nucleus and the primary energy level.	Shell number.	0.3														
@@ -2038,72 +2119,82 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
-																									`;
-    
-    const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
-    let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
-    let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
+																									<--- PASTE 1400 ROWS HERE
 
-    function parseObsidian() {
-        return RAW_STRING.trim().split('\n').map(line => {
+    /* --- JS ENGINE V94.0 START --- */
+    const NEXT_MAP = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
+    let DATABASE = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
+    let MODE = "MENU_DIFFICULTY", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
+
+    function parseTitanium(text) {
+        if (!text) return [];
+        return text.trim().split('\n').map(line => {
             try {
                 if (!line.includes('❌')) return null;
                 const id = line.substring(0, 10);
+                const ds = id.substring(0, 5);
                 const types = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"];
                 const type = types.find(t => line.includes(t)) || "CONCEPT";
                 const explStart = line.indexOf('❌');
                 const weightMatch = line.match(/(\d\.\d+)$/);
                 const weight = weightMatch ? weightMatch[1] : "0.5";
-                const middleContent = line.substring(line.indexOf(type) + type.length, explStart).trim();
-                const correct = middleContent.match(/(UP|RIGHT|LEFT|DOWN)$/)[0];
-                const qAndOpts = middleContent.substring(0, middleContent.length - correct.length).trim();
-                const questionEnd = qAndOpts.indexOf('?') + 1;
-                const question = qAndOpts.substring(0, questionEnd);
-                const optsRaw = qAndOpts.substring(questionEnd).trim();
+                const topic = line.substring(10, line.indexOf(type)).replace(ds, "").trim();
+                const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
+                const directions = ["UP", "RIGHT", "LEFT", "DOWN"];
+                const correct = directions.find(d => middle.endsWith(d)) || "RIGHT";
+                const qAndO = middle.substring(0, middle.length - correct.length).trim();
+                const qSplit = qAndO.split('?');
+                const question = qSplit[0] + "?";
+                const optsRaw = qSplit[1] || "";
                 const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
                 let explanation = explFull, hint = "Apply logic.";
                 const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
                 if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
-                return { id, ds: id.substring(0, 5), ty: type, q: question, u: opts[0] || "A", r: opts[1] || "B", l: opts[2] || "C", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
+                return { id, ds, tp: topic, ty: type, q: question, u: opts[0]||"A", r: opts[1]||"B", l: opts[2]||"C", c: correct, ex: explanation, h: hint };
             } catch (e) { return null; }
         }).filter(x => x !== null);
     }
 
-    const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
-    
+    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
+
+    function updateHUD() {
+        document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`;
+        const progress = (CUR_INDEX / SESSION_LIMIT) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+    }
+
     function addToLog(msg, action) {
         const tape = document.getElementById('history-tape');
         tape.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
         const div = document.createElement('div');
-        div.className = "log-item active"; div.innerHTML = "> " + msg;
-        if (action) div.onclick = () => { if(!isTransitioning) action(); };
+        div.className = "log-item active"; div.innerHTML = `> ${msg}`;
+        if (action) div.onclick = () => { if (!isTransitioning) action(); };
         tape.prepend(div);
     }
 
-    function renderMenuCard(q, up, lt, rt, dn) {
+    function renderMenu(q, up, lt, rt, dn) {
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
         c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    function renderDatasetSelect() { 
-        MODE = "DATASET_SELECT"; CUR_INDEX = 0; SCORE = 0; MISTAKES = [];
-        document.getElementById('rank-ui').innerText = "READY"; 
+    function renderDifficulty() { 
+        MODE = "MENU_DIFFICULTY"; CUR_INDEX = 0; SCORE = 0; MISTAKES = [];
+        document.getElementById('rank-ui').innerText = "START"; 
         document.getElementById('progress-bar').style.width = "0%";
-        addToLog("RESET: SELECT DIFFICULTY", null); 
-        renderMenuCard("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); 
+        addToLog("INIT_SYSTEM", null); 
+        renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); 
     }
-    
-    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds.replace(/\s/g, '_'); addToLog(ds, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-    function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(tp, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
-    function renderRangeSelect(genre) { MODE = "RANGE_SELECT"; CUR_GENRE = genre; addToLog(genre, () => renderGenreSelect(CUR_TOPIC)); renderMenuCard("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
+    function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds.replace(/\s/g, '_'); addToLog(ds, renderDifficulty); renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+    function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; addToLog(tp, () => renderTopic(CUR_DATASET)); renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
+    function renderVolume(genre) { MODE = "MENU_VOLUME"; CUR_GENRE = genre; addToLog(genre, () => renderDepth(CUR_TOPIC)); renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
 
     function startQuiz(limit) {
         SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1;
-        addToLog(limit + " CARDS", () => renderRangeSelect(CUR_GENRE));
-        POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET);
+        addToLog(`${limit} Qs`, () => renderVolume(CUR_GENRE));
+        POOL = DATABASE.filter(q => q.ds === CUR_DATASET);
         POOL.sort(() => Math.random() - 0.5);
         POOL = POOL.slice(0, SESSION_LIMIT);
         MODE = "QUIZ"; renderNext();
@@ -2111,66 +2202,69 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 
     function renderNext() {
         const s = document.getElementById('stack'); s.innerHTML = "";
-        if(!POOL.length) { renderEnd(); return; }
-        document.getElementById('rank-ui').innerText = CUR_INDEX + " / " + SESSION_LIMIT;
-        document.getElementById('progress-bar').style.width = (CUR_INDEX/SESSION_LIMIT)*100 + "%";
+        if (!POOL.length) { renderEnd(); return; }
+        updateHUD();
         const q = { ...POOL[0] };
-        const items = [{ t: q.u, c: q.c==="UP" }, { t: q.r, c: q.c==="RIGHT" }, { t: q.l, c: q.c==="LEFT" }].sort(() => Math.random() - 0.5);
+        const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
         q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
         q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
+        c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-label">LOGIC_ANALYSIS</div><div class="overlay-body">${format(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
         s.appendChild(c); bindPhysics(c, q);
     }
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
         document.getElementById('rank-ui').innerText = "COMPLETE";
-        const mCount = MISTAKES.length;
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span><br><span style="color:#555; font-size:0.8rem; font-family:var(--font-code)">${mCount} GAPS DETECTED</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right" style="color:var(--green)">LEVEL UP</div><div class="swipe-label sl-down" style="color:${mCount > 0 ? 'var(--blue)' : '#333'}">${mCount > 0 ? 'REVIEW MISTAKES' : 'EXIT'}</div>`;
+        c.innerHTML = `<div class="card-q">SESSION COMPLETE<br><span style="color:var(--gold); font-size:1.5rem">${SCORE} XP</span><br><small style="color:#444">${MISTAKES.length} GAPS DETECTED</small></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW MISTAKES</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
     function bindPhysics(el, data) {
-        let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
+        let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
         const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        el.onmousedown = el.ontouchstart = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
+        el.onmousedown = el.ontouchstart = e => { if (isTransitioning) return; active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; };
         window.onmousemove = window.ontouchmove = e => {
-            if(!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
+            if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
             el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
-            const ang = Math.atan2(-y, x) * (180/Math.PI);
-            Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
+            const ang = Math.atan2(-y, x) * (180 / Math.PI);
+            Object.values(labels).forEach(l => { if (l) l.style.opacity = 0; });
             if (Math.abs(x) > 20 || Math.abs(y) > 20) {
-                let dir = (ang>=45&&ang<135)?"up":(ang>=135||ang<-135)?"lt":(ang>=-135&&ang<-45)?"dn":"rt";
-                if(labels[dir]) labels[dir].style.opacity = 1; triggerDir = dir.toUpperCase();
+                let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
+                if (labels[d]) labels[d].style.opacity = 1; td = d.toUpperCase();
             }
         };
         window.onmouseup = window.ontouchend = () => {
-            if(!active) return; active=false;
-            if(Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, triggerDir);
-            else { el.style.transition="0.4s"; el.style.transform="none"; }
+            if (!active) return; active = false;
+            if (Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, td);
+            else { el.style.transition = "0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; }
         };
     }
 
     function handleAction(el, data, dir) {
-        if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET A":dir === "LT"?"SET B":dir === "RT"?"SET C":"SET D");
-        else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
-        else if(MODE === "GENRE_SELECT") renderRangeSelect(dir === "UP"?"CONCEPT":dir === "LT"?"MATH":dir === "RT"?"DATA":"LOGIC");
-        else if(MODE === "RANGE_SELECT") startQuiz(dir==="UP"?10:dir==="LT"?20:dir==="RT"?30:50);
-        else if(MODE === "END") {
-            if(dir === "UP") startQuiz(SESSION_LIMIT);
-            else if(dir === "LT") renderDatasetSelect();
-            else if(dir === "RT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); }
-            else if(dir === "DN") { if(MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else location.reload(); }
+        if (MODE === "MENU_DIFFICULTY") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D");
+        else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical");
+        else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC");
+        else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
+        else if (MODE === "END") {
+            if (dir === "UP") startQuiz(SESSION_LIMIT);
+            else if (dir === "LT") renderDifficulty();
+            else if (dir === "RT") { CUR_DATASET = NEXT_MAP[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); }
+            else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDifficulty(); }
         } else {
-            if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-            const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
-            if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = SCORE + " XP"; }
-            else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); }
+            if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
+            const ad = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT');
+            if (ad === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
+            else { MISTAKES.push(data); }
             POOL.shift(); CUR_INDEX++; renderNext();
         }
     }
-    window.onload = () => { RAW_DATA = parseObsidian(); renderDatasetSelect(); };
+
+    window.onload = () => {
+        DATABASE = parseTitanium(RAW_DATA_BLOCK);
+        document.getElementById('loader').remove();
+        renderDifficulty();
+    };
 </script>
 </body>
 </html>
