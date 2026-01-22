@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V95.0 | Optimized</title>
-    
+    <title>Alchemist V94.0 | Production Runtime</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
-
     <style>
         :root {
             --bg: #000; --card: #111; --border: #262626; 
@@ -17,39 +15,44 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
 
-        /* HUD */
+        /* Formula Scaling - Enhances Visuality of Chemistry Symbols */
+        sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
+        sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
+
+        /* HUD - Top Progress Bar & Counter */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.8rem; color: #777; letter-spacing: 2px; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
 
-        /* HISTORY TAPE */
+        /* History Tape - Active terminal log */
         #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 10px; mask-image: linear-gradient(to bottom, transparent 0%, black 30%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%); }
         .log-item { margin-bottom: 5px; color: #444; transition: 0.3s; }
         .log-item.active { color: var(--green); font-weight: 900; }
 
-        /* STACK ENGINE */
+        /* Card Stack - Gesture Engine */
         #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; perspective: 1500px; display: flex; align-items: center; justify-content: center; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; }
         
-        .card-q { font-family: var(--font-chem); font-size: clamp(20px, 5vmin, 28px); line-height: 1.4; color: #fff; max-height: 80%; overflow-y: auto; scrollbar-width: none; }
-        sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
-        sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
+        /* Visuality Focus - Large, High-Contrast Text */
+        .card-q { font-family: var(--font-chem); font-size: clamp(20px, 5vmin, 28px); line-height: 1.4; font-weight: 600; color: #fff; width: 100%; max-height: 80%; overflow-y: auto; scrollbar-width: none; }
+        .card-q::-webkit-scrollbar { display: none; }
 
-        /* OVERLAYS */
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); color: #fff; font-weight: 900; font-size: 1.8rem; text-transform: uppercase; border-radius: 44px; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
-        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 40px; opacity: 0; border-radius: 44px; display: none; flex-direction: column; justify-content: center; border: 1px solid var(--gold); }
+        /* UI Overlays */
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); color: #fff; font-weight: 900; font-size: 1.8rem; text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; }
+        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 40px; opacity: 0; border-radius: 44px; transition: 0.4s; display: none; flex-direction: column; justify-content: center; border: 1px solid var(--gold); }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-        .overlay-body { font-size: 1.25rem; line-height: 1.7; color: #ccc; margin-bottom: 40px; font-family: var(--font-chem); text-align: left; overflow-y: auto; }
+        .overlay-body { font-size: 1.25rem; line-height: 1.7; color: #ccc; margin-bottom: 30px; font-family: var(--font-chem); text-align: left; overflow-y: auto; }
         
-        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: transform 0.2s; }
+        .btn:active { transform: scale(0.95); }
 
         #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 8px; font-weight: 900; }
     </style>
 </head>
 <body>
 
-<div id="loader">ICE_BREAKER_ACTIVE</div>
+<div id="loader">ATOMIC_LOAD_V94</div>
 
 <div id="header">
     <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
@@ -60,8 +63,9 @@
 <div id="stack"></div>
 
 <script>
-    /* ----------------------------------------------------
-       id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
+    /* --- JSON PROTECTED DATA BLOCK --- */
+
+	id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
 SET_A_0003	SET_A	Quantum	CONCEPT	Which quantum number defines the main energy shell and size of an orbital?	Principal (n)	Azimuthal (l)	Magnetic (m)	UP	❌ Azimuthal (l) determines shape. || ❌ Magnetic (m) determines orientation. || ✅ The Principal Quantum Number (n) corresponds to the radial distance from the nucleus and the primary energy level.	Shell number.	0.3														
@@ -2060,37 +2064,37 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
-    ---------------------------------------------------- */
-    const RAW_DATA_SOURCE = `
-PASTE_YOUR_1400_LINES_HERE
-`;
+    // Paste your full 1400 rows as a single string here. 
+    // The parser will handle the merged columns automatically.
+    const RAW_JSON_DATA = `PASTE_YOUR_DATA_HERE`;
 
-    /* --- JS ENGINE V95.0 --- */
+    /* --- ALCHEMIST V94 RUNTIME --- */
     const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
     let DATABASE = [], POOL = [], MISTAKES = [], SCORE = 0;
     let MODE = "MENU_DIFF", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
 
-    // ASYNC PARSER: Prevents UI Thread Freezing
-    function parseProtected(text) {
+    function parseMaster(text) {
         if (!text) return [];
-        const lines = text.trim().split('\n');
-        return lines.map(line => {
+        return text.trim().split('\n').map(line => {
             try {
                 if (!line.includes('❌')) return null;
                 const id = line.substring(0, 10);
                 const ds = id.substring(0, 5);
-                const type = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"].find(t => line.includes(t)) || "CONCEPT";
+                const types = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"];
+                const type = types.find(t => line.includes(t)) || "CONCEPT";
                 const explStart = line.indexOf('❌');
                 const weight = (line.match(/(\d\.\d+)$/) || [null, "0.5"])[1];
                 const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
-                const directions = ["UP", "RIGHT", "LEFT", "DOWN"];
-                const correct = directions.find(d => middle.endsWith(d)) || "RIGHT";
+                const dirs = ["UP", "RIGHT", "LEFT", "DOWN"];
+                const correct = dirs.find(d => middle.endsWith(d)) || "RIGHT";
                 const qAndO = middle.substring(0, middle.length - correct.length).trim();
                 const qSplit = qAndO.split('?');
                 const question = qSplit[0] + "?";
-                const opts = (qSplit[1] || "").replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
+                const optsRaw = qSplit[1] || "";
+                // Fixed CamelCase Split for Chemistry Merged Cells
+                const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
-                let explanation = explFull, hint = "Logic Focus.";
+                let explanation = explFull, hint = "Focus Logic.";
                 const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
                 if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
                 return { id, ds, tp: "Module", ty: type, q: question, u: opts[0]||"A", r: opts[1]||"B", l: opts[2]||"C", c: correct, ex: explanation };
@@ -2121,13 +2125,13 @@ PASTE_YOUR_1400_LINES_HERE
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    function renderDiff() { MODE = "MENU_DIFF"; addToLog("INIT_ALCHEMIST", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+    function renderDiff() { MODE = "MENU_DIFF"; CUR_INDEX = 0; SCORE = 0; addToLog("SYSTEM_READY", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
     function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds; addToLog(ds, renderDiff); renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
     function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; addToLog(tp, () => renderTopic(CUR_DATASET)); renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
     function renderVolume(genre) { MODE = "MENU_VOLUME"; CUR_GENRE = genre; addToLog(genre, () => renderDepth(CUR_TOPIC)); renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
 
     function startQuiz(limit) {
-        SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; SCORE = 0; MISTAKES = [];
+        SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; MISTAKES = [];
         addToLog(`${limit} Qs`, () => renderVolume(CUR_GENRE));
         POOL = DATABASE.filter(q => q.ds === CUR_DATASET.replace(' ','_'));
         POOL.sort(() => Math.random() - 0.5);
@@ -2150,7 +2154,7 @@ PASTE_YOUR_1400_LINES_HERE
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.5rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`;
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
@@ -2187,14 +2191,13 @@ PASTE_YOUR_1400_LINES_HERE
             else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); }
         } else {
             if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
-            const ad = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT');
-            if (ad === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
-            else { MISTAKES.push(data); }
+            if (dir.replace('LT', 'LEFT').replace('RT', 'RIGHT') === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = SCORE + " XP"; }
+            else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); }
             POOL.shift(); CUR_INDEX++; renderNext();
         }
     }
 
-    window.onload = () => { DATABASE = parseProtected(RAW_DATA_SOURCE); document.getElementById('loader').remove(); renderDiff(); };
+    window.onload = () => { DATABASE = parseMaster(RAW_JSON_DATA); document.getElementById('loader').remove(); renderDiff(); };
 </script>
 </body>
 </html>
