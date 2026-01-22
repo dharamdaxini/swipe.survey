@@ -1,5 +1,5 @@
 let DATABASE = [], POOL = [], MISTAKES = [], SCORE = 0;
-let MODE = "MENU_DIFF", CUR_DATASET = "", CUR_TOPIC = "", CUR_DEPTH = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
+let MODE = "MENU_DIFF", CUR_DATASET = "", CUR_TOPIC = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
 
 window.onload = () => {
     const saved = localStorage.getItem('alchemist_vault');
@@ -18,26 +18,25 @@ function vaultAndInject() {
 function process(raw) {
     const lines = raw.split(/\r?\n/);
     DATABASE = lines.map(line => {
-        // UNIVERSAL CSV REGEX: Corrects Comma vs Quote issues seen in screenshots
+        // Safe CSV Split (Regex handles commas inside quotes)
         const pattern = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
         const cols = (line.match(pattern) || []).map(c => c.replace(/^"|"$/g, '').trim());
-
         if (cols.length < 8) return null;
-
         return {
             id: cols[0], ds: cols[1], tp: cols[2], ty: cols[3],
             q: cols[4], u: cols[5], r: cols[6], l: cols[7],
             c: cols[8] || "RIGHT", ex: cols[9] || ""
         };
-    }).filter(x => x !== null && x.id !== "id");
+    }).filter(x => x !== null && x.id.toLowerCase() !== "id");
     renderDiff();
 }
 
-const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/theta/g, '&theta;').replace(/lambda/g, '&lambda;') : "";
+const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>') : "";
 
+/* V81.1 Legacy Magnetic Physics Engine */
 function bindPhysics(el, data) {
     let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
-    const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
+    const lbs = { up: el.querySelector('.sl-up'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
     const MAX_RADIUS = 38; 
 
     el.ontouchstart = e => { active = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY; el.style.transition = "none"; };
@@ -50,36 +49,33 @@ function bindPhysics(el, data) {
         const ang = Math.atan2(-dy, dx) * (180 / Math.PI);
         Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; });
         if (dist > 20) {
-            let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
+            let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : "rt";
             if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase();
         }
     };
     window.ontouchend = () => { if (!active) return; active = false; if (Math.sqrt(x*x + y*y) > 30) handleAction(el, data, td); else { el.style.transition = "0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } };
 }
 
-/* UI LOGIC FLOW */
-function renderMenu(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; s.appendChild(c); bindPhysics(c, {}); }
-function renderDiff() { MODE = "MENU_DIFF"; renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
-function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds; renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
-function renderVolume(dp) { MODE = "MENU_VOLUME"; CUR_DEPTH = dp; renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
-function startQuiz(limit) { SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => Math.random() - 0.5).slice(0, SESSION_LIMIT); MODE = "QUIZ"; renderNext(); }
+function renderMenu(q, up, lt, rt) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div>`; s.appendChild(c); bindPhysics(c, {}); }
+function renderDiff() { MODE = "MENU_DIFF"; renderMenu("CHOOSE SET", "SET A", "SET B", "SET C"); }
+function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds; renderMenu("DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC"); }
+function renderVolume() { MODE = "MENU_VOLUME"; renderMenu("SESSION", "20 Qs", "50 Qs", "100 Qs"); }
+function startQuiz(limit) { SESSION_LIMIT = limit; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => 0.5 - Math.random()).slice(0, limit); renderNext(); }
 
 function renderNext() {
     const s = document.getElementById('stack'); s.innerHTML = "";
-    if (!POOL.length) { renderEnd(); return; }
+    if (!POOL.length) { renderDiff(); return; }
     const q = { ...POOL[0] };
     const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
     q.u = items[0].t; q.r = items[1].t; q.l = items[2].t; q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
     const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ VIEW LOGIC</div>`;
+    c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div>`;
     s.appendChild(c); bindPhysics(c, q);
 }
 
 function handleAction(el, data, dir) {
-    if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D");
-    else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical");
-    else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC");
-    else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
-    else { POOL.shift(); CUR_INDEX++; renderNext(); }
+    if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET_A" : dir === "LT" ? "SET_B" : "SET_C");
+    else if (MODE === "MENU_TOPIC") renderVolume();
+    else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 20 : dir === "LT" ? 50 : 100);
+    else { POOL.shift(); renderNext(); }
 }
