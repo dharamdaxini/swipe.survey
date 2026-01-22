@@ -3,53 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V128.0 | NEXUS CORE</title>
+    <title>ALCHEMIST V129.2 | FINAL NEXUS</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-        sub { font-size: 0.75em; vertical-align: baseline; position: relative; bottom: -0.2em; }
-        sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4em; }
-        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #222; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
-        
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; }
         h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 15px 0; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; text-align: center; }
-        
-        .storage-meter { width: 100%; height: 2px; background: #222; margin-bottom: 20px; position: relative; }
-        #storage-fill { position: absolute; height: 100%; background: var(--blue); width: 0%; transition: 0.5s; }
-        .storage-label { font-size: 9px; font-family: var(--font-code); color: #555; text-align: right; display: block; margin-top: 4px; }
-
         .section-label { font-family: var(--font-code); font-size: 0.65rem; color: #555; margin: 15px 0 8px; letter-spacing: 2px; text-transform: uppercase; }
         textarea { width: 100%; height: 120px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 12px; border-radius: 12px; font-size: 11px; outline: none; }
-        
-        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .topic-tile { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; position: relative; }
-        .topic-tile.selected { border-color: var(--blue); background: #001529; }
+        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .topic-tile { background: var(--card); border: 2px solid var(--border); padding: 15px; border-radius: 12px; transition: 0.2s; }
+        .topic-tile.selected { border-color: var(--blue) !important; background: #001529; }
         .topic-name { color: var(--gold); font-weight: 900; font-size: 0.8rem; display: block; margin-bottom: 3px; }
         .topic-meta { color: #555; font-size: 0.6rem; font-family: var(--font-code); }
-
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; font-weight: 900; }
         .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 8px; border-radius: 2px; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.3s; }
-
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); transition: transform 0.4s ease; }
         .card-q { font-family: var(--font-chem); font-size: clamp(16px, 4vmin, 20px); line-height: 1.45; font-weight: 600; color: #ffffff; }
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); color: #fff; font-weight: 900; font-size: 1rem; text-transform: uppercase; border-radius: 40px; z-index: 10; opacity: 0; pointer-events: none; border: 3px solid var(--gold); }
-        
         #global-overlay { position: fixed; inset: 0; background: #080808; z-index: 10000; padding: 40px; display: none; flex-direction: column; }
         #global-overlay.active { display: flex; }
         .overlay-body { font-size: 1rem; line-height: 1.5; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
-        
-        .btn { width: 100%; padding: 18px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); margin-top: 8px; font-size: 13px; }
+        .btn { width: 100%; padding: 18px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 8px; font-size: 13px; }
         .btn-gold { background: var(--gold); }
         .btn-blue { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
+        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 9px; color: #222; letter-spacing: 2px; pointer-events: none; }
     </style>
 </head>
 <body>
-<div class="v-tag">NEXUS_CORE_V128.0</div>
+<div class="v-tag">FINAL_NEXUS_V129.2</div>
 
 <div id="global-overlay">
     <div id="overlay-content" class="overlay-body"></div>
@@ -57,18 +44,16 @@
 </div>
 
 <div id="portal">
-    <h1>Alchemist_V128</h1>
-    <div class="storage-meter"><div id="storage-fill"></div></div>
-    <span id="storage-status" class="storage-label">NEXUS_READY</span>
-
-    <div class="section-label">CURRICULUM_VAULTS (TAP TO SELECT / DOUBLE-TAP TO START)</div>
+    <h1>Alchemist_V129.2</h1>
+    
+    <div class="section-label">CURRICULUM_VAULTS</div>
     <div id="library"></div>
     
-    <div id="merge-controls" style="display:none; margin-bottom: 20px;">
-        <button class="btn btn-blue" onclick="executeMerge()">MERGE SELECTED TOPICS</button>
-        <button class="btn" style="background:#222; color:#555;" onclick="cancelMerge()">CANCEL</button>
+    <div id="merge-controls" style="display:none; margin-bottom: 15px;">
+        <button id="execute-merge-btn" class="btn btn-blue" disabled onclick="executeMerge()">SELECT 2 TOPICS</button>
+        <button class="btn" style="background:#222; color:#777; border:none;" onclick="cancelMerge()">CANCEL</button>
     </div>
-    <button id="merge-mode-btn" class="btn btn-blue" onclick="toggleMergeMode()">ENABLE MERGE MODE</button>
+    <button id="merge-mode-btn" class="btn btn-blue" style="font-size:10px; padding:10px;" onclick="toggleMergeMode()">ENABLE VAULT MERGER</button>
 
     <div class="section-label">IMPORT_DATASET (TAB_SEPARATED)</div>
     <textarea id="data-input" placeholder="Paste 12-column TSV data..."></textarea>
@@ -85,31 +70,27 @@
 
 <script>
     let db;
-    const DB_NAME = "AlchemistDB";
-    const STORE_NAME = "Vaults";
+    const DB_NAME = "AlchemistDB", STORE_NAME = "Vaults";
     let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0, MODE = "INIT", INDEX = 1;
-    let SEL_PATH = "", SEL_CORE = "", SEL_DOMAIN = "", SEL_DEPTH = "", SEL_VOL = 20, SEL_DIFF = "";
+    let SEL_PATH = "", SEL_CORE = "";
     let mergeMode = false, selectedForMerge = [];
 
-    // Initialize DB
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = e => { db = e.target.result; db.createObjectStore(STORE_NAME); };
-    request.onsuccess = e => { db = e.target.result; refreshLibrary(); updateStorageStatus(); };
+    request.onsuccess = e => { db = e.target.result; refreshLibrary(); };
 
     function refreshLibrary() {
-        const transaction = db.transaction([STORE_NAME], "readonly");
-        const store = transaction.objectStore(STORE_NAME);
+        const store = db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME);
         const container = document.getElementById('library');
         container.innerHTML = "";
         selectedForMerge = [];
-        
         store.openCursor().onsuccess = e => {
             const cursor = e.target.result;
             if (cursor) {
                 const div = document.createElement('div');
                 div.className = "topic-tile";
                 div.id = `tile-${cursor.key}`;
-                div.onclick = () => handleTileClick(cursor.key);
+                div.onclick = () => handleTileClick(cursor.key, div);
                 div.innerHTML = `<span class="topic-name">${cursor.key}</span><span class="topic-meta">${cursor.value.length} CARDS</span>`;
                 container.appendChild(div);
                 cursor.continue();
@@ -117,16 +98,18 @@
         };
     }
 
-    function handleTileClick(name) {
+    function handleTileClick(name, el) {
         if (mergeMode) {
-            const tile = document.getElementById(`tile-${name}`);
             if (selectedForMerge.includes(name)) {
                 selectedForMerge = selectedForMerge.filter(n => n !== name);
-                tile.classList.remove('selected');
+                el.classList.remove('selected');
             } else if (selectedForMerge.length < 2) {
                 selectedForMerge.push(name);
-                tile.classList.add('selected');
+                el.classList.add('selected');
             }
+            const mBtn = document.getElementById('execute-merge-btn');
+            mBtn.disabled = selectedForMerge.length !== 2;
+            mBtn.innerText = selectedForMerge.length === 2 ? "EXECUTE MERGE" : `SELECT ${2 - selectedForMerge.length} MORE`;
         } else {
             loadDataset(name);
         }
@@ -146,64 +129,16 @@
     }
 
     function executeMerge() {
-        if (selectedForMerge.length !== 2) return alert("Select exactly 2 topics to merge.");
-        const newName = prompt("Enter name for merged vault:", `${selectedForMerge[0]}_${selectedForMerge[1]}`);
-        if (!newName) return;
-
-        const transaction = db.transaction([STORE_NAME], "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        
-        let mergedData = [];
-        let count = 0;
-
-        selectedForMerge.forEach(name => {
-            store.get(name).onsuccess = e => {
-                mergedData = mergedData.concat(e.target.result);
-                count++;
-                if (count === 2) {
-                    store.put(mergedData, newName);
-                    alert(`MERGED: ${newName} Created.`);
-                    cancelMerge();
-                }
-            };
+        if (selectedForMerge.length !== 2) return;
+        const n = prompt("Merged Vault Name:");
+        if (!n) return;
+        const s = db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME);
+        let d = [], c = 0;
+        selectedForMerge.forEach(m => s.get(m).onsuccess = e => {
+            d = d.concat(e.target.result);
+            c++;
+            if (c === 2) { s.put(d, n); cancelMerge(); }
         });
-    }
-
-    async function importDataset() {
-        const raw = document.getElementById('data-input').value.trim();
-        const btn = document.getElementById('import-btn');
-        if (!raw) return alert("INPUT EMPTY");
-        btn.disabled = true; btn.innerText = "CHUNKING...";
-
-        const lines = raw.split(/\r?\n/);
-        let parsed = [];
-        for (let i = 0; i < lines.length; i++) {
-            let c = lines[i].split(/\t/);
-            if (c.length < 5) c = lines[i].split(/\s{3,}/); 
-            if (c.length >= 9 && c[0].toLowerCase() !== "id") {
-                parsed.push({ id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9]||"---", hint: c[10]||"---", context: c[11]||"---" });
-            }
-            if (i % 500 === 0) await new Promise(r => setTimeout(r, 0));
-        }
-
-        if (!parsed.length) { btn.disabled = false; btn.innerText = "REGISTER TO VAULT"; return alert("TAB ERROR"); }
-
-        const topicName = parsed[0].set || `VAULT_${Date.now().toString().slice(-4)}`;
-        const transaction = db.transaction([STORE_NAME], "readwrite");
-        transaction.objectStore(STORE_NAME).put(parsed, topicName);
-        transaction.oncomplete = () => {
-            document.getElementById('data-input').value = "";
-            btn.disabled = false; btn.innerText = "REGISTER TO VAULT";
-            refreshLibrary(); updateStorageStatus();
-        };
-    }
-
-    async function updateStorageStatus() {
-        if (navigator.storage && navigator.storage.estimate) {
-            const {usage} = await navigator.storage.estimate();
-            document.getElementById('storage-fill').style.width = "10%";
-            document.getElementById('storage-status').innerText = `USED: ${(usage/1024/1024).toFixed(2)}MB`;
-        }
     }
 
     function loadDataset(name) {
@@ -215,33 +150,21 @@
         };
     }
 
-    // --- SHARED RE-USE LOGIC ---
+    /* --- SESSION ENGINE --- */
+    function renderS0() { MODE = "S_PATH"; renderSlide("SELECT MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
+    function renderS1() { MODE = "S_CORE"; renderSlide("MAINLINE CORE", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
+
+    function start() {
+        MODE = "ACTIVE"; INDEX = 1; SCORE = 0; MISTAKES = [];
+        POOL = VAULT.filter(v => v.dom === SEL_CORE || true).sort(() => 0.5 - Math.random()).slice(0, 20);
+        renderNext();
+    }
+
     function renderSlide(q, up, lt, rt, dn) {
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
         c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
         s.appendChild(c); bindPhysics(c, {});
-    }
-
-    function renderS0() { MODE = "S_PATH"; renderSlide("STEP 1: SELECT MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
-    function renderS1() { MODE = "S_CORE"; renderSlide("STEP 2: CORE TOPIC", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
-    function renderS2() {
-        MODE = "S_DOMAIN";
-        const map = { MATTER: ["SOLID STATE", "PERIODICITY", "QUANTUM", "BONDING"], ENERGY: ["STAT MECH", "ELECTROCHEM", "THERMO", "PHASE EQUIL"], CHANGE: ["PHOTOCHEM", "SURFACE", "KINETICS", "CATALYSIS"], ANALYSIS: ["MASS SPEC", "CHROMATOGRAPHY", "SPECTROSCOPY", "DATA"] };
-        const ops = map[SEL_CORE] || ["---","---","---","---"];
-        renderSlide(`DOMAIN: ${SEL_CORE}`, ops[0], ops[1], ops[2], ops[3]);
-    }
-    function renderS3() { MODE = "S_DEPTH"; renderSlide("STEP 4: COGNITIVE DEPTH", "LOGIC", "APPLICATION", "CONCEPT", "MATH"); }
-    function renderS4() { MODE = "S_VOL"; renderSlide("STEP 5: SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
-    function renderS5() { MODE = "S_DIFF"; renderSlide("STEP 6: CURRICULUM TIER", "SET D-F (Expert/PhD)", "SET B (Practical)", "SET A (Fundamentals)", "SET C (Advanced Math)"); }
-
-    function start() {
-        MODE = "ACTIVE"; INDEX = 1; SCORE = 0; MISTAKES = [];
-        const diffMap = { UP: ["SET_D", "SET_E", "SET_F"], LT: "SET_B", RT: "SET_A", DN: "SET_C" };
-        const targetSet = diffMap[SEL_DIFF];
-        let filtered = Array.isArray(targetSet) ? VAULT.filter(v => targetSet.includes(v.set)) : VAULT.filter(v => v.set === targetSet);
-        POOL = (filtered.length ? filtered : VAULT).sort(() => 0.5 - Math.random()).slice(0, SEL_VOL);
-        renderNext();
     }
 
     function renderNext() {
@@ -257,25 +180,22 @@
         s.appendChild(c); bindPhysics(c, q); updateHUD();
     }
 
-    function openOverlay(data) {
-        let content = `<strong style='color:var(--blue)'>ANALYSIS</strong><br>${format(data.expl)}<br><br><strong style='color:var(--gold)'>CONTEXT</strong><br>${format(data.context)}`;
-        if (SEL_PATH === "QUIZ_LEARN") content = `<strong style='color:var(--gold)'>HINT</strong><br>${format(data.hint)}`;
-        document.getElementById('overlay-content').innerHTML = content;
-        document.getElementById('global-overlay').classList.add('active');
+    function route(el, data, dir) {
+        if (MODE === "S_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); renderS1(); }
+        else if (MODE === "S_CORE") { SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); start(); }
+        else if (MODE === "END") { location.reload(); }
+        else {
+            if (dir === "DN") {
+                if (SEL_PATH === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
+                if (SEL_PATH === "TEST") { el.style.transform = "none"; return; }
+                openOverlay(data); el.style.transform = "none"; return;
+            }
+            if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; else MISTAKES.push(data);
+            POOL.shift(); INDEX++; renderNext();
+        }
     }
-    function closeOverlay() { document.getElementById('global-overlay').classList.remove('active'); }
-    function renderEnd() { 
-        MODE = "END"; 
-        const acc = Math.round(((SEL_VOL - MISTAKES.length) / SEL_VOL) * 100);
-        let rec = (acc >= 90) ? "PROCEED TO RESEARCH (SET F)." : (acc >= 70) ? "REVIEW INDUSTRIAL (SET B)." : "REVISIT FUNDAMENTALS (SET A).";
-        document.getElementById('stack').innerHTML = `<div class='card'><div class='card-q'>RESULT: ${acc}%</div><p style='color:#777; font-size:12px;'>${rec}</p><div class='swipe-label sl-up'>RESTART</div><div class='swipe-label sl-left'>MENU</div></div>`; 
-        bindPhysics(document.querySelector('.card'), {}); 
-    }
-    
-    function clearLibrary() { if(confirm("Wipe curriculum?")) { db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).clear(); refreshLibrary(); } }
-    const format = (t) => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;') : "";
-    function updateHUD() { document.getElementById('p-text').innerText = `${INDEX}/${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
+    /* --- CORE UTILS --- */
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, dir=null;
         el.ontouchstart = e => { active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; el.style.transition="none"; };
@@ -288,30 +208,37 @@
             if (dist > 15) {
                 const ang = Math.atan2(-dy, dx)*(180/Math.PI);
                 let d = (ang >= 45 && ang < 135) ? ".sl-up" : (ang >= 135 || ang < -135) ? ".sl-left" : (ang >= -135 && ang < -45) ? ".sl-down" : ".sl-right";
-                const target = el.querySelector(d); if (target) { target.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); }
+                const t = el.querySelector(d); if (t) { t.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); }
             }
         };
         window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>25) route(el, data, dir); else { el.style.transition="0.4s ease"; el.style.transform="none"; } };
     }
 
-    function route(el, data, dir) {
-        if (MODE === "S_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); renderS1(); }
-        else if (MODE === "S_CORE") { SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); renderS2(); }
-        else if (MODE === "S_DOMAIN") { SEL_DOMAIN = dir; renderS3(); }
-        else if (MODE === "S_DEPTH") { SEL_DEPTH = dir; renderS4(); }
-        else if (MODE === "S_VOL") { SEL_VOL = parseInt(dir) || 20; renderS5(); }
-        else if (MODE === "S_DIFF") { SEL_DIFF = dir; start(); }
-        else if (MODE === "END") { location.reload(); }
-        else {
-            if (dir === "DN") {
-                if (SEL_PATH === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
-                if (SEL_PATH === "TEST") { el.style.transform = "none"; return; }
-                openOverlay(data); el.style.transform = "none"; return;
+    async function importDataset() {
+        const raw = document.getElementById('data-input').value.trim();
+        const btn = document.getElementById('import-btn');
+        if (!raw) return; btn.disabled = true; btn.innerText = "CHUNKING...";
+        const lines = raw.split(/\r?\n/);
+        let parsed = [];
+        for (let i = 0; i < lines.length; i++) {
+            let c = lines[i].split(/\t/);
+            if (c.length < 5) c = lines[i].split(/\s{3,}/); 
+            if (c.length >= 9 && c[0].toLowerCase() !== "id") {
+                parsed.push({ id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9]||"---", hint: c[10]||"---", context: c[11]||"---" });
             }
-            if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; else MISTAKES.push(data);
-            POOL.shift(); INDEX++; renderNext();
+            if (i % 500 === 0) await new Promise(r => setTimeout(r, 0));
         }
+        const topicName = parsed[0].set || `VAULT_${Date.now().toString().slice(-4)}`;
+        db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).put(parsed, topicName);
+        location.reload();
     }
+
+    function openOverlay(d) { document.getElementById('overlay-content').innerHTML = `<strong style='color:var(--blue)'>LOGIC</strong><br>${format(d.expl)}<br><br><strong style='color:var(--gold)'>CONTEXT</strong><br>${format(d.context)}`; document.getElementById('global-overlay').classList.add('active'); }
+    function closeOverlay() { document.getElementById('global-overlay').classList.remove('active'); }
+    function clearLibrary() { if(confirm("Purge Library?")) { db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).clear(); refreshLibrary(); } }
+    const format = (t) => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;') : "";
+    function updateHUD() { document.getElementById('p-text').innerText = `${INDEX}/20`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/20)*100}%`; }
+    function renderEnd() { document.getElementById('stack').innerHTML = `<div class='card'><div class='card-q'>MISSION COMPLETE</div><div class='swipe-label sl-up'>RESTART</div><div class='swipe-label sl-left'>VAULT</div></div>`; bindPhysics(document.querySelector('.card'), {}); MODE="END"; }
 </script>
 </body>
 </html>
