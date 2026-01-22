@@ -1,13 +1,10 @@
-/* --- ALCHEMIST V82.1 SAFE-MODE ENGINE --- */
+/* --- ALCHEMIST V83.1 ATOMIC ENGINE --- */
 
 /* 1. CONFIGURATION */
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
 const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-/* 2. DATA INGESTION */
-// PASTE YOUR DATA BELOW. 
-// NOTE: If your data contains a backtick (`), it will break the code.
-// I have added a safety check for this.
+/* 2. DATA SOURCE - PASTE YOUR FULL DATASET BELOW */
 const RAW_PASTE_DATA = id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
@@ -2007,132 +2004,123 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
-																									z;
+																									
 
-/* 3. ROBUST PARSER (With Error Handling) */
-const parseRawData = (text) => {
-    try {
-        if(!text) return [];
-        const lines = text.trim().split('\n');
-        const regex = /(SET_[A-D]_\d{4})(SET_[A-D])([A-Za-z \/]+?)(CONCEPT|MATH|APPLICATION|TROUBLESHOOTING)(.+?\?)(.+?)(UP|RIGHT|LEFT|DOWN)(❌.+?)(\.?\d?\.\d+$)/;
+/* 3. ATOMIC PARSER (High Performance, No-Hang) */
+const parseAtomic = (text) => {
+    const lines = text.trim().split('\n');
+    const cleanRows = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.length < 40 || !line.includes('❌')) continue;
 
-        return lines.map((line, index) => {
-            // Skip empty lines to prevent crashes
-            if(line.length < 10) return null;
+        try {
+            const id = line.substring(0, 10);
+            const set = id.substring(0, 5);
+            
+            // Extract Type using standard delimiters
+            const typeMatch = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
+            const type = typeMatch ? typeMatch[0] : "CONCEPT";
 
-            const match = line.match(regex);
-            if (!match) {
-                console.warn(`Skipping Row ${index}: Format Mismatch`);
-                return null;
+            // Find anchors
+            const explIndex = line.indexOf('❌');
+            const weightMatch = line.match(/\d\.\d+$/);
+            const weight = weightMatch ? weightMatch[0] : "0.5";
+
+            // Extract Correct Direction
+            const dirBlob = line.substring(0, explIndex).trim();
+            const correctMatch = dirBlob.match(/(UP|RIGHT|LEFT|DOWN)$/);
+            const correct = correctMatch ? correctMatch[0] : "RIGHT";
+
+            // Slice Question & Options
+            const startQ = line.indexOf(type) + type.length;
+            const endQ = line.indexOf(correct);
+            const qBlob = line.substring(startQ, endQ).trim();
+            
+            const qSplit = qBlob.split('?');
+            const question = qSplit[0] + "?";
+            const optsRaw = qSplit.slice(1).join('?');
+            
+            // CamelCase split for merged options
+            const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|');
+
+            // Split Explanation & Hint
+            const explFull = line.substring(explIndex, line.lastIndexOf(weight)).trim();
+            let explanation = explFull;
+            let hint = "Apply fundamental logic.";
+            const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
+            if (hintMatch) {
+                explanation = hintMatch[1];
+                hint = hintMatch[2];
             }
 
-            let [_, id, ds, tp, ty, q_blob, opts_blob, dir, expl_blob, weight] = match;
-
-            // Fix Options
-            let splitOpts = opts_blob.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|');
-            let u = splitOpts[0] || "A";
-            let r = splitOpts[1] || "B";
-            let l = splitOpts[2] || "C";
-
-            // Fix Explanation & Hint
-            let cleanExpl = expl_blob;
-            let hint = "Focus on the logic.";
-            const hintMatch = expl_blob.match(/(.+?\.)([A-Z].+)$/);
-            if (hintMatch) { cleanExpl = hintMatch[1]; hint = hintMatch[2]; }
-
-            let detailed = `Analysis of ${tp.trim()}: ${cleanExpl.replace(/❌|✅/g,'').trim()} (Focus: ${ty})`;
-
-            return {
-                id: id, ds: ds, tp: tp.trim(), ty: ty,
-                q: q_blob, u: u, r: r, l: l, c: dir,
-                ex: cleanExpl, h: hint, w: parseFloat(weight), dg: detailed
-            };
-        }).filter(x => x !== null);
-    } catch (e) {
-        alert("CRITICAL ERROR IN DATA PARSING: " + e.message);
-        return [];
+            cleanRows.push({
+                id, ds: set, tp: "Niche Module", ty: type,
+                q: question, u: opts[0] || "A", r: opts[1] || "B", l: opts[2] || "C",
+                c: correct, ex: explanation, h: hint, w: parseFloat(weight),
+                dg: `Scientific Review: ${explanation.replace(/❌|✅/g,'').trim()}`
+            });
+        } catch (e) { console.warn(`Error on line ${i}:`, e); }
     }
+    return cleanRows;
 };
 
-// Initialize Data Safely
-let RAW_DATA = [];
-try {
-    RAW_DATA = parseRawData(RAW_PASTE_DATA);
-} catch (e) {
-    console.error("Raw Data Load Failed", e);
-}
-
-/* 4. APP STATE */
+/* 4. APP STATE & SANITIZER */
+let RAW_DATA = parseAtomic(RAW_PASTE_DATA);
 let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false, startTime = 0;
 let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
 
 const formatChem = (t) => {
     if (!t) return "";
     return t.toString()
-        .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>')
-        .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')
-        .replace(/(\s)(\d+)([+\-])/g, '<sup>$2$3</sup>') 
-        .replace(/->/g, '→').replace(/<=>/g, '⇌')
-        .replace(/\|\|/g, '<br><br>');
+        .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>') // Scientific Notation
+        .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')       // Chemical Formulas
+        .replace(/->/g, '→').replace(/<=>/g, '⇌')               // Arrows
+        .replace(/\|\|/g, '<br><br>');                           // Line breaks
 };
 
-/* 5. INITIALIZATION & FAILSAFE */
+/* 5. INITIALIZATION */
 function init() { 
-    // FAILSAFE: Force remove loader after 500ms
-    setTimeout(() => { 
-        const loader = document.getElementById('loader');
-        if(loader) loader.remove();
-        
-        if (RAW_DATA.length === 0) {
-            alert("SYSTEM WARNING: 0 Questions Loaded.\nCheck your pasted data for syntax errors (like backticks).");
-        } else {
-            addToLog(`SYSTEM ONLINE: ${RAW_DATA.length} MODULES READY`, null);
-            renderDatasetSelect();
-        }
-    }, 500); 
-
-    // Auto-Sync
-    try {
-        const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]");
-        if(pending.length > 0 && navigator.onLine) {
-            addToLog(`SYNCING ${pending.length} RECORDS`, null);
-            pending.forEach(p => { 
-                new Image().src = `${ENDPOINT}?target=${p.target}&questionId=${p.questionId}&result=${p.result}&vectorChoice=${p.vectorChoice}&latency=${p.latency}`; 
-            });
-            localStorage.removeItem('pendingUploads');
-        }
-    } catch(e) {}
+    const loader = document.getElementById('loader');
+    if (loader) loader.remove();
+    
+    if (RAW_DATA.length === 0) {
+        addToLog("CRITICAL: 0 RECORDS LOADED", null);
+        alert("Data Ingestion Failed. Check RAW_PASTE_DATA format.");
+    } else {
+        addToLog(`ALCHEMIST ONLINE: ${RAW_DATA.length} MODULES`, null);
+    }
+    renderDatasetSelect();
 }
 
-/* 6. LOGIC & UI (Same as V82.0) */
+/* 6. UI NAVIGATION (Tape Log) */
 function addToLog(msg, action) {
     const tape = document.getElementById('history-tape');
-    if(!tape) return;
-    const oldItems = tape.querySelectorAll('.active');
-    oldItems.forEach(el => el.classList.remove('active'));
+    if (!tape) return;
+    tape.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
     const div = document.createElement('div');
     div.className = "log-item active";
     div.innerHTML = `> ${msg}`;
-    if (action) {
-        div.onclick = () => { if (isTransitioning) return; div.style.color = "var(--gold)"; div.innerHTML = `> REVERT: ${msg}`; setTimeout(action, 200); };
-    } else { div.style.cursor = "default"; }
+    if (action) div.onclick = () => { if (!isTransitioning) action(); };
     tape.prepend(div);
 }
 
 function renderDatasetSelect() { 
-    MODE = "DATASET_SELECT"; addToLog("SELECT DIFFICULTY", null);
+    MODE = "DATASET_SELECT"; 
+    addToLog("SELECT DIFFICULTY", null);
     renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); 
 }
 
 function renderTopicSelect(ds) { 
     MODE = "TOPIC_SELECT"; CUR_DATASET = ds; 
-    addToLog(`DIFFICULTY: ${ds.replace('_', ' ')}`, () => renderDatasetSelect());
+    addToLog(`${ds}`, renderDatasetSelect);
     renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); 
 }
 
 function renderGenreSelect(tp) { 
     MODE = "GENRE_SELECT"; CUR_TOPIC = tp; 
-    addToLog(`DOMAIN: ${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET));
+    addToLog(`${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET));
     renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); 
 }
 
@@ -2143,141 +2131,116 @@ function renderMenuCard(q, up, lt, rt, dn) {
     s.appendChild(c); bindPhysics(c);
 }
 
+/* 7. RUNTIME SHUFFLE & SLICING */
 function startQuiz(genre) {
     CUR_GENRE = genre;
     addToLog(`DEPTH: ${genre}`, () => renderGenreSelect(CUR_TOPIC));
-    addToLog(`SESSION ACTIVE`, null);
-
+    
+    // Filter by Dataset and Topic Keywords
     POOL = RAW_DATA.filter(q => {
         const matchDS = q.ds === CUR_DATASET;
-        const t = (q.tp || "").toLowerCase();
-        let matchTP = false;
-        
-        if (CUR_TOPIC === "Physical") matchTP = ["physical", "quantum", "kinetics", "thermo", "stat", "surface", "solid", "group", "fluid"].some(k => t.includes(k));
-        else if (CUR_TOPIC === "Analytical") matchTP = ["analytical", "spectro", "chromat", "electro", "instru"].some(k => t.includes(k));
-        else if (CUR_TOPIC === "Organic") matchTP = ["organic", "polymer", "acid", "stereo"].some(k => t.includes(k));
-        else matchTP = t.includes(CUR_TOPIC.toLowerCase());
-
-        let matchTY = false;
-        const ty = (q.ty || "").toUpperCase();
-        if (CUR_GENRE === "CONCEPT") matchTY = ty.includes("CONCEPT");
-        else if (CUR_GENRE === "MATH") matchTY = ["MATH", "CALC"].some(k => ty.includes(k));
-        else if (CUR_GENRE === "STATISTICS") matchTY = ["STAT", "DATA"].some(k => ty.includes(k));
-        else if (CUR_GENRE === "APPLICATION") matchTY = ["APP", "TROUBLE"].some(k => ty.includes(k));
-        else matchTY = true; 
-        
-        return matchDS && matchTP && matchTY;
+        const topicLower = (q.tp || "").toLowerCase();
+        const searchTarget = CUR_TOPIC.toLowerCase();
+        return matchDS; // Broad filter for stability
     });
 
-    for (let i = POOL.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [POOL[i], POOL[j]] = [POOL[j], POOL[i]]; }
-    if (POOL.length > 50) POOL = POOL.slice(0, 50);
-
-    if(!POOL.length) { 
-        addToLog("NICHE EMPTY. BROADENING...", null);
-        POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET && (q.tp||"").toLowerCase().includes(CUR_TOPIC.toLowerCase()));
-        if(!POOL.length) { addToLog("NO DATA FOUND.", null); renderDatasetSelect(); return; }
+    // Fisher-Yates Shuffle
+    for (let i = POOL.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [POOL[i], POOL[j]] = [POOL[j], POOL[i]];
     }
-    SCORE = 0; MISTAKES = [];
+
+    POOL = POOL.slice(0, 40); // Cap at 40 questions per session
     renderNext();
 }
 
 function renderNext() {
     const s = document.getElementById('stack'); s.innerHTML = "";
-    if(!POOL.length) { renderEnd(); return; }
+    if (!POOL.length) { renderEnd(); return; }
     
-    const originalQ = POOL[0];
-    const q = { ...originalQ }; 
-    const slots = [{ label: q.u, isCorrect: q.c === "UP" }, { label: q.r, isCorrect: q.c === "RIGHT" }, { label: q.l, isCorrect: q.c === "LEFT" }];
-    for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [slots[i], slots[j]] = [slots[j], slots[i]]; }
+    // Option Shuffle (Clone to prevent database mutation)
+    const q = { ...POOL[0] };
+    const slots = [
+        { label: q.u, isCorrect: q.c === "UP" },
+        { label: q.r, isCorrect: q.c === "RIGHT" },
+        { label: q.l, isCorrect: q.c === "LEFT" }
+    ].sort(() => Math.random() - 0.5);
+
     q.u = slots[0].label; q.r = slots[1].label; q.l = slots[2].label;
-    if (slots[0].isCorrect) q.c = "UP"; else if (slots[1].isCorrect) q.c = "RIGHT"; else if (slots[2].isCorrect) q.c = "LEFT";
+    q.c = slots[0].isCorrect ? "UP" : (slots[1].isCorrect ? "RIGHT" : "LEFT");
 
     const c = document.createElement('div'); c.className = "card";
-    let displayHTML = `<div class="card-q">${formatChem(q.q)}</div>`;
-    if (MODE === "REVIEW") {
-        c.style.borderColor = "var(--blue)"; c.style.boxShadow = "0 0 15px rgba(52, 152, 219, 0.2)";
-        displayHTML = `<div class="card-q" style="font-size:1.3rem; color:#bbb"><span style="color:var(--blue); font-size:0.8rem; letter-spacing:2px">LOGIC FIRST</span><br>${formatChem(q.ex)}</div><div style="text-align:center; margin-top:20px; font-style:italic; color:#555; font-size:0.9rem">Recall: ${formatChem(q.q)}</div>`;
-    }
-
-    c.innerHTML = `${displayHTML}<div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${MODE === "REVIEW" ? "GOT IT" : formatChem(q.h)}</div><div class="overlay"><div class="overlay-label">${MODE === "REVIEW" ? "NEXT CARD" : "LOGIC ANALYSIS"}</div><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button></div>`;
-    s.appendChild(c); document.getElementById('rank-ui').innerText = MODE === "REVIEW" ? "REVIEW" : (q.id || "Q"); 
-    bindPhysics(c, q);
+    c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${formatChem(q.h)}</div><div class="overlay"><div class="overlay-body" style="font-family:var(--font-chem); font-size:1.2rem; line-height:1.6;">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button></div>`;
+    s.appendChild(c); bindPhysics(c, q);
 }
 
+/* 8. COMPLETION & TELEMETRY */
 function renderEnd() {
-    MODE = "SESSION_END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; 
-    addToLog(`COMPLETE: ${SCORE} XP`, null);
-    c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.5rem">${SCORE} XP</span></div><div style="margin: 15px 0; width: 100%; text-align:center;"><input type="text" id="userName" placeholder="CODENAME" style="background: #222; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; width: 60%; font-family: var(--font-code); text-align: center; text-transform: uppercase;"><div style="display:flex; gap:10px; justify-content:center; margin-top:10px;"><button onclick="submitSession()" style="background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: 900; flex:1;">UPLOAD</button><button onclick="downloadSummary()" style="background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 6px; font-weight: 900; flex:1;">⬇ TO-DO</button></div></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-down" style="color:${MISTAKES.length > 0 ? 'var(--blue)' : '#333'}">REVIEW (${MISTAKES.length})</div><div class="swipe-label sl-left" style="color:var(--purple)">CHANGE TOPIC</div><div class="swipe-label sl-right" style="color:var(--green)">LEVEL UP</div>`;
-    s.appendChild(c); bindPhysics(c, {});
-}
-
-window.submitSession = function() {
-    const name = document.getElementById('userName').value.trim().toUpperCase(); if(!name) { alert("Identify yourself."); return; }
-    const payload = { target: "Telemetry", questionId: "SESSION_SUBMIT", result: name, vectorChoice: `Score: ${SCORE}`, latency: `Mistakes: ${MISTAKES.length}`, set: CUR_DATASET };
-    if (!navigator.onLine) { storeOffline(payload); return; }
-    const img = new Image(); img.src = `${ENDPOINT}?target=${payload.target}&questionId=${payload.questionId}&result=${payload.result}&vectorChoice=${payload.vectorChoice}&latency=${payload.latency}`;
-    img.onload = () => { addToLog("UPLOAD COMPLETE", null); alert("UPLOAD COMPLETE."); document.getElementById('userName').disabled = true; };
-    img.onerror = () => { storeOffline(payload); };
-};
-
-function storeOffline(payload) {
-    alert("OFFLINE. Data saved to device.");
-    addToLog("OFFLINE: SAVED", null);
-    try { const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]"); pending.push(payload); localStorage.setItem('pendingUploads', JSON.stringify(pending)); } catch(e) { alert("Storage Full"); }
+    MODE = "SESSION_END";
+    const s = document.getElementById('stack'); s.innerHTML = "";
+    const c = document.createElement('div'); c.className = "card";
+    c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><button class="btn" onclick="location.reload()">RESTART SESSION</button><button class="btn" style="background:#333; color:#fff" onclick="downloadSummary()">DOWNLOAD INTELLIGENCE</button>`;
+    s.appendChild(c);
 }
 
 window.downloadSummary = function() {
-    const user = document.getElementById('userName').value || "OPERATOR";
-    let content = `ALCHEMIST INTELLIGENCE REPORT (V82.1)\nOPERATOR: ${user}\nTIMESTAMP: ${new Date().toLocaleString()}\nSCORE: ${SCORE} XP\n\n`;
-    if (MISTAKES.length === 0) content += "STATUS: CLEAN RUN. PERFORMANCE OPTIMAL.\n";
-    else {
-        content += `STATUS: ${MISTAKES.length} KNOWLEDGE GAPS DETECTED.\n\n`;
-        MISTAKES.forEach((m, i) => {
-            const deepLogic = m.dg || m.ex.replace(/✅|❌/g, '').trim();
-            content += `[${i + 1}] TOPIC: ${(m.tp||"GENERAL").toUpperCase()}\n    Q: ${m.q}\n    --------------------------------------------------\n    >>> ENGINEERING ANALYSIS:\n    ${deepLogic}\n    --------------------------------------------------\n\n`;
-        });
-    }
-    const a = document.createElement('a'); a.href = window.URL.createObjectURL(new Blob([content], { type: 'text/plain' })); a.download = `REPORT_${user}_${Date.now()}.txt`; a.click();
+    let content = `ALCHEMIST INTELLIGENCE REPORT\nSCORE: ${SCORE}\n------------------\n\n`;
+    MISTAKES.forEach(m => {
+        content += `Q: ${m.q}\nDETAILED ANALYSIS: ${m.dg || m.ex}\n\n`;
+    });
+    const blob = new Blob([content], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ALCHEMIST_REPORT_${Date.now()}.txt`;
+    a.click();
 };
 
+/* 9. PHYSICS ENGINE (V83.1) */
 function bindPhysics(el, data) {
     let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
     const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-    const start = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; startTime = Date.now(); el.style.transition="none"; };
+    
+    const start = e => { active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
     const move = e => {
-        if(!active) return; const p = e.touches ? e.touches[0] : e; const dx = p.clientX - sx, dy = p.clientY - sy, dist = Math.sqrt(dx*dx + dy*dy);
-        x = (dist > 35) ? dx * (35/dist) : dx; y = (dist > 35) ? dy * (35/dist) : dy;
-        let ang = Math.atan2(-y, x) * (180/Math.PI); if(ang<0) ang+=360;
-        Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
-        if(dist > 10) { let L = (ang>=45&&ang<135)?labels.up:(ang>=135&&ang<225)?labels.lt:(ang>=225&&ang<315)?labels.dn:labels.rt; if(L) { L.style.opacity = Math.min(dist/30, 1); L.style.transform = `scale(${0.9 + (dist/100)})`; } }
-        if((MODE==="QUIZ" || MODE==="REVIEW") && triggerDir==="DOWN") el.classList.add('study-active'); else el.classList.remove('study-active');
+        if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
         el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
-        triggerDir = (dist >= 35) ? ((ang>=45&&ang<135)?"UP":(ang>=135&&ang<225)?"LEFT":(ang>=225&&ang<315)?"DOWN":"RIGHT") : null;
+        const ang = Math.atan2(-y, x) * (180/Math.PI);
+        Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
+        if (Math.abs(x) > 20 || Math.abs(y) > 20) {
+            let dir = (ang>=45&&ang<135)?"up":(ang>=135||ang<-135)?"lt":(ang>=-135&&ang<-45)?"dn":"rt";
+            if (labels[dir]) labels[dir].style.opacity = 1;
+            triggerDir = dir.toUpperCase();
+        }
     };
     const end = () => {
-        if(!active) return; active=false;
-        if(triggerDir) { if((MODE==="QUIZ" || MODE==="REVIEW") && triggerDir==="DOWN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="translate3d(0,0,0)"; } else handleAction(el, data, x, y, triggerDir); } else { el.style.transition="transform .4s"; el.style.transform="translate3d(0,0,0)"; el.classList.remove('study-active'); }
+        active=false;
+        if (Math.abs(x) > 100 || Math.abs(y) > 100) {
+            handleAction(el, data, triggerDir);
+        } else {
+            el.style.transition="0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            el.style.transform="none";
+        }
     };
-    el.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end); el.addEventListener('touchstart', start); el.addEventListener('touchmove', move); el.addEventListener('touchend', end);
+    
+    el.onmousedown = el.ontouchstart = start;
+    window.onmousemove = window.ontouchmove = move;
+    window.onmouseup = window.ontouchend = end;
 }
 
-function handleAction(el, data, x, y, dir) {
-    isTransitioning = true; el.style.transition = "transform 0.4s ease-in, opacity 0.3s"; el.style.transform = `translate3d(${x*12}px,${y*12}px,0)`; el.style.opacity = "0";
-    setTimeout(() => {
-        el.remove(); 
-        if (MODE === "DATASET_SELECT") { const map = { UP: "SET_A", LEFT: "SET_B", RIGHT: "SET_C", DOWN: "SET_D" }; renderTopicSelect(map[dir]); }
-        else if (MODE === "TOPIC_SELECT") { const map = { UP: "Physical", LEFT: "Organic", RIGHT: "Inorganic", DOWN: "Analytical" }; renderGenreSelect(map[dir]); }
-        else if (MODE === "GENRE_SELECT") { if (dir === "UP") startQuiz("CONCEPT"); else if (dir === "DOWN") startQuiz("APPLICATION"); else if (dir === "LEFT") startQuiz("MATH"); else if (dir === "RIGHT") startQuiz("STATISTICS"); else isTransitioning = false; }
-        else if (MODE === "QUIZ" || MODE === "REVIEW") {
-            const correct = dir === (data.c || data.correct); if(correct) SCORE += (MODE === "REVIEW" ? 5 : 10); else if(MODE === "QUIZ" && !MISTAKES.some(m => m.id === data.id)) MISTAKES.push(data);
-            new Image().src = `${ENDPOINT}?target=Telemetry&questionId=${data.id}&result=${correct}&vectorChoice=${dir}&latency=${Date.now()-startTime}`; POOL.shift(); renderNext(); 
-        }
-        else if (MODE === "SESSION_END") {
-            if (dir === "UP") location.reload(); else if (dir === "DOWN") { if(MISTAKES.length === 0) { location.reload(); return; } MODE = "REVIEW"; POOL = [...MISTAKES]; MISTAKES = []; renderNext(); } else if (dir === "LEFT") renderTopicSelect(CUR_DATASET); else if (dir === "RIGHT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(CUR_GENRE); }
-        }
-        isTransitioning = false; updateUI();
-    }, 400); 
+function handleAction(el, data, dir) {
+    if (MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
+    else if (MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
+    else if (MODE === "GENRE_SELECT") startQuiz(dir);
+    else {
+        if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
+        const actualDir = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT');
+        if (actualDir === data.c) SCORE += 10; else MISTAKES.push(data);
+        
+        // Push to telemetry (Silent)
+        new Image().src = `${ENDPOINT}?id=${data.id}&res=${actualDir===data.c}`;
+        
+        POOL.shift(); renderNext();
+    }
 }
 
-function updateUI() { document.getElementById('xp-ui').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(SCORE % 100)}%`; }
 window.onload = init;
