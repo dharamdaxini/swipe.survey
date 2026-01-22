@@ -1,59 +1,229 @@
+/* --- ALCHEMIST V105.2 | LOCKED UI CORE --- */
+
 :root {
-    --bg: #000; --card: #111; --border: #262626; 
-    --gold: #ffd600; --green: #2ecc71; --blue: #3498db;
-    --font-chem: 'Crimson Text', serif; 
-    --font-ui: 'Inter', sans-serif;
-    --font-code: 'JetBrains Mono', monospace;
+    /* Color Palette: Deep contrast for focus */
+    --bg: #000000; 
+    --card: #111111; 
+    --border: #262626; 
+    --gold: #ffd600; 
+    --green: #2ecc71;
+    --blue: #3498db;
+    --text-primary: #f5f5f5;
+    --text-secondary: #777777;
+    
+    /* Typography: Professional Chemistry & UI fonts */
+    --font-chem: 'Crimson Text', serif; /* Optimized for chemical notation */
+    --font-ui: 'Inter', sans-serif;    /* Industrial UI feel */
+    --font-code: 'JetBrains Mono', monospace; /* Terminal HUD feel */
 }
 
+/* 1. CORE ARCHITECTURE */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
 
-/* Chemistry Formula Visuality */
-sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.2em; }
-sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.4em; }
+body { 
+    margin: 0; 
+    height: 100vh; 
+    background: var(--bg); 
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    overflow: hidden; 
+    touch-action: none; 
+    display: flex; 
+    flex-direction: column;
+}
 
-/* HUD & Progress */
-#header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; }
-.header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
-.progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
-#progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
+/* 2. CHEMISTRY NOTATION RENDERING */
+/* Ensures H2O and 10^-3 are visually correct without breaking line-height */
+sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.25em; }
+sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.45em; }
 
-/* History Tape */
-#history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
-.log-item { margin-bottom: 4px; color: #333; text-transform: uppercase; }
-.log-item.active { color: var(--green); font-weight: 900; }
+/* 3. HUD VISUALS (Locked Top Bar) */
+#header { 
+    width: 92%; 
+    margin: 20px auto 10px; 
+    flex-shrink: 0; 
+    z-index: 1000; 
+}
 
-/* Card Core */
-#stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; perspective: 1500px; display: flex; align-items: center; justify-content: center; }
-.card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); }
-.card-q { font-family: var(--font-chem); font-size: clamp(22px, 5.5vmin, 30px); line-height: 1.35; font-weight: 600; color: #ffffff; width: 100%; max-height: 80%; overflow-y: auto; scrollbar-width: none; }
+.header-meta { 
+    display: flex; 
+    justify-content: space-between; 
+    font-family: var(--font-code); 
+    font-size: 0.85rem; 
+    color: var(--text-secondary); 
+    letter-spacing: 2px;
+    font-weight: 900;
+}
 
-/* Labels & Overlays */
-.swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: #fff; font-weight: 900; font-size: 2rem; text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); }
+.progress-track { 
+    width: 100%; 
+    height: 4px; 
+    background: #1a1a1a; 
+    margin-top: 12px; 
+    border-radius: 2px; 
+    overflow: hidden; 
+}
 
-/* Swipe-Down Fix: Logic Overlay Styling */
-.overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; justify-content: flex-start; border: 1px solid var(--gold); text-align: left; }
-.overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-.overlay-meta { font-family: var(--font-code); font-size: 0.7rem; color: var(--gold); margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-.overlay-body { font-size: 1.15rem; line-height: 1.6; color: #dddddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
-.overlay-hint { font-size: 0.85rem; color: var(--blue); font-family: var(--font-code); font-style: italic; margin-bottom: 20px; }
+#progress-bar { 
+    height: 100%; 
+    background: var(--gold); 
+    width: 0%; 
+    transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1); 
+    box-shadow: 0 0 15px rgba(255, 214, 0, 0.4);
+}
 
-.btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
+/* 4. ACTIVE TAPE LOG (History Terminal) */
+#history-tape {
+    width: 90%; 
+    margin: 0 auto; 
+    flex-grow: 1; 
+    max-height: 10vh; 
+    overflow-y: auto; 
+    display: flex; 
+    flex-direction: column-reverse; 
+    font-family: var(--font-code); 
+    font-size: 0.75rem; 
+    text-align: right; 
+    border-right: 2px solid #222;
+    padding-right: 12px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 40%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40%);
+}
 
-#portal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-#portal textarea { width: 100%; height: 200px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 12px; }
+.log-item { 
+    margin-bottom: 4px; 
+    color: #333333; 
+    transition: 0.3s; 
+    text-transform: uppercase; 
+}
 
-/* Fix for Option Text Overlap */
-.swipe-label { 
-    position: absolute; inset: 0; display: flex; 
-    align-items: center; justify-content: center; 
-    background: rgba(0,0,0,0.95); color: #fff; 
+.log-item.active { 
+    color: var(--green); 
     font-weight: 900; 
-    /* clamp ensures text scales down for long answers */
+}
+
+/* 5. STACK ENGINE & CARDS */
+#stack { 
+    position: relative; 
+    width: 94%; 
+    max-width: 420px; 
+    height: 62vh; 
+    margin: 0 auto 30px; 
+    perspective: 1500px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+.card { 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; 
+    background: var(--card); 
+    border-radius: 44px; 
+    border: 1px solid var(--border);
+    padding: 35px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    text-align: center;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.9); 
+    will-change: transform, opacity;
+}
+
+/* Question Visuality Focus */
+.card-q { 
+    font-family: var(--font-chem); 
+    font-size: clamp(22px, 5.5vmin, 30px); 
+    line-height: 1.35; 
+    font-weight: 600; 
+    color: #ffffff; 
+    width: 100%;
+    max-height: 80%; 
+    overflow-y: auto; 
+    scrollbar-width: none;
+}
+.card-q::-webkit-scrollbar { display: none; }
+
+/* 6. GESTURE FEEDBACK & OVERLAYS */
+.swipe-label { 
+    position: absolute; 
+    inset: 0; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: rgba(0,0,0,0.95); 
+    color: #fff; 
+    font-weight: 900; 
     font-size: clamp(1rem, 4vw, 1.8rem); 
-    text-transform: uppercase; border-radius: 44px; 
-    z-index: 999; opacity: 0; pointer-events: none; 
-    transition: opacity 0.1s; border: 3px solid var(--gold);
-    padding: 20px; text-align: center;
+    text-transform: uppercase; 
+    border-radius: 44px; 
+    z-index: 999; 
+    opacity: 0; 
+    pointer-events: none; 
+    transition: opacity 0.1s;
+    border: 3px solid var(--gold);
+    padding: 20px;
+    text-align: center;
+}
+
+.overlay { 
+    position: absolute; 
+    inset: 0; 
+    background: #080808; 
+    z-index: 1100; 
+    padding: 35px; 
+    border-radius: 44px; 
+    display: none; 
+    flex-direction: column; 
+    border: 1px solid var(--gold); 
+    text-align: left;
+}
+
+.overlay.active { 
+    display: flex; 
+    opacity: 1; 
+    pointer-events: auto; 
+}
+
+.overlay-body { 
+    font-size: 1.15rem; 
+    line-height: 1.6; 
+    color: #dddddd; 
+    font-family: var(--font-chem); 
+    overflow-y: auto; 
+    flex-grow: 1; 
+    margin-bottom: 20px;
+    scrollbar-width: none;
+}
+.overlay-body::-webkit-scrollbar { display: none; }
+
+/* 7. INTERACTIVE BUTTONS */
+.btn { 
+    width: 100%; 
+    padding: 22px; 
+    border-radius: 100px; 
+    border: none; 
+    background: #ffffff; 
+    color: #000000; 
+    font-weight: 900; 
+    text-transform: uppercase; 
+    cursor: pointer; 
+    font-family: var(--font-ui);
+}
+
+/* 8. SYSTEM LOADER */
+#loader { 
+    position: fixed; 
+    inset: 0; 
+    background: #000; 
+    z-index: 5000; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-family: var(--font-code); 
+    color: var(--gold); 
+    letter-spacing: 10px; 
+    font-weight: 900;
 }
