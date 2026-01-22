@@ -4,7 +4,7 @@
     --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
 }
 
-/* HARDWARE ACCELERATION & RESET */
+/* RESET & PERFORMANCE */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
 body { 
     margin: 0; height: 100vh; background: var(--bg); color: #fff;
@@ -29,18 +29,23 @@ sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
 
 .card { 
     position: absolute; width: 100%; height: 90%; background: var(--card); border-radius: 40px; border: 1px solid var(--border);
-    padding: 40px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
+    padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
     will-change: transform, opacity; transform: translate3d(0,0,0);
+    backface-visibility: hidden; align-items: center; text-align: center;
 }
 
-/* PHYSICS STATES */
-.card.study-active { filter: blur(20px) brightness(0.2); opacity: 0.5; transform: scale(0.85) translateY(40px) !important; pointer-events: none; }
-
-/* MATH TYPOGRAPHY UPGRADE */
+/* --- V81.0 LIQUID UI ENGINE --- */
+/* Uses 'vmin' (min of height/width) to scale text. Prevents cutting on laptops/wide screens. */
 .card-q { 
-    font-family: var(--font-chem); font-size: 1.6rem; line-height: 1.5; font-weight: 600; 
-    text-align: center; color: #f0f0f0; text-rendering: optimizeLegibility; 
+    font-family: var(--font-chem); 
+    font-size: clamp(18px, 4.5vmin, 28px); 
+    line-height: 1.4; font-weight: 600; color: #f0f0f0; text-rendering: optimizeLegibility;
+    width: 100%; 
+    max-height: 70%; /* Safety limit */
+    overflow-y: auto; /* Internal scroll if text is massive */
+    scrollbar-width: none; 
 }
+.card-q::-webkit-scrollbar { display: none; }
 
 /* VECTOR LABELS */
 .swipe-label {
@@ -49,11 +54,11 @@ sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
     border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px;
 }
 
-/* HINT SPECIFIC STYLING */
+/* HINT STYLING */
 .sl-down-hint { 
     color: var(--blue) !important; font-size: 1.1rem !important; 
     text-transform: none !important; font-family: var(--font-chem) !important; 
-    padding: 20px 40px; line-height: 1.4; white-space: pre-wrap;
+    padding: 30px; line-height: 1.4; white-space: pre-wrap;
 }
 
 /* OVERLAY */
@@ -67,4 +72,5 @@ sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
 .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #bbb; margin-bottom: 30px; font-family: var(--font-chem); }
 .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer;}
 
+/* LOADING SCREEN */
 #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; }
