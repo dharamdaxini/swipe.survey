@@ -3,138 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V107.5 | Master Steel</title>
+    <title>Alchemist V107.7 | Final Steel</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
 
-        /* Formula Visuality */
+        /* Chemistry Symbol Formatting */
         sub { font-size: 0.75em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4em; }
 
-        /* HUD & Progress */
+        /* HUD & Metrics */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
 
-        /* V81.1 Magnetic Center-Locked Stack */
+        /* V81.1 Legacy Magnetic Stack (Lower Base - 58%) */
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; transform-origin: center center; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .card-q { font-family: var(--font-chem); font-size: clamp(16px, 4.2vmin, 24px); line-height: 1.45; font-weight: 600; color: #ffffff; width: 100%; max-height: 85%; overflow-y: auto; scrollbar-width: none; }
 
-        /* Swipe Labels */
+        /* Swipe Interaction Overlays */
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); color: #fff; font-weight: 900; font-size: clamp(0.9rem, 3.5vw, 1.5rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); padding: 20px; text-align: center; }
 
-        /* Data Portal UI */
+        /* Logic & Hint Overlay */
+        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
+        .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
+        .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
+        
+        /* Data Persistence Portal */
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-        #portal textarea { width: 100%; height: 300px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 10px; outline: none; }
-        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
+        #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.2rem; text-transform: uppercase; }
+        #portal textarea { width: 100%; height: 300px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 10px; outline: none; transition: border 0.3s; }
+        #portal textarea:focus { border-color: var(--gold); }
+        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
         .btn-gold { background: var(--gold); }
     </style>
 </head>
 <body>
 
 <div id="portal">
-    <h1 style="color:var(--gold); letter-spacing:5px; margin:0; font-size:1.2rem;">ALCHEMIST_MASTER</h1>
-    <p style="color:#666; font-size:0.7rem; margin:5px 0;">PERSISTENT VAULT ENABLED</p>
-    <textarea id="data-input" placeholder="PASTE_YOUR_DATA_HERE"></textarea>
-    <button class="btn btn-gold" onclick="vaultAndInject()">SYNC & INITIALIZE</button>
+    <h1>Alchemist_V107.7</h1>
+    <p style="color: #555; font-size: 0.7rem; margin: 10px 0 0;">CSV PERSISTENCE ENGINE ACTIVE</p>
+    <textarea id="data-input" placeholder="PASTE CSV/EXCEL DATA HERE..."></textarea>
+    <button class="btn btn-gold" onclick="syncAndStart()">INITIALIZE VAULT</button>
 </div>
 
 <div id="header">
-    <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
+    <div class="header-meta"><span id="progress-text">READY</span><span id="score-text">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="stack"></div>
 
 <script>
-    let DATABASE = [], POOL = [], SCORE = 0, MODE = "MENU_DIFF", CUR_DATASET = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
+    let VAULT = [], POOL = [], SCORE = 0, MODE = "INIT", CUR_SET = "", SESSION_MAX = 20, INDEX = 0;
 
     window.onload = () => {
-        const saved = localStorage.getItem('alchemist_vault');
-        if (saved) document.getElementById('data-input').value = saved;
+        const cached = localStorage.getItem('alchemist_v107_vault');
+        if (cached) document.getElementById('data-input').value = cached;
     };
 
-    function vaultAndInject() {
+    function syncAndStart() {
         const raw = document.getElementById('data-input').value.trim();
         if (!raw) return;
-        localStorage.setItem('alchemist_vault', raw);
-        processData(raw);
+        localStorage.setItem('alchemist_v107_vault', raw);
+        parseVault(raw);
         document.getElementById('portal').style.display = 'none';
         ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
     }
 
-    function processData(raw) {
+    function parseVault(raw) {
         const lines = raw.split(/\r?\n/);
-        DATABASE = lines.map(line => {
-            const pattern = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
-            const cols = (line.match(pattern) || []).map(c => c.replace(/^"|"$/g, '').trim());
-            if (cols.length < 8) return null;
+        VAULT = lines.map(line => {
+            // Regex to handle commas inside quoted strings (Standard CSV)
+            const regex = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
+            const cols = (line.match(regex) || []).map(c => c.replace(/^"|"$/g, '').trim());
+            
+            // Map: ID(0), SET(1), TOPIC(2), TYPE(3), Q(4), U(5), R(6), L(7), ANS(8), EXPL(9), HINT(10)
+            if (cols.length < 11) return null;
             return {
-                id: cols[0], ds: cols[1], tp: cols[2], ty: cols[3],
-                q: cols[4], u: cols[5], r: cols[6], l: cols[7],
-                c: cols[8] || "RIGHT"
+                id: cols[0], ds: cols[1], q: cols[4], u: cols[5], r: cols[6], l: cols[7],
+                ans: cols[8], expl: cols[9], hint: cols[10]
             };
         }).filter(x => x !== null && x.id.toLowerCase() !== "id");
-        renderDiff();
+        renderMenu("SELECT DATASET", "SET A", "SET B", "SET C", "SET D");
     }
 
-    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>') : "";
+    const format = (t) => t ? t.toString()
+        .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>')
+        .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')
+        .replace(/\^(\d+)/g, '<sup>$1</sup>') : "";
 
     function bindPhysics(el, data) {
-        let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
-        const lbs = { up: el.querySelector('.sl-up'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        const MAX_RADIUS = 38; 
+        let x = 0, y = 0, sx = 0, sy = 0, active = false, dir = null;
+        const lbs = { up: el.querySelector('.sl-up'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right'), dn: el.querySelector('.sl-down') };
+        const RADIUS = 38; // 1cm Lock
 
         el.ontouchstart = e => { active = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY; el.style.transition = "none"; };
         window.ontouchmove = e => { 
             if (!active) return; 
             let dx = e.touches[0].clientX - sx, dy = e.touches[0].clientY - sy; 
             const dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist > MAX_RADIUS) { x = dx * (MAX_RADIUS/dist); y = dy * (MAX_RADIUS/dist); } else { x = dx; y = dy; }
-            requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
+            
+            // Magnetic Clamping
+            if (dist > RADIUS) { x = dx * (RADIUS/dist); y = dy * (RADIUS/dist); } else { x = dx; y = dy; }
+            
+            requestAnimationFrame(() => { 
+                if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; 
+            });
+
             const ang = Math.atan2(-dy, dx) * (180 / Math.PI);
             Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; });
+            
             if (dist > 20) {
-                let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : "rt";
-                if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase();
+                let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
+                if (lbs[d]) lbs[d].style.opacity = 1; dir = d.toUpperCase();
             }
         };
-        window.ontouchend = () => { if (!active) return; active = false; if (Math.sqrt(x*x + y*y) > 30) handleAction(el, data, td); else { el.style.transition = "0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } };
+        window.ontouchend = () => { 
+            if (!active) return; active = false; 
+            if (Math.sqrt(x*x + y*y) > 30) routeAction(el, data, dir); 
+            else { el.style.transition = "0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } 
+        };
     }
 
-    function renderMenu(q, up, lt, rt) { 
-        const s = document.getElementById('stack'); s.innerHTML = ""; 
-        const c = document.createElement('div'); c.className = "card"; 
-        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div>`; 
-        s.appendChild(c); bindPhysics(c, {}); 
+    function renderMenu(q, up, lt, rt, dn) {
+        MODE = "MENU"; const s = document.getElementById('stack'); s.innerHTML = ""; 
+        const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div>${dn ? `<div class="swipe-label sl-down">${dn}</div>` : ''}`;
+        s.appendChild(c); bindPhysics(c, {});
     }
 
-    function renderDiff() { MODE = "MENU_DIFF"; renderMenu("CHOOSE SET", "SET A", "SET B", "SET C"); }
-    function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds; renderMenu("DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC"); }
-    function renderVolume() { MODE = "MENU_VOLUME"; renderMenu("SESSION", "20 Qs", "50 Qs", "100 Qs"); }
-    function startQuiz(limit) { SESSION_LIMIT = limit; CUR_INDEX = 1; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => 0.5 - Math.random()).slice(0, limit); renderNext(); }
+    function startQuiz(set) {
+        MODE = "QUIZ"; CUR_SET = set; INDEX = 1; SCORE = 0;
+        POOL = VAULT.filter(v => v.ds === set).sort(() => 0.5 - Math.random()).slice(0, 20);
+        renderNext();
+    }
 
     function renderNext() {
         const s = document.getElementById('stack'); s.innerHTML = "";
-        if (!POOL.length) { renderDiff(); return; }
+        if (!POOL.length) { renderMenu("SESSION COMPLETE", "RESTART", "MENU", "NEW SET"); return; }
+        
         const q = { ...POOL[0] };
-        const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
-        q.u = items[0].t; q.r = items[1].t; q.l = items[2].t; q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
+        // Randomize Options
+        const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
+        q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
+        q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
+
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div>`;
+        c.innerHTML = `
+            <div class="card-q">${format(q.q)}</div>
+            <div class="swipe-label sl-up">${q.u}</div>
+            <div class="swipe-label sl-left">${q.l}</div>
+            <div class="swipe-label sl-right">${q.r}</div>
+            <div class="swipe-label sl-down">⬇ HINT & LOGIC</div>
+            <div class="overlay">
+                <div class="overlay-body">
+                    <strong style="color:var(--gold)">HINT:</strong><br>${format(q.hint)}<br><br>
+                    <strong style="color:var(--blue)">ANALYSIS:</strong><br>${format(q.expl)}
+                </div>
+                <button class="btn" onclick="this.parentElement.classList.remove('active')">RETURN</button>
+            </div>
+        `;
         s.appendChild(c); bindPhysics(c, q);
+        updateHUD();
     }
 
-    function handleAction(el, data, dir) {
-        if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET_A" : dir === "LT" ? "SET_B" : "SET_C");
-        else if (MODE === "MENU_TOPIC") renderVolume();
-        else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 20 : dir === "LT" ? 50 : 100);
-        else { POOL.shift(); CUR_INDEX++; renderNext(); }
+    function updateHUD() {
+        document.getElementById('progress-text').innerText = `${INDEX} / 20`;
+        document.getElementById('score-text').innerText = `${SCORE} XP`;
+        document.getElementById('progress-bar').style.width = `${(INDEX/20)*100}%`;
+    }
+
+    function routeAction(el, data, dir) {
+        if (MODE === "MENU") {
+            if (dir === "UP") startQuiz("SET_A");
+            else if (dir === "LT") startQuiz("SET_B");
+            else if (dir === "RT") startQuiz("SET_C");
+            else if (dir === "DN") startQuiz("SET_D");
+        } else {
+            if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
+            if (dir === data.ans.replace('LEFT', 'LT').replace('RIGHT', 'RT')) SCORE += 10;
+            POOL.shift(); INDEX++; renderNext();
+        }
     }
 </script>
 </body>
