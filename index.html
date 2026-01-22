@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V80.8 | Liquid Text</title>
+    <title>Alchemist V80.9 | Final Production</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
@@ -32,7 +32,7 @@
         .progress-track { width: 100%; height: 2px; background: #1a1a1a; margin-top: 10px; border-radius: 1px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-        /* STACK ENGINE (Depth sorting) */
+        /* STACK ENGINE */
         #stack { 
             position: relative; width: 92%; max-width: 400px; height: 70vh; 
             margin: auto; perspective: 1200px; display: flex; align-items: center; justify-content: center;
@@ -42,26 +42,15 @@
             position: absolute; width: 100%; height: 90%; background: var(--card); border-radius: 40px; border: 1px solid var(--border);
             padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
             will-change: transform, opacity; transform: translate3d(0,0,0);
-            backface-visibility: hidden;
-            /* Flex layout for centering content perfectly */
-            align-items: center; text-align: center;
+            backface-visibility: hidden; align-items: center; text-align: center;
         }
 
-        /* LIQUID TYPOGRAPHY: Scales with screen width to prevent cutting */
+        /* LIQUID TYPOGRAPHY */
         .card-q { 
             font-family: var(--font-chem); 
-            /* Clamp: Minimum 1.1rem, Preferred 5vw, Maximum 1.7rem */
             font-size: clamp(1.2rem, 5vw, 1.7rem); 
-            line-height: 1.4; 
-            font-weight: 600; 
-            color: #f0f0f0; 
-            text-rendering: optimizeLegibility;
-            width: 100%;
-            /* Safety Scroll: If text is excessively long, allow internal scroll instead of cutting */
-            max-height: 65%;
-            overflow-y: auto;
-            /* Hide scrollbar */
-            scrollbar-width: none; 
+            line-height: 1.4; font-weight: 600; color: #f0f0f0; text-rendering: optimizeLegibility;
+            width: 100%; max-height: 65%; overflow-y: auto; scrollbar-width: none; 
         }
         .card-q::-webkit-scrollbar { display: none; }
 
@@ -85,6 +74,7 @@
             display: flex; flex-direction: column; justify-content: center; overflow-y: auto;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
+        .overlay-label { font-size: 0.7rem; color: var(--gold); font-family: var(--font-code); margin-bottom: 10px; letter-spacing: 2px; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #bbb; margin-bottom: 30px; font-family: var(--font-chem); }
         .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer;}
 
@@ -93,7 +83,7 @@
 </head>
 <body>
 
-<div id="loader">ALCHEMIST V80.8</div>
+<div id="loader">ALCHEMIST V80.9</div>
 
 <div id="header">
     <div class="header-meta">
@@ -110,121 +100,44 @@
     const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
     const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-    /* --- 100Q DATA REPOSITORY --- */
+    /* --- DATA REPOSITORY (SET A + SET B SAMPLE) --- */
     const RAW_DATA = [
+        // SET A: CORE (Sample)
         {"id": "SET_A_0001", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "In a second-order reaction rate = k[A]², why is the half-life t₁/₂ dependent on initial concentration?", "u": "Rate decreases too slowly", "r": "Derivative depends on [A]²", "l": "Integral diverges", "c": "RIGHT", "ex": "✅ Integrating 1/[A]² yields t = 1/(k[A]₀).", "h": "Integration of power rule."},
         {"id": "SET_A_0002", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Why must the Hamiltonian operator Ĥ be Hermitian?", "u": "Real eigenvalues", "r": "Complex waves", "l": "Boundary conditions", "c": "UP", "ex": "✅ Hermiticity guarantees real energy eigenvalues.", "h": "Real spectrum."},
         {"id": "SET_A_0003", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Which property validates Maxwell Relations?", "u": "Exact Differentials", "r": "Homogeneity", "l": "Additivity", "c": "UP", "ex": "✅ State functions are exact differentials (path-independent).", "h": "Mixed partials equality."},
-        {"id": "SET_A_0004", "ds": "SET_A", "tp": "Stat Mech", "ty": "CONCEPT", "q": "As T → 0, Partition Function Z approaches:", "u": "Degeneracy g₀", "r": "Entropy max", "l": "Infinite", "c": "UP", "ex": "✅ Only the ground state term survives in the sum.", "h": "Limit of e^-x."},
-        {"id": "SET_A_0005", "ds": "SET_A", "tp": "Group Theory", "ty": "CONCEPT", "q": "Forbidden IR transition means direct product lacks:", "u": "Totally Symmetric Rep", "r": "Basis set", "l": "Imaginary E", "c": "UP", "ex": "✅ Integral over symmetric space must be non-zero.", "h": "Symmetry integral."},
-        {"id": "SET_A_0006", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Commutator [A, B] = 0 implies:", "u": "Simultaneous eigenfunctions", "r": "Orthogonal", "l": "Time-dependent", "c": "UP", "ex": "✅ Can be measured precisely at the same time.", "h": "Simultaneous measurement."},
-        {"id": "SET_A_0007", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "Intercept of Arrhenius plot ln(k) vs 1/T:", "u": "ln(A)", "r": "Activation Energy", "l": "Enthalpy", "c": "UP", "ex": "✅ ln(k) = ln(A) - Ea/RT. Intercept is ln(A).", "h": "y-intercept."},
-        {"id": "SET_A_0008", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Fourier Transform connects FID to spectrum by:", "u": "Time → Frequency", "r": "Phase → Amp", "l": "Integrates noise", "c": "UP", "ex": "✅ Decomposes time-domain signal into frequencies.", "h": "t to omega."},
-        {"id": "SET_A_0009", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "Stirling's Approx valid when:", "u": "N is large", "r": "N is small", "l": "N is integer", "c": "UP", "ex": "✅ Large N allows sum of logs to approximate integral.", "h": "Discrete to continuous."},
-        {"id": "SET_A_0010", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Gibbs-Duhem equation implies potentials are:", "u": "Dependent/Coupled", "r": "Equal", "l": "Constant", "c": "UP", "ex": "✅ Σ n dμ = 0. Potentials cannot change independently.", "h": "Reduced DOF."},
-        {"id": "SET_A_0011", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Variational Principle: E_trial is always:", "u": "≥ E_true", "r": "≤ E_true", "l": "Zero", "c": "UP", "ex": "✅ Upper bound to the true ground state energy.", "h": "You can't beat truth."},
-        {"id": "SET_A_0012", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Steady State fails during induction because:", "u": "Formation > Consumption", "r": "Rate=0", "l": "[I] constant", "c": "UP", "ex": "✅ Intermediate must accumulate from zero first.", "h": "Filling bucket."},
-        {"id": "SET_A_0013", "ds": "SET_A", "tp": "Crystallography", "ty": "MATH", "q": "Bragg's Law nλ = 2d sinθ geometry:", "u": "Path difference", "r": "Lattice energy", "l": "Packing", "c": "UP", "ex": "✅ Extra distance 2d sinθ must match wavelengths.", "h": "Extra mile."},
-        {"id": "SET_A_0014", "ds": "SET_A", "tp": "Electrochem", "ty": "MATH", "q": "Nernst Eq at equilibrium (Q=K):", "u": "E_cell = 0", "r": "ln Q infinite", "l": "E° doubles", "c": "UP", "ex": "✅ Driving force cancels standard potential.", "h": "Balance."},
-        {"id": "SET_A_0015", "ds": "SET_A", "tp": "Surface Chem", "ty": "MATH", "q": "Langmuir Isotherm θ → 1 as P → ∞ because:", "u": "KP dominates denominator", "r": "Numerator 0", "l": "K is 0", "c": "UP", "ex": "✅ θ = KP/(1+KP). Ratio approaches 1.", "h": "Saturation."},
-        {"id": "SET_A_0016", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Overlap integral S of orthogonal orbitals:", "u": "Zero", "r": "One", "l": "Infinite", "c": "UP", "ex": "✅ Orthogonality means zero overlap integral.", "h": "Integral is 0."},
-        {"id": "SET_A_0017", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Why is Cp defined as (∂H/∂T)_p?", "u": "Isobaric path", "r": "H is 0", "l": "H independent", "c": "UP", "ex": "✅ Subscript p locks Pressure constant.", "h": "Fix the path."},
-        {"id": "SET_A_0018", "ds": "SET_A", "tp": "Polymer Chem", "ty": "STATISTICS", "q": "Number Average Mn is which moment?", "u": "First moment", "r": "Second moment", "l": "Variance", "c": "UP", "ex": "✅ Arithmetic mean is the first moment.", "h": "Arithmetic mean."},
-        {"id": "SET_A_0019", "ds": "SET_A", "tp": "Fluid Dynamics", "ty": "MATH", "q": "Viscosity term μ∇²v represents:", "u": "Diffusion", "r": "Convection", "l": "Source", "c": "UP", "ex": "✅ Laplacian ∇² implies diffusion of momentum.", "h": "Spreading out."},
-        {"id": "SET_A_0020", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Beer's Law deviations at high conc:", "u": "Refractive index / ε change", "r": "Log fail", "l": "Path change", "c": "UP", "ex": "✅ Interactions change molar absorptivity ε.", "h": "ε not constant."},
-        {"id": "SET_A_0021", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Why is 'n' integer in Box?", "u": "Match boundary zeros", "r": "Min energy", "l": "Normalize", "c": "UP", "ex": "✅ Wave must be zero at the walls.", "h": "Fit the wave."},
-        {"id": "SET_A_0022", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "In dU = TdS - PdV, why P negative?", "u": "System loses energy pushing", "r": "Work ON system", "l": "P vector", "c": "UP", "ex": "✅ Expansion costs energy (pushing out).", "h": "Cost of expansion."},
-        {"id": "SET_A_0023", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "Zero-order rate implies:", "u": "Independent of conc", "r": "Linear dep", "l": "Exponential", "c": "UP", "ex": "✅ Rate = k. Constant speed.", "h": "Constant speed."},
-        {"id": "SET_A_0024", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "2s radial node occurs when:", "u": "Polynomial is zero", "r": "One", "l": "Infinite", "c": "UP", "ex": "✅ Node is zero probability.", "h": "Roots."},
-        {"id": "SET_A_0025", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "Boltzmann prob as E → ∞:", "u": "Zero", "r": "One", "l": "Infinite", "c": "UP", "ex": "✅ Exponential decay e^-E/kT.", "h": "Decay."},
-        {"id": "SET_A_0026", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "If [A,B] ≠ 0, variance product is:", "u": "Bounded by non-zero", "r": "Sum zero", "l": "Prod zero", "c": "UP", "ex": "✅ Uncertainty principle: σA²σB² ≥ |<[A,B]>|²/4.", "h": "Heisenberg."},
-        {"id": "SET_A_0027", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Arrhenius: if T → ∞, k approaches:", "u": "A", "r": "Infinity", "l": "Zero", "c": "UP", "ex": "✅ e^0 = 1. k approaches Pre-exponential A.", "h": "Limit."},
-        {"id": "SET_A_0028", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "dG = VdP - SdT. V is:", "u": "(∂G/∂P)T", "r": "(∂G/∂T)P", "l": "-(∂G/∂T)P", "c": "UP", "ex": "✅ Coefficient of dP is V.", "h": "Coefficients."},
-        {"id": "SET_A_0029", "ds": "SET_A", "tp": "Solutions", "ty": "CONCEPT", "q": "Raoult's Law plot is:", "u": "Linear", "r": "Log", "l": "Exp", "c": "UP", "ex": "✅ P = X * P° is linear.", "h": "y = mx."},
-        {"id": "SET_A_0030", "ds": "SET_A", "tp": "Solid State", "ty": "CONCEPT", "q": "APF is ratio of:", "u": "Vol atoms / Vol cell", "r": "Surface/Vol", "l": "Mass/Density", "c": "UP", "ex": "✅ Geometric efficiency percentage.", "h": "Efficiency."},
-        {"id": "SET_A_0031", "ds": "SET_A", "tp": "Acid-Base", "ty": "CONCEPT", "q": "10x change in [H+] means pH change:", "u": "1 unit", "r": "10 units", "l": "0.1", "c": "UP", "ex": "✅ log(10) = 1.", "h": "Log scale."},
-        {"id": "SET_A_0032", "ds": "SET_A", "tp": "Gas Laws", "ty": "CONCEPT", "q": "Z deviates from 1 due to:", "u": "IMF and Volume", "r": "Temp error", "l": "Gravity", "c": "UP", "ex": "✅ Real gases interact and take up space.", "h": "Non-ideal."},
-        {"id": "SET_A_0033", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Normalize ψ by solving:", "u": "Integral |ψ|² = 1", "r": "Deriv=0", "l": "Hψ=Eψ", "c": "UP", "ex": "✅ Total probability must be 1.", "h": "100% chance."},
-        {"id": "SET_A_0034", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Faraday mass prop to:", "u": "Total Charge Q", "r": "Voltage", "l": "Resist", "c": "UP", "ex": "✅ Counting electrons.", "h": "Electron count."},
-        {"id": "SET_A_0035", "ds": "SET_A", "tp": "Stat Mech", "ty": "CONCEPT", "q": "If W doubles, S increases by:", "u": "k ln 2", "r": "2k", "l": "k/2", "c": "UP", "ex": "✅ Log product rule.", "h": "Add log."},
-        {"id": "SET_A_0036", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "1st Order [A] vs t plot:", "u": "Exponential Decay", "r": "Linear", "l": "Parabola", "c": "UP", "ex": "✅ e^-kt curve.", "h": "Decay."},
-        {"id": "SET_A_0037", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Box energy quantized due to:", "u": "Boundary conditions", "r": "Pot=0", "l": "Mass", "c": "UP", "ex": "✅ Standing wave fit.", "h": "Guitar string."},
-        {"id": "SET_A_0038", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Colligative relies on activity:", "u": "< 1", "r": "> 1", "l": "= 1", "c": "UP", "ex": "✅ Dilution lowers chemical potential.", "h": "Dilution."},
-        {"id": "SET_A_0039", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Rotational line spacing:", "u": "Constant (2B)", "r": "Increases", "l": "Decreases", "c": "UP", "ex": "✅ Picket fence pattern.", "h": "Constant gap."},
-        {"id": "SET_A_0040", "ds": "SET_A", "tp": "Bonding", "ty": "CONCEPT", "q": "Bond Order formula:", "u": "(Bond - Anti)/2", "r": "Sum/2", "l": "Prod", "c": "UP", "ex": "✅ Net bonding electrons.", "h": "Net glue."},
-        {"id": "SET_A_0041", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Why K dimensionless?", "u": "Uses Activities", "r": "Units cancel", "l": "Pressure", "c": "UP", "ex": "✅ Ratio to standard state.", "h": "Ratio."},
-        {"id": "SET_A_0042", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Rate doubles every 10C. Curve is:", "u": "Exponential", "r": "Linear", "l": "Log", "c": "UP", "ex": "✅ Geometric growth.", "h": "Growth."},
-        {"id": "SET_A_0043", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Prob at Node:", "u": "Zero", "r": "Small", "l": "Undef", "c": "UP", "ex": "✅ Node = Zero Amp.", "h": "Zero."},
-        {"id": "SET_A_0044", "ds": "SET_A", "tp": "Chromatography", "ty": "CONCEPT", "q": "Resolution depends on separation and:", "u": "Width", "r": "Height", "l": "Area", "c": "UP", "ex": "✅ Narrow peaks help.", "h": "Spread."},
-        {"id": "SET_A_0045", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Why Work path-dependent?", "u": "Area under curve varies", "r": "V state func", "l": "dG exact", "c": "UP", "ex": "✅ Integral depends on path.", "h": "Area."},
-        {"id": "SET_A_0046", "ds": "SET_A", "tp": "Nuclear", "ty": "CONCEPT", "q": "Low count decay dist:", "u": "Poisson", "r": "Gauss", "l": "Binomial", "c": "UP", "ex": "✅ Rare random events.", "h": "Rare."},
-        {"id": "SET_A_0047", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "H-atom degeneracy (2s=2p) due to:", "u": "Symmetry", "r": "Mass", "l": "Spin", "c": "UP", "ex": "✅ Spherical symmetry.", "h": "Sym."},
-        {"id": "SET_A_0048", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Zero-order k units:", "u": "M/s", "r": "1/s", "l": "1/Ms", "c": "UP", "ex": "✅ Match Rate units.", "h": "Rate units."},
-        {"id": "SET_A_0049", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Approx Activity with Conc because:", "u": "γ ≈ 1 dilute", "r": "Unmeasurable", "l": "Meters", "c": "UP", "ex": "✅ Ideal solution approx.", "h": "Ideal."},
-        {"id": "SET_A_0050", "ds": "SET_A", "tp": "Group Theory", "ty": "CONCEPT", "q": "Trace of Matrix is:", "u": "Character", "r": "Det", "l": "Eigenval", "c": "UP", "ex": "✅ Sum of diagonals.", "h": "Char."},
-        {"id": "SET_A_0051", "ds": "SET_A", "tp": "Enzyme Kinetics", "ty": "MATH", "q": "Slope of Lineweaver-Burk:", "u": "Km/Vmax", "r": "Vmax/Km", "l": "1/Vmax", "c": "UP", "ex": "✅ Double reciprocal form.", "h": "Reciprocal."},
-        {"id": "SET_A_0052", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Why L² is l(l+1) not l²?", "u": "Uncertainty/Commutation", "r": "Integer", "l": "Vector", "c": "UP", "ex": "✅ Components don't commute (wobble).", "h": "Wobble."},
-        {"id": "SET_A_0053", "ds": "SET_A", "tp": "Solutions", "ty": "MATH", "q": "Debye-Huckel log(γ) dep on I:", "u": "Sqrt(I)", "r": "Linear", "l": "InvSq", "c": "UP", "ex": "✅ Screening length physics.", "h": "Root."},
-        {"id": "SET_A_0054", "ds": "SET_A", "tp": "Spectroscopy", "ty": "MATH", "q": "Pascal's triangle in NMR from:", "u": "Binomial expansion", "r": "Fourier", "l": "Gauss", "c": "UP", "ex": "✅ Combinatorics of spin flips.", "h": "Coin flip."},
-        {"id": "SET_A_0055", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Ideal U indep of V because:", "u": "No interactions", "r": "P constant", "l": "T constant", "c": "UP", "ex": "✅ Distance costs no energy.", "h": "No forces."},
-        {"id": "SET_A_0056", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "A->B->C, k1>>k2. Rate limit:", "u": "B->C", "r": "A->B", "l": "Sum", "c": "UP", "ex": "✅ Fast step waits for slow step.", "h": "Bottleneck."},
-        {"id": "SET_A_0057", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "Equipartition energy per quad term:", "u": "1/2 kT", "r": "kT", "l": "3/2 kT", "c": "UP", "ex": "✅ Gaussian integral result.", "h": "Half kT."},
-        {"id": "SET_A_0058", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Cond decreases with root Conc due to:", "u": "Atmosphere drag", "r": "Neutral", "l": "Viscosity", "c": "UP", "ex": "✅ Relaxation effect.", "h": "Drag."},
-        {"id": "SET_A_0059", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Radial prob has r² because:", "u": "Volume element", "r": "Norm", "l": "Repulsion", "c": "UP", "ex": "✅ Shell volume 4πr².", "h": "Shell vol."},
-        {"id": "SET_A_0060", "ds": "SET_A", "tp": "Thermodynamics", "ty": "MATH", "q": "d(G/T)/dT relates to:", "u": "Enthalpy", "r": "Entropy", "l": "Cp", "c": "UP", "ex": "✅ Gibbs-Helmholtz.", "h": "H."},
-        {"id": "SET_A_0061", "ds": "SET_A", "tp": "Surface Chem", "ty": "MATH", "q": "Capillary rise balances tension vs:", "u": "Gravity", "r": "Visc", "l": "Press", "c": "UP", "ex": "✅ Weight of column.", "h": "Weight."},
-        {"id": "SET_A_0062", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Why 'A' approx constant?", "u": "Root T weak vs Exp", "r": "Const", "l": "Exp T", "c": "UP", "ex": "✅ Exponential term dominates.", "h": "Weak dep."},
-        {"id": "SET_A_0063", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Huckel Deloc Energy is:", "u": "Pi sys - Isolated", "r": "Gap", "l": "Sum", "c": "UP", "ex": "✅ Stabilization benefit.", "h": "Benefit."},
-        {"id": "SET_A_0064", "ds": "SET_A", "tp": "Thermodynamics", "ty": "MATH", "q": "Critical Point singularity:", "u": "1st/2nd derivs 0", "r": "T inf", "l": "V 0", "c": "UP", "ex": "✅ Flat inflection.", "h": "Flat."},
-        {"id": "SET_A_0065", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Anti-Stokes weak because:", "u": "Low excited pop", "r": "Scatter eff", "l": "Loss", "c": "UP", "ex": "✅ Boltzmann.", "h": "Start high."},
-        {"id": "SET_A_0066", "ds": "SET_A", "tp": "Solutions", "ty": "CONCEPT", "q": "Van't Hoff i corrects:", "u": "Particle count", "r": "Interact", "l": "Vol", "c": "UP", "ex": "✅ Dissociation count.", "h": "Count."},
-        {"id": "SET_A_0067", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Born-Oppenheimer:", "u": "Sep Elec/Nuc", "r": "No rep", "l": "Class", "c": "UP", "ex": "✅ Mass difference.", "h": "Heavy/Slow."},
-        {"id": "SET_A_0068", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Autocatalytic curve:", "u": "Sigmoidal", "r": "Linear", "l": "Decay", "c": "UP", "ex": "✅ Self-feeding.", "h": "S-shape."},
-        {"id": "SET_A_0069", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Carnot eff < 1 because:", "u": "Tc=0 impossible", "r": "Friction", "l": "Leak", "c": "UP", "ex": "✅ Third Law.", "h": "Abs Zero."},
-        {"id": "SET_A_0070", "ds": "SET_A", "tp": "Solid State", "ty": "MATH", "q": "Miller index parallel:", "u": "Zero", "r": "Inf", "l": "One", "c": "UP", "ex": "✅ 1/Infinity.", "h": "Reciprocal."},
-        {"id": "SET_A_0071", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "ZPE non-zero because:", "u": "Uncertainty", "r": "Cons", "l": "Pauli", "c": "UP", "ex": "✅ Position/Momentum constraint.", "h": "Uncertainty."},
-        {"id": "SET_A_0072", "ds": "SET_A", "tp": "Acid-Base", "ty": "MATH", "q": "pH = pKa at:", "u": "Inflection (Flat)", "r": "Equiv", "l": "Start", "c": "UP", "ex": "✅ Max buffering.", "h": "Buffer."},
-        {"id": "SET_A_0073", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "S of combined system:", "u": "Additive", "r": "Mult", "l": "Exp", "c": "UP", "ex": "✅ Log product rule.", "h": "Add."},
-        {"id": "SET_A_0074", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Steady State means:", "u": "In=Out", "r": "Zero", "l": "Const", "c": "UP", "ex": "✅ Rate balance.", "h": "Balance."},
-        {"id": "SET_A_0075", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "μ = Molar G only for:", "u": "Pure", "r": "Mixt", "l": "Ideal", "c": "UP", "ex": "✅ No partial molarity.", "h": "Pure."},
-        {"id": "SET_A_0076", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Exchange Integral K:", "u": "Lowers E (Parallel)", "r": "Raises", "l": "Zero", "c": "UP", "ex": "✅ Antisymmetry benefit.", "h": "Hund."},
-        {"id": "SET_A_0077", "ds": "SET_A", "tp": "Spectroscopy", "ty": "MATH", "q": "Swap H for D, B constant:", "u": "Decreases", "r": "Inc", "l": "Same", "c": "UP", "ex": "✅ Inertia increases.", "h": "Heavy slow."},
-        {"id": "SET_A_0078", "ds": "SET_A", "tp": "Electrochem", "ty": "MATH", "q": "Cottrell decay:", "u": "t^-1/2", "r": "Exp", "l": "Inv", "c": "UP", "ex": "✅ Diffusion growth.", "h": "Root time."},
-        {"id": "SET_A_0079", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Ideal Mixing Enthalpy 0:", "u": "Interactions identical", "r": "Entropy", "l": "Vol", "c": "UP", "ex": "✅ No energy diff.", "h": "Same same."},
-        {"id": "SET_A_0080", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Reversible drive force:", "u": "Infinitesimal", "r": "Large", "l": "Zero", "c": "UP", "ex": "✅ Equilibrium step.", "h": "Tiny."},
-        {"id": "SET_A_0081", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Tunneling exp depends on:", "u": "Barrier width", "r": "Temp", "l": "Spin", "c": "UP", "ex": "✅ Decay length.", "h": "Width."},
-        {"id": "SET_A_0082", "ds": "SET_A", "tp": "Analytical Chemistry", "ty": "MATH", "q": "T=0.1, Abs is:", "u": "1.0", "r": "0.1", "l": "2.0", "c": "UP", "ex": "✅ -log(0.1).", "h": "Log."},
-        {"id": "SET_A_0083", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Fugacity replaces:", "u": "Pressure", "r": "Vol", "l": "Temp", "c": "UP", "ex": "✅ Effective P.", "h": "Press."},
-        {"id": "SET_A_0084", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Transition State curvature:", "u": "Neg one way", "r": "Pos", "l": "Zero", "c": "UP", "ex": "✅ Saddle point.", "h": "Saddle."},
-        {"id": "SET_A_0085", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Frank-Condon vertical:", "u": "Fast elec/Slow nuc", "r": "Mom", "l": "Quant", "c": "UP", "ex": "✅ Time scale sep.", "h": "Frozen."},
-        {"id": "SET_A_0086", "ds": "SET_A", "tp": "Stat Mech", "ty": "CONCEPT", "q": "Grand Canonical exch:", "u": "Part & Energy", "r": "E only", "l": "V", "c": "UP", "ex": "✅ Open system.", "h": "Open."},
-        {"id": "SET_A_0087", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Conc Cell source:", "u": "Entropy/Nernst", "r": "Res", "l": "Temp", "c": "UP", "ex": "✅ Mixing drive.", "h": "Mixing."},
-        {"id": "SET_A_0088", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Slater Det enforces:", "u": "Antisymmetry", "r": "Norm", "l": "Orth", "c": "UP", "ex": "✅ Pauli.", "h": "Sign flip."},
-        {"id": "SET_A_0089", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Joule-Thomson:", "u": "Cool/Heat expand", "r": "Explode", "l": "Liq", "c": "UP", "ex": "✅ Expansion temp change.", "h": "Fridge."},
-        {"id": "SET_A_0090", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "Large Keq means:", "u": "kf >> kr", "r": "Eq", "l": "kr >> kf", "c": "UP", "ex": "✅ Ratio.", "h": "Fast in."},
-        {"id": "SET_A_0091", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Selection Rule:", "u": "Integral Zero", "r": "Gap", "l": "Spin", "c": "UP", "ex": "✅ Symmetry forbidden.", "h": "Zero."},
-        {"id": "SET_A_0092", "ds": "SET_A", "tp": "Thermodynamics", "ty": "MATH", "q": "Phase Rule origin:", "u": "Vars - Constraints", "r": "Atoms", "l": "Energy", "c": "UP", "ex": "✅ Algebra.", "h": "DOF."},
-        {"id": "SET_A_0093", "ds": "SET_A", "tp": "Spectroscopy", "ty": "MATH", "q": "Resolution m/dm depends:", "u": "Peak width", "r": "Ht", "l": "Mass e", "c": "UP", "ex": "✅ Sharpness.", "h": "Width."},
-        {"id": "SET_A_0094", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Residual Entropy Ice:", "u": "Config disorder", "r": "Tunnel", "l": "Vib", "c": "UP", "ex": "✅ Frozen states.", "h": "Frozen."},
-        {"id": "SET_A_0095", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "k_cat is:", "u": "Vmax/[E]", "r": "Km*V", "l": "V/K", "c": "UP", "ex": "✅ Efficiency.", "h": "Per site."},
-        {"id": "SET_A_0096", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Perturbation expand in:", "u": "Small param", "r": "t", "l": "V", "c": "UP", "ex": "✅ Taylor series.", "h": "Small."},
-        {"id": "SET_A_0097", "ds": "SET_A", "tp": "Solid State", "ty": "MATH", "q": "Bragg limit d:", "u": "d >= lambda/2", "r": "d >= lam", "l": "d >= 2lam", "c": "UP", "ex": "✅ sin theta max 1.", "h": "Limit."},
-        {"id": "SET_A_0098", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Activity coeff 1 when:", "u": "Conc -> 0", "r": "Inf", "l": "T -> 0", "c": "UP", "ex": "✅ Ideal.", "h": "Solitude."},
-        {"id": "SET_A_0099", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Spin-Orbit Z dep:", "u": "Z^4", "r": "Z^2", "l": "Z", "c": "UP", "ex": "✅ Relativistic.", "h": "Heavy."},
-        {"id": "SET_A_0100", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "[B] >> [A] order:", "u": "Pseudo-1st", "r": "0", "l": "2nd", "c": "UP", "ex": "✅ Swamping.", "h": "Pseudo."}
+        
+        // SET B: INDUSTRIAL (Sample)
+        {"id": "SET_B_0001", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "In HPLC, high back-pressure usually indicates:", "u": "Blocked Column/Frit", "r": "Leak", "l": "Empty Solvent", "c": "UP", "ex": "✅ High pressure suggests a blockage in the flow path.", "h": "Obstruction."},
+        {"id": "SET_B_0002", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Which detector is destructive in GC?", "u": "FID (Flame Ionization)", "r": "TCD", "l": "ECD", "c": "UP", "ex": "✅ FID burns the sample to measure ions.", "h": "Burning."},
+        {"id": "SET_B_0003", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Karl Fischer titration measures:", "u": "Water Content", "r": "Acid", "l": "Metals", "c": "UP", "ex": "✅ Industrial standard for trace moisture.", "h": "Moisture."}
+        
+        // ... PASTE THE REST OF YOUR DATA HERE ...
     ];
 
-    let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false, startTime = 0, latency = 0;
+    let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false, startTime = 0;
     let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
 
     const formatChem = t => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g,'$1<sub>$2</sub>').replace(/(\d*)([+\-])/g, '<sup>$1$2</sup>').replace(/\|\|/g, '<br><br>') : "";
 
-    function init() { setTimeout(() => { document.getElementById('loader').remove(); renderDatasetSelect(); }, 800); }
+    function init() { 
+        setTimeout(() => { document.getElementById('loader').remove(); renderDatasetSelect(); }, 800); 
+        
+        // AUTO-SYNC RECOVERY
+        const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]");
+        if(pending.length > 0 && navigator.onLine) {
+            console.log(`Syncing ${pending.length} offline sessions...`);
+            pending.forEach(p => {
+                new Image().src = `${ENDPOINT}?target=${p.target}&questionId=${p.questionId}&result=${p.result}&vectorChoice=${p.vectorChoice}&latency=${p.latency}`;
+            });
+            localStorage.removeItem('pendingUploads');
+        }
+    }
 
     /* --- MENU RENDERERS (UPDATED LABELS) --- */
     function renderDatasetSelect() { 
         MODE = "DATASET_SELECT"; 
-        renderMenuCard("SELECT DIFFICULTY", "LEVEL 1 (Core)", "LEVEL 2 (Applied)", "LEVEL 3 (Advanced)", "LEVEL 4 (Expert)"); 
+        renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); 
     }
     
     function renderTopicSelect(ds) { 
@@ -234,7 +147,8 @@
     
     function renderGenreSelect(tp) { 
         MODE = "GENRE_SELECT"; CUR_TOPIC = tp; 
-        renderMenuCard("SELECT DEPTH", "CONCEPT", "", "", "APPLICATION"); 
+        // 4-WAY DEPTH SELECTION
+        renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); 
     }
 
     function renderMenuCard(q, up, lt, rt, dn) {
@@ -246,52 +160,45 @@
         s.appendChild(c); bindPhysics(c);
     }
 
-    /* --- RUNTIME TOPIC CLUSTER ENGINE --- */
+    /* --- RUNTIME ENGINE --- */
     function startQuiz(genre) {
         CUR_GENRE = genre;
         
-        // INTELLIGENT TOPIC CLUSTERING
         POOL = RAW_DATA.filter(q => {
             const matchDS = q.ds === CUR_DATASET;
             const t = q.tp.toLowerCase();
             let matchTP = false;
 
             if (CUR_TOPIC === "Physical") {
-                // Grabs: Quantum, Kinetics, Thermo, Stat Mech, Surface, Solid, Group Theory, Fluid
                 matchTP = ["physical", "quantum", "kinetics", "thermo", "stat", "surface", "solid", "group", "fluid"].some(k => t.includes(k));
             } else if (CUR_TOPIC === "Analytical") {
-                // Grabs: Analytical, Spectro, Chromat, Electrochem
                 matchTP = ["analytical", "spectro", "chromat", "electro"].some(k => t.includes(k));
             } else if (CUR_TOPIC === "Organic") {
                 matchTP = ["organic", "polymer", "acid"].some(k => t.includes(k));
-            } else {
-                matchTP = t.includes(CUR_TOPIC.toLowerCase());
-            }
+            } else { matchTP = t.includes(CUR_TOPIC.toLowerCase()); }
 
-            // Genre Fallback: Route MATH/STATS to APPLICATION
             let matchTY = false;
             if (CUR_GENRE === "CONCEPT") matchTY = q.ty === "CONCEPT";
-            else matchTY = ["APPLICATION", "MATH", "STATISTICS"].includes(q.ty);
+            else if (CUR_GENRE === "MATH") matchTY = q.ty === "MATH";
+            else if (CUR_GENRE === "STATISTICS") matchTY = q.ty === "STATISTICS";
+            else if (CUR_GENRE === "APPLICATION") matchTY = ["APPLICATION", "TROUBLESHOOTING"].includes(q.ty);
+            else matchTY = true; 
             
             return matchDS && matchTP && matchTY;
         });
 
-        // SHUFFLE ENGINE (Runtime Fisher-Yates)
         for (let i = POOL.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [POOL[i], POOL[j]] = [POOL[j], POOL[i]];
         }
 
         if(!POOL.length) { 
-            // Fallback: If Niche is empty, try loading Generic Topic
-            alert(`Niche empty. Trying broad search for ${CUR_TOPIC}...`);
             POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET && q.tp.toLowerCase().includes(CUR_TOPIC.toLowerCase()));
             if(!POOL.length) { renderDatasetSelect(); return; }
         }
         renderNext();
     }
 
-    /* --- MAIN RENDERER (FLASHCARD + HINT SUPPORT) --- */
     function renderNext() {
         const s = document.getElementById('stack'); s.innerHTML = "";
         if(!POOL.length) { renderEnd(); return; }
@@ -306,7 +213,6 @@
         const r = q.r || q.swipe_right_label;
         const l = q.l || q.swipe_left_label;
 
-        // REVIEW MODE FLASHCARD
         let displayHTML = `<div class="card-q">${formatChem(qText)}</div>`;
         if (MODE === "REVIEW") {
             c.style.borderColor = "var(--blue)";
@@ -325,10 +231,7 @@
             <div class="swipe-label sl-up">${u}</div>
             <div class="swipe-label sl-left">${l}</div>
             <div class="swipe-label sl-right">${r}</div>
-            <div class="swipe-label sl-down sl-down-hint">
-                ${MODE === "REVIEW" ? "GOT IT" : formatChem(hText)}
-            </div>
-            
+            <div class="swipe-label sl-down sl-down-hint">${MODE === "REVIEW" ? "GOT IT" : formatChem(hText)}</div>
             <div class="overlay">
                 <div class="overlay-label">${MODE === "REVIEW" ? "NEXT CARD" : "LOGIC ANALYSIS"}</div>
                 <div class="overlay-body">${formatChem(exText)}</div>
@@ -339,47 +242,78 @@
         bindPhysics(c, q);
     }
 
-    /* --- END CARD (4-WAY NAVIGATION) --- */
     function renderEnd() {
         MODE = "SESSION_END";
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
+        
         const revCount = MISTAKES.length;
-        const nextSet = NEXT_LEVEL[CUR_DATASET] || "SET_A";
 
         c.innerHTML = `
             <div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.5rem">${SCORE} XP</span></div>
+            <div style="margin: 15px 0; width: 100%; text-align:center;">
+                <input type="text" id="userName" placeholder="CODENAME" style="background: #222; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; width: 60%; font-family: var(--font-code); text-align: center; text-transform: uppercase;">
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+                    <button onclick="submitSession()" style="background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: 900; flex:1;">UPLOAD</button>
+                    <button onclick="downloadSummary()" style="background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 6px; font-weight: 900; flex:1;">⬇ TO-DO</button>
+                </div>
+            </div>
             <div class="swipe-label sl-up">RESTART</div>
             <div class="swipe-label sl-down" style="color:${revCount > 0 ? 'var(--blue)' : '#333'}">REVIEW (${revCount})</div>
             <div class="swipe-label sl-left" style="color:var(--purple)">CHANGE TOPIC</div>
-            <div class="swipe-label sl-right" style="color:var(--green)">LEVEL UP<br><span style="font-size:0.7rem">TO ${nextSet.replace('_',' ')}</span></div>
+            <div class="swipe-label sl-right" style="color:var(--green)">LEVEL UP</div>
         `;
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    /* --- UNIVERSAL PHYSICS ENGINE --- */
+    function submitSession() {
+        const name = document.getElementById('userName').value.trim().toUpperCase();
+        if(!name) { alert("Identify yourself."); return; }
+        const payload = { target: "Telemetry", questionId: "SESSION_SUBMIT", result: name, vectorChoice: `Score: ${SCORE}`, latency: `Mistakes: ${MISTAKES.length}`, set: CUR_DATASET };
+        
+        const img = new Image();
+        img.src = `${ENDPOINT}?target=${payload.target}&questionId=${payload.questionId}&result=${payload.result}&vectorChoice=${payload.vectorChoice}&latency=${payload.latency}`;
+        img.onload = () => { alert("UPLOAD COMPLETE."); document.getElementById('userName').disabled = true; };
+        img.onerror = () => {
+            alert("OFFLINE. Data saved to device.");
+            const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]");
+            pending.push(payload);
+            localStorage.setItem('pendingUploads', JSON.stringify(pending));
+        };
+    }
+
+    function downloadSummary() {
+        let content = `ALCHEMIST REPORT\nOPERATOR: ${document.getElementById('userName').value||"UNKNOWN"}\nSCORE: ${SCORE}\n\n`;
+        if (MISTAKES.length === 0) content += "CLEAN RUN.\n";
+        else {
+            content += "ACTION PLAN:\n\n";
+            MISTAKES.forEach((m, i) => {
+                content += `[ ] ${m.tp || "General"}: ${m.q}\n    FIX: ${m.ex.replace(/✅|❌/g,'').trim()}\n\n`;
+            });
+        }
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+        a.download = `PLAN_${Date.now()}.txt`;
+        a.click();
+    }
+
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
         const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        
         const start = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; startTime = Date.now(); el.style.transition="none"; };
-        
         const move = e => {
             if(!active) return; const p = e.touches ? e.touches[0] : e; const dx = p.clientX - sx, dy = p.clientY - sy, dist = Math.sqrt(dx*dx + dy*dy);
             x = (dist > 35) ? dx * (35/dist) : dx; y = (dist > 35) ? dy * (35/dist) : dy;
             let ang = Math.atan2(-y, x) * (180/Math.PI); if(ang<0) ang+=360;
-            
             Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
             if(dist > 10) {
                 let L = (ang>=45&&ang<135)?labels.up:(ang>=135&&ang<225)?labels.lt:(ang>=225&&ang<315)?labels.dn:labels.rt;
                 if(L) { L.style.opacity = Math.min(dist/30, 1); L.style.transform = `scale(${0.9 + (dist/100)})`; }
             }
             if((MODE==="QUIZ" || MODE==="REVIEW") && triggerDir==="DOWN") el.classList.add('study-active'); else el.classList.remove('study-active');
-            
             el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
             triggerDir = (dist >= 35) ? ((ang>=45&&ang<135)?"UP":(ang>=135&&ang<225)?"LEFT":(ang>=225&&ang<315)?"DOWN":"RIGHT") : null;
         };
-        
         const end = () => {
             if(!active) return; active=false;
             if(triggerDir) {
@@ -387,25 +321,17 @@
                 else handleAction(el, data, x, y, triggerDir);
             } else { el.style.transition="transform .4s"; el.style.transform="translate3d(0,0,0)"; el.classList.remove('study-active'); }
         };
-        
         el.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
         el.addEventListener('touchstart', start); el.addEventListener('touchmove', move); el.addEventListener('touchend', end);
     }
 
-    /* --- ACTION ROUTER WITH FREEZE FIX --- */
     function handleAction(el, data, x, y, dir) {
         isTransitioning = true;
-        
-        // 1. ANIMATE CARD OFF SCREEN
         el.style.transition = "transform 0.4s ease-in, opacity 0.3s";
-        el.style.transform = `translate3d(${x*12}px,${y*12}px,0)`; 
-        el.style.opacity = "0";
+        el.style.transform = `translate3d(${x*12}px,${y*12}px,0)`; el.style.opacity = "0";
 
-        // 2. WAIT FOR ANIMATION TO FINISH BEFORE LOADING NEXT
         setTimeout(() => {
-            el.remove(); // Remove old card from DOM
-
-            // NOW PROCESS LOGIC
+            el.remove(); 
             if (MODE === "DATASET_SELECT") {
                 const map = { UP: "SET_A", LEFT: "SET_B", RIGHT: "SET_C", DOWN: "SET_D" };
                 renderTopicSelect(map[dir]);
@@ -417,35 +343,28 @@
             else if (MODE === "GENRE_SELECT") {
                 if (dir === "UP") startQuiz("CONCEPT");
                 else if (dir === "DOWN") startQuiz("APPLICATION");
+                else if (dir === "LEFT") startQuiz("MATH");
+                else if (dir === "RIGHT") startQuiz("STATISTICS");
                 else isTransitioning = false; 
             }
             else if (MODE === "QUIZ" || MODE === "REVIEW") {
                 const correct = dir === (data.c || data.correct);
                 if(correct) SCORE += (MODE === "REVIEW" ? 5 : 10);
                 else if(MODE === "QUIZ" && !MISTAKES.some(m => m.id === data.id)) MISTAKES.push(data);
-
                 new Image().src = `${ENDPOINT}?target=Telemetry&questionId=${data.id}&result=${correct}&vectorChoice=${dir}&latency=${Date.now()-startTime}`;
-                
-                POOL.shift(); // Remove processed question
-                renderNext(); // Load next question
+                POOL.shift(); renderNext(); 
             }
             else if (MODE === "SESSION_END") {
                 if (dir === "UP") location.reload();
                 else if (dir === "DOWN") {
-                    if(MISTAKES.length === 0) { alert("No mistakes to review!"); location.reload(); return; }
+                    if(MISTAKES.length === 0) { location.reload(); return; }
                     MODE = "REVIEW"; POOL = [...MISTAKES]; MISTAKES = []; renderNext();
                 }
                 else if (dir === "LEFT") renderTopicSelect(CUR_DATASET);
-                else if (dir === "RIGHT") {
-                    CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A";
-                    alert(`Advancing to ${CUR_DATASET}...`);
-                    startQuiz(CUR_GENRE);
-                }
+                else if (dir === "RIGHT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(CUR_GENRE); }
             }
-            
-            isTransitioning = false;
-            updateUI();
-        }, 400); // 400ms delay matches CSS transition
+            isTransitioning = false; updateUI();
+        }, 400); 
     }
 
     function updateUI() { document.getElementById('xp-ui').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(SCORE % 100)}%`; }
