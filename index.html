@@ -3,36 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V106.8 | Persistent</title>
+    <title>Alchemist V107 | Omni-Vault</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
+        
+        /* Chemistry Rendering */
         sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.4em; }
 
+        /* HUD */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
 
+        /* Terminal Tape */
         #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow: auto; display: none; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
         .log-item { margin-bottom: 4px; color: #333; text-transform: uppercase; transition: 0.3s; }
         .log-item.active { color: var(--green); font-weight: 900; }
 
+        /* V81.1 Legacy Magnetic Stack */
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; transform-origin: center center; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .card-q { font-family: var(--font-chem); font-size: clamp(20px, 5vmin, 28px); line-height: 1.3; font-weight: 600; color: #ffffff; width: 100%; max-height: 85%; overflow-y: auto; scrollbar-width: none; }
+        .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.5vmin, 26px); line-height: 1.3; font-weight: 600; color: #ffffff; width: 100%; max-height: 85%; overflow-y: auto; scrollbar-width: none; }
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); color: #fff; font-weight: 900; font-size: clamp(0.9rem, 3.5vw, 1.5rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); padding: 20px; text-align: center; }
 
+        /* Logic Overlay */
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
-        
-        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-        #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.5rem; }
-        #portal textarea { width: 100%; height: 250px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 10px; outline: none; }
+
+        /* Portal UI */
+        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+        #portal h1 { color: var(--gold); letter-spacing: 5px; margin-bottom: 5px; font-size: 1.2rem; }
+        #portal textarea { width: 100%; height: 280px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 10px; outline: none; }
         
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
         .btn-gold { background: var(--gold); }
@@ -41,10 +48,10 @@
 <body>
 
 <div id="portal">
-    <h1>ALCHEMIST_V106.8</h1>
-    <p style="color: #666; font-size: 0.8rem;">SAFE-ZONE PARSER ENABLED</p>
-    <textarea id="data-input" placeholder="Paste data here..."></textarea>
-    <button class="btn btn-gold" onclick="saveAndInject()">INJECT & SAVE</button>
+    <h1>ALCHEMIST_V107</h1>
+    <p style="color: #666; font-size: 0.7rem; margin: 0;">DATA PERSISTENCE: ON</p>
+    <textarea id="data-input" placeholder="PASTE_DATA_HERE"></textarea>
+    <button class="btn btn-gold" onclick="vaultAndInject()">SYNC & INITIALIZE</button>
 </div>
 
 <div id="header">
@@ -58,56 +65,51 @@
 <script>
     let DATABASE = [], POOL = [], MISTAKES = [], SCORE = 0;
     let MODE = "MENU_DIFF", CUR_DATASET = "", CUR_TOPIC = "", CUR_DEPTH = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
-    const NEXT_LVL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
     window.onload = () => {
         const saved = localStorage.getItem('alchemist_vault');
         if (saved) document.getElementById('data-input').value = saved;
     };
 
-    function saveAndInject() {
+    function vaultAndInject() {
         const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return alert("VAULT_EMPTY");
+        if (!raw) return;
         localStorage.setItem('alchemist_vault', raw);
-        processData(raw);
+        process(raw);
         document.getElementById('portal').style.display = 'none';
         ['header', 'history-tape', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
     }
 
-    function processData(raw) {
-        const lines = raw.split('\n');
-        DATABASE = lines.map(line => {
+    function process(raw) {
+        DATABASE = raw.split('\n').map(line => {
             try {
                 if (!line.includes('❌')) return null;
                 const id = line.substring(0, 10), ds = id.substring(0, 5);
                 const type = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"].find(t => line.includes(t)) || "CONCEPT";
-                const explStart = line.indexOf('❌'), weightMatch = line.match(/(\d\.\d+)$/);
-                const weight = weightMatch ? weightMatch[1] : "0.5";
-                const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
+                const explStart = line.indexOf('❌'), middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
                 const correct = ["UP", "RIGHT", "LEFT", "DOWN"].find(d => middle.endsWith(d)) || "RIGHT";
                 const content = middle.substring(0, middle.length - correct.length).trim();
                 
-                // STAGE 1: Anchor Discovery
+                // SAFE-RIP PARSER
                 const qBreak = content.lastIndexOf('?');
-                let question = content, optsRaw = "";
+                let question = content, optsPart = "";
                 if (qBreak !== -1) {
                     question = content.substring(0, qBreak + 1);
-                    optsRaw = content.substring(qBreak + 1).trim();
+                    optsPart = content.substring(qBreak + 1).trim();
                 }
 
-                // STAGE 2: Safe-Zone Option Ripping
-                // This regex ONLY splits if a lowercase letter is followed by an uppercase one.
-                // It ignores formulas like NaCl, H2O, or (CH3)3.
-                const opts = optsRaw.split(/(?<=[a-z])(?=[A-Z])/)
-                    .map(s => s.trim()).filter(s => s.length > 0);
+                // Split by Tabs, Multi-Space, or Formula-Safe CamelCase
+                const opts = optsPart.split(/\t|\s{2,}|(?<=[a-z])(?=[A-Z])/)
+                            .map(s => s.trim()).filter(s => s.length > 0);
 
-                const cleanEx = line.substring(explStart, line.lastIndexOf(weight)).replace(/[❌✅]/g, '').trim();
-                return { id, ds, ty: type, q: question, u: opts[0]||"Check Data", r: opts[1]||"Check Data", l: opts[2]||"Check Data", c: correct, ex: cleanEx };
+                const cleanEx = line.substring(explStart).split(/\d\.\d+$/)[0].replace(/[❌✅]/g, '').trim();
+                return { id, ds, ty: type, q: question, u: opts[0]||"Check", r: opts[1]||"Check", l: opts[2]||"Check", c: correct, ex: cleanEx };
             } catch (e) { return null; }
         }).filter(x => x !== null);
         renderDiff();
     }
 
+    /* PHYSICS & UI ENGINE */
     const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
     function updateHUD() { document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`; document.getElementById('progress-bar').style.width = `${(CUR_INDEX / SESSION_LIMIT) * 100}%`; }
     function addToLog(msg, action) { const tape = document.getElementById('history-tape'); tape.querySelectorAll('.active').forEach(el => el.classList.remove('active')); const div = document.createElement('div'); div.className = "log-item active"; div.innerHTML = `> ${msg}`; if (action) div.onclick = action; tape.prepend(div); }
@@ -133,7 +135,7 @@
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`;
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.2rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">NEXT SET</div><div class="swipe-label sl-down">REVIEW</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
@@ -158,8 +160,7 @@
         };
         window.onmouseup = window.ontouchend = e => { 
             if (!active) return; active = false; 
-            const p = e.changedTouches ? e.changedTouches[0] : e;
-            const finalDist = Math.sqrt(Math.pow(p.clientX - sx, 2) + Math.pow(p.clientY - sy, 2));
+            const finalDist = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
             if (finalDist > 30) handleAction(el, data, td); 
             else { el.style.transition = "transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } 
         };
@@ -172,7 +173,6 @@
         else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
         else if (MODE === "END") {
             if (dir === "UP") startQuiz(SESSION_LIMIT); else if (dir === "LT") renderDiff();
-            else if (dir === "RT") { CUR_DATASET = NEXT_LVL[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); }
             else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); }
         } else {
             if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
