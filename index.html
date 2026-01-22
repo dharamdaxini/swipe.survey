@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V89.0 | Titanium Build</title>
+    <title>Alchemist V91.1 | Omni-Loop Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #222; --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -40,7 +40,8 @@
     /* ----------------------------------------------------
        DATA INTEGRATION: PASTE YOUR 1400 ROWS BELOW
     ---------------------------------------------------- */
-    const RAW_STRING = `SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
+    const RAW_STRING = `id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
+SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
 SET_A_0003	SET_A	Quantum	CONCEPT	Which quantum number defines the main energy shell and size of an orbital?	Principal (n)	Azimuthal (l)	Magnetic (m)	UP	❌ Azimuthal (l) determines shape. || ❌ Magnetic (m) determines orientation. || ✅ The Principal Quantum Number (n) corresponds to the radial distance from the nucleus and the primary energy level.	Shell number.	0.3														
 SET_A_0004	SET_A	Spectroscopy	CONCEPT	Beer's Law states that Absorbance is proportional to:	Wavelength	Concentration and Path Length	Frequency	RIGHT	❌ Wavelength determines *where* it absorbs, not how much. || ❌ Frequency is energy. || ✅ A = ebc. Absorbance scales linearly with how much stuff is there (c) and how far the light travels (b).	A = ebc.	0.3														
@@ -114,7 +115,6 @@ SET_A_0071	SET_A	Thermodynamics	CONCEPT	Specific Heat Capacity is an ______ prop
 SET_A_0072	SET_A	Kinetics	MATH	The slope of a plot of [A] vs Time for a Zero Order reaction is:	k	-k	ln(k)	RIGHT	❌ Positive k would mean concentration grows. || ❌ ln(k) is Arrhenius. || ✅ d[A]/dt = -k. Integrating gives [A] = -kt + [A]0.	Constant slope.	0.35														
 SET_A_0073	SET_A	Quantum	APPLICATION	Which technique relies on Spin-Flip transitions?	UV-Vis	NMR	IR	RIGHT	❌ UV-Vis is electronic. || ❌ IR is vibrational. || ✅ Nuclear Magnetic Resonance probes the energy gap between spin-up and spin-down nuclei in a magnetic field.	MRI physics.	0.4														
 SET_A_0074	SET_A	Thermodynamics	CONCEPT	When a gas expands into a vacuum (Free Expansion)	the work done is:	Maximum	Positive	Zero	RIGHT	❌ Max is reversible. || ❌ Positive implies compression. || ✅ P_ext = 0. Work = -P_ext * dV = 0.	Pushing nothing.	0.4													
-SET_A_0075	SET_A	Stat Mech	MATH	The total partition function Z of independent systems is the ______ of individual Zs.	Sum	Product	Difference	RIGHT	❌ Sum is for mutually exclusive states. || ❌ Difference is meaningless. || ✅ For independent particles, probabilities multiply, so partition functions multiply (Z_tot = z^N / N!).	Multiplicative rule.	0.55														
 SET_A_0076	SET_A	Kinetics	CONCEPT	The 'rate determining step' is always the ______ step.	First	Slowest	Last	RIGHT	❌ First isn't always slow. || ❌ Last isn't always slow. || ✅ The overall reaction cannot proceed faster than its slowest bottleneck.	Traffic jam.	0.3														
 SET_A_0077	SET_A	Quantum	CONCEPT	Wave-Particle Duality: Heavy objects have wavelengths that are:	Large	Observable	Negligibly small	RIGHT	❌ Large is for light objects. || ❌ Observable is false. || ✅ Lambda = h/mv. Large mass 'm' in denominator makes Lambda tiny (undetectable).	De Broglie.	0.35														
 SET_A_0078	SET_A	Thermodynamics	CONCEPT	A process is Reversible only if it occurs:	Infinitely slowly	Instantly	At high pressure	UP	❌ Instantly creates turbulence. || ❌ Pressure is irrelevant. || ✅ The system must remain in equilibrium at every step, requiring infinitesimal changes (quasi-static).	No friction.	0.45														
@@ -1168,7 +1168,7 @@ SET_D_0075	SET_D	Chromatography	TROUBLESHOOTING	HPLC Baseline drift is correlate
 SET_D_0076	SET_D	Stat Mech	CONCEPT	The 'Ergodic Hypothesis' states that:	Time average = Ensemble average	Energy is conserved	Entropy increases	UP	❌ Conservation is 1st Law. || ❌ Entropy is 2nd Law. || ✅ Observing one system for a long time is statistically equivalent to observing many identical systems at once. (System explores all microstates).	Time vs Space.	0.85														
 SET_D_0077	SET_D	Process Chem	APPLICATION	Why is 'Seed Crystal' added in the metastable zone?	To control particle size and prevent spontaneous nucleation	To speed up cooling	To purify solvent	UP	❌ Cooling is external. || ❌ Purity is secondary. || ✅ Spontaneous nucleation creates fines (dust). Seeding lets the crystal grow on a template, giving large, filterable product.	Controlled growth.	0.65														
 SET_D_0078	SET_D	Kinetics	MATH	In 'Surface Catalysis' (Langmuir-Hinshelwood)	rate drops at high pressure because:	Surface is saturated (Order -> 0) or inhibition occurs	Reactants repel	Desorption is blocked	UP	❌ Repulsion is VDW. || ❌ Desorption is equilibrium. || ✅ Once all sites are full, increasing Pressure cannot increase concentration on the surface. If 'Inhibition' occurs, reactant A might block reactant B.	Crowded surface.	0.7													
-SET_D_0079	SET_D	Spectroscopy	TROUBLESHOOTING	NMR Lock signal is unstable ("bouncing"). Sample is vortexing. Cause?	Spin rate too high for the tube diameter	Field drift	Sample too concentrated	UP	❌ Drift is slow. || ❌ Conc affects S/N. || ✅ High spin speed creates a parabola (vortex) in the liquid surface. This changes the volume/geometry in the coil, confusing the Lock.	Spinning too fast.	0.65														
+SET_D_0079	SET_D	Spectroscopy	TROUBLESHOOTING	"NMR Lock signal is unstable (""bouncing""). Sample is vortexing. Cause?"	Spin rate too high for the tube diameter	Field drift	Sample too concentrated	UP	❌ Drift is slow. || ❌ Conc affects S/N. || ✅ High spin speed creates a parabola (vortex) in the liquid surface. This changes the volume/geometry in the coil, confusing the Lock.	Spinning too fast.	0.65														
 SET_D_0080	SET_D	Thermodynamics	CONCEPT	Why is the 'Critical Point' opalescent?	Density fluctuations become macroscopic (light scattering)	Phase separation	Chemical reaction	UP	❌ Phase separation ends here. || ❌ No reaction. || ✅ Near Tc, gas and liquid domains fluctuate on the scale of visible light wavelength (microns), scattering light strongly (Critical Opalescence).	Fog of physics.	0.8														
 SET_D_0081	SET_D	Quantum	MATH	The 'Spin-Statistics Theorem' implies that if you swap two Fermions	the wavefunction:	Changes sign (Antisymmetric)	Stays same (Symmetric)	Becomes zero	UP	❌ Symmetric is Boson. || ❌ Zero is Pauli. || ✅ Antisymmetry is the defining math of matter (Fermions). Psi(1,2) = -Psi(2,1).	Minus sign.	0.6													
 SET_D_0082	SET_D	Electrochemistry	APPLICATION	In 'Anodic Stripping Voltammetry'	why is it so sensitive (ppb)?	Pre-concentration step	High voltage	Fast scan	UP	❌ Voltage is standard. || ❌ Speed is standard. || ✅ You spend minutes plating ALL the metal from a large volume onto a tiny drop, increasing concentration by 1000x before measuring.	Concentration trick.	0.75													
@@ -1439,12 +1439,612 @@ SET_D_0346	SET_D	Process Chem	APPLICATION	What is 'Dead Leg' in piping?	A stagna
 SET_D_0347	SET_D	Kinetics	MATH	The 'Salt Effect' on neutral molecules (z=0) is:	Negligible / Salting Out effect	Large	Infinite	UP	❌ Large requires charge. || ❌ Infinite impossible. || ✅ No Coulombic effect. High salt might change solubility (activity), affecting rate slightly (Salting In/Out).	Minor adjustment.	0.6														
 SET_D_0348	SET_D	Thermodynamics	CONCEPT	Why is the 'Triple Point' unique?	F = C - P + 2 = 0 (Invariant)	It is at 0C	It is at 1 atm	UP	❌ 0C/1atm is Melting. || ✅ Degrees of Freedom is zero. You cannot change T or P without losing a phase.	Fixed point.	0.55														
 SET_D_0349	SET_D	Quantum	CONCEPT	Why is 'Spin' half-integer for Fermions?	Relativistic Quantum Mechanics (Dirac Equation)	Experiment only	It is integer	UP	❌ Experiment matches theory. || ❌ Integer is Boson. || ✅ Dirac's derivation of the electron requires a 4-component spinor, leading naturally to s=1/2.	Dirac math.	0.8														
-SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is proportional to:	Heat Capacity Cv	Temperature	Pressure	UP	❌ Temp is driver. || ❌ Pressure is wrong. || ✅ Systems with high ability to store heat (Cv) also show large spontaneous energy fluctuations.	Energy noise.	0.75	`;
+SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is proportional to:	Heat Capacity Cv	Temperature	Pressure	UP	❌ Temp is driver. || ❌ Pressure is wrong. || ✅ Systems with high ability to store heat (Cv) also show large spontaneous energy fluctuations.	Energy noise.	0.75														
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									
+																									`;
     
+    const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
     let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
     let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
 
-    function parseTitanium() {
+    function parseObsidian() {
         return RAW_STRING.trim().split('\n').map(line => {
             try {
                 if (!line.includes('❌')) return null;
@@ -1452,20 +2052,20 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
                 const types = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"];
                 const type = types.find(t => line.includes(t)) || "CONCEPT";
                 const explStart = line.indexOf('❌');
-                const weight = (line.match(/(\d\.\d+)$/) || [null, "0.5"])[1];
-                const topic = line.substring(10, line.indexOf(type)).replace(id.substring(0,5), "").trim();
-                const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
-                const dirs = ["UP", "RIGHT", "LEFT", "DOWN"];
-                const correct = dirs.find(d => middle.endsWith(d));
-                const qAndO = middle.substring(0, middle.length - (correct ? correct.length : 0)).trim();
-                const qSplit = qAndO.split('?');
-                const question = qSplit[0] + "?";
-                const opts = (qSplit[1] || "").replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
+                const weightMatch = line.match(/(\d\.\d+)$/);
+                const weight = weightMatch ? weightMatch[1] : "0.5";
+                const middleContent = line.substring(line.indexOf(type) + type.length, explStart).trim();
+                const correct = middleContent.match(/(UP|RIGHT|LEFT|DOWN)$/)[0];
+                const qAndOpts = middleContent.substring(0, middleContent.length - correct.length).trim();
+                const questionEnd = qAndOpts.indexOf('?') + 1;
+                const question = qAndOpts.substring(0, questionEnd);
+                const optsRaw = qAndOpts.substring(questionEnd).trim();
+                const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
-                let explanation = explFull, hint = "Logic Focus.";
+                let explanation = explFull, hint = "Apply logic.";
                 const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
                 if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
-                return { id, ds: id.substring(0,5), tp: topic, ty: type, q: question, u: opts[0]||"Opt1", r: opts[1]||"Opt2", l: opts[2]||"Opt3", c: correct || "RIGHT", ex: explanation, h: hint, w: parseFloat(weight) };
+                return { id, ds: id.substring(0, 5), ty: type, q: question, u: opts[0] || "A", r: opts[1] || "B", l: opts[2] || "C", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
             } catch (e) { return null; }
         }).filter(x => x !== null);
     }
@@ -1484,19 +2084,19 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     function renderMenuCard(q, up, lt, rt, dn) {
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = '<div class="card-q">' + q + '</div><div class="swipe-label sl-up">' + up + '</div><div class="swipe-label sl-left">' + lt + '</div><div class="swipe-label sl-right">' + rt + '</div><div class="swipe-label sl-down">' + dn + '</div>';
+        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
     function renderDatasetSelect() { 
         MODE = "DATASET_SELECT"; CUR_INDEX = 0; SCORE = 0; MISTAKES = [];
-        document.getElementById('rank-ui').innerText = "ALCHEMIST"; 
+        document.getElementById('rank-ui').innerText = "READY"; 
         document.getElementById('progress-bar').style.width = "0%";
         addToLog("RESET: SELECT DIFFICULTY", null); 
         renderMenuCard("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); 
     }
     
-    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(ds, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds.replace(/\s/g, '_'); addToLog(ds, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
     function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(tp, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
     function renderRangeSelect(genre) { MODE = "RANGE_SELECT"; CUR_GENRE = genre; addToLog(genre, () => renderGenreSelect(CUR_TOPIC)); renderMenuCard("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
 
@@ -1519,14 +2119,15 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
         q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = '<div class="card-q">' + formatChem(q.q) + '</div><div class="swipe-label sl-up">' + q.u + '</div><div class="swipe-label sl-left">' + q.l + '</div><div class="swipe-label sl-right">' + q.r + '</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">' + formatChem(q.ex) + '</div><button class="btn" onclick="this.parentElement.classList.remove(\'active\')">BACK</button></div>';
+        c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
         s.appendChild(c); bindPhysics(c, q);
     }
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
         document.getElementById('rank-ui').innerText = "COMPLETE";
-        c.innerHTML = '<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold)">' + SCORE + ' XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div>';
+        const mCount = MISTAKES.length;
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span><br><span style="color:#555; font-size:0.8rem; font-family:var(--font-code)">${mCount} GAPS DETECTED</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right" style="color:var(--green)">LEVEL UP</div><div class="swipe-label sl-down" style="color:${mCount > 0 ? 'var(--blue)' : '#333'}">${mCount > 0 ? 'REVIEW MISTAKES' : 'EXIT'}</div>`;
         s.appendChild(c); bindPhysics(c, {});
     }
 
@@ -1536,7 +2137,7 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         el.onmousedown = el.ontouchstart = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
         window.onmousemove = window.ontouchmove = e => {
             if(!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
-            el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0) rotate(' + x/20 + 'deg)';
+            el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
             const ang = Math.atan2(-y, x) * (180/Math.PI);
             Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
             if (Math.abs(x) > 20 || Math.abs(y) > 20) {
@@ -1552,18 +2153,24 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     }
 
     function handleAction(el, data, dir) {
-        if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
+        if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET A":dir === "LT"?"SET B":dir === "RT"?"SET C":"SET D");
         else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
         else if(MODE === "GENRE_SELECT") renderRangeSelect(dir === "UP"?"CONCEPT":dir === "LT"?"MATH":dir === "RT"?"DATA":"LOGIC");
         else if(MODE === "RANGE_SELECT") startQuiz(dir==="UP"?10:dir==="LT"?20:dir==="RT"?30:50);
-        else if(MODE === "END") { if(dir==="UP") startQuiz(SESSION_LIMIT); else renderDatasetSelect(); }
-        else {
+        else if(MODE === "END") {
+            if(dir === "UP") startQuiz(SESSION_LIMIT);
+            else if(dir === "LT") renderDatasetSelect();
+            else if(dir === "RT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); }
+            else if(dir === "DN") { if(MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else location.reload(); }
+        } else {
             if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-            if (dir.replace('LT','LEFT').replace('RT','RIGHT') === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = SCORE + " XP"; }
+            const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
+            if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = SCORE + " XP"; }
+            else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); }
             POOL.shift(); CUR_INDEX++; renderNext();
         }
     }
-    window.onload = () => { RAW_DATA = parseTitanium(); renderDatasetSelect(); };
+    window.onload = () => { RAW_DATA = parseObsidian(); renderDatasetSelect(); };
 </script>
 </body>
 </html>
