@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V112.8 | HARD-FORCE</title>
+    <title>Alchemist V112.7 | Forced Update</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -12,10 +12,7 @@
         sub { font-size: 0.75em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4em; }
 
-        /* Version Anchor */
-        .v-anchor { position: absolute; bottom: 10px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 0.6rem; color: #333; letter-spacing: 2px; z-index: 10000; pointer-events: none; }
-
-        /* Portal UI */
+        /* Portal UI (V112.7 Specifics) */
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
         #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.5rem; text-transform: uppercase; font-weight: 900; }
         #portal textarea { width: 100%; height: 320px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 25px; border-radius: 12px; margin: 25px 0; font-size: 14px; outline: none; line-height: 1.5; }
@@ -46,10 +43,8 @@
 </head>
 <body>
 
-<div class="v-anchor">STRICT_DEPLOY_ACTIVE_V112.8</div>
-
 <div id="portal">
-    <h1>Alchemist_V112.8</h1>
+    <h1>Alchemist_V112.7</h1>
     <textarea id="data-input" placeholder="PASTE_CSV_DATA_HERE"></textarea>
     <button class="btn btn-gold" onclick="masterInit()">SYNC & INITIALIZE</button>
 </div>
