@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V85.2 | Counter HUD</title>
+    <title>Alchemist V85.3 | Infinite Loop</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
@@ -14,90 +14,52 @@
             --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
         }
 
-        /* --- HARDWARE ACCELERATED CORE --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
-        body { 
-            margin: 0; height: 100vh; background: var(--bg); color: #fff;
-            font-family: var(--font-ui); overflow: hidden; touch-action: none; 
-            display: flex; flex-direction: column;
-        }
+        body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
+        sub, sup { font-size: 0.7em; line-height: 0; vertical-align: baseline; position: relative; }
+        sup { top: -0.4em; } sub { bottom: -0.2em; }
 
-        sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
-        sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
-
-        /* --- HUD --- */
+        /* HUD */
         #header { width: 90%; margin: 20px auto 5px; z-index: 100; flex-shrink: 0; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; letter-spacing: 2px; }
         .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 10px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-        /* --- TAPE LOG (History) --- */
-        #history-tape {
-            width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; 
-            overflow-y: auto; display: flex; flex-direction: column-reverse; 
-            font-family: var(--font-code); font-size: 0.8rem; text-align: right; 
-            padding-right: 5px; border-right: 1px solid #333;
-            mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
-        }
-        .log-item { margin-bottom: 3px; color: #444; cursor: pointer; transition: 0.2s; }
-        .log-item.active { color: var(--green); font-weight: bold; text-shadow: 0 0 10px rgba(46, 204, 113, 0.1); }
+        /* TAPE LOG */
+        #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.8rem; text-align: right; padding-right: 5px; border-right: 1px solid #333; mask-image: linear-gradient(to bottom, transparent 0%, black 20%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%); }
+        .log-item { margin-bottom: 3px; color: #444; cursor: pointer; }
+        .log-item.active { color: var(--green); font-weight: bold; }
 
-        /* --- STACK --- */
-        #stack { 
-            position: relative; width: 92%; max-width: 400px; height: 65vh; 
-            margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center;
-        }
+        /* STACK */
+        #stack { position: relative; width: 92%; max-width: 400px; height: 65vh; margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9); will-change: transform, opacity; backface-visibility: hidden; align-items: center; text-align: center; }
         
-        .card { 
-            position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border);
-            padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
-            will-change: transform, opacity; transform: translate3d(0,0,0);
-            backface-visibility: hidden; align-items: center; text-align: center;
-        }
-
-        /* LIQUID TYPOGRAPHY */
-        .card-q { 
-            font-family: var(--font-chem); 
-            font-size: clamp(18px, 4.2vmin, 26px); 
-            line-height: 1.35; font-weight: 600; color: #f0f0f0; text-rendering: optimizeLegibility;
-            width: 100%; max-height: 70%; overflow-y: auto; scrollbar-width: none; 
-        }
-        .card-q::-webkit-scrollbar { display: none; }
-
-        /* LABELS & INTERACTIVE OVERLAYS */
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px; }
-        .sl-down-hint { color: var(--blue) !important; font-size: 1.1rem !important; text-transform: none !important; font-family: var(--font-chem) !important; padding: 30px; line-height: 1.4; white-space: pre-wrap; }
-
-        .overlay { position: absolute; inset: 0; background: #0a0a0a; z-index: 1100; padding: 40px; opacity: 0; pointer-events: none; border-radius: 40px; transition: opacity 0.3s ease; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
+        .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.2vmin, 26px); line-height: 1.35; font-weight: 600; color: #f0f0f0; width: 100%; max-height: 70%; overflow-y: auto; scrollbar-width: none; }
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px; transition: opacity 0.1s; }
+        
+        .overlay { position: absolute; inset: 0; background: #0a0a0a; z-index: 1100; padding: 40px; opacity: 0; pointer-events: none; border-radius: 40px; transition: opacity 0.3s ease; display: flex; flex-direction: column; justify-content: center; }
         .overlay.active { opacity: 1; pointer-events: auto; }
-        .overlay-label { font-size: 0.7rem; color: var(--gold); font-family: var(--font-code); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
         .overlay-body { font-size: 1.2rem; line-height: 1.6; color: #ccc; margin-bottom: 30px; font-family: var(--font-chem); text-align: left; }
-        
-        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); transition: 0.2s; }
-        .btn:active { transform: scale(0.96); opacity: 0.8; }
+        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 
-        #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; font-weight: 900; }
+        #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; }
     </style>
 </head>
 <body>
 
 <div id="loader">ATOMIC LOAD...</div>
-
 <div id="header">
-    <div class="header-meta"><span id="rank-ui">INITIALIZING</span><span id="xp-ui">0 XP</span></div>
+    <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
-
 <div id="history-tape"></div>
 <div id="stack"></div>
 
 <script>
-    /* ----------------------------------------------------
-       DATA INGESTION ENGINE
-       Paste your massive, merged 1400-line dataset between the backticks.
-    ---------------------------------------------------- */
+    /* --- DATA INGESTION --- */
     const RAW_PASTE_DATA = `
+
+
 id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
@@ -2097,69 +2059,56 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
-																									`; // <--- Paste all lines here.
+																									
+`; // PASTE 1400 LINES HERE
 
-    /* --- GLOBAL CONFIG --- */
     const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
     let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
     let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
 
-    /* --- ATOMIC PARSER (Fixes Merged Text) --- */
+    /* --- PARSER V85.3 (Fixed Option Text) --- */
     function parseAtomic(text) {
         if(!text) return [];
-        const lines = text.trim().split('\n');
-        return lines.map(line => {
+        return text.trim().split('\n').map(line => {
             try {
-                if (line.length < 30 || !line.includes('❌')) return null;
-                const id = line.substring(0, 10);
-                const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
-                const type = typeMark ? typeMark[0] : "CONCEPT";
+                if (!line.includes('❌')) return null;
+                const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/)[0];
                 const explStart = line.indexOf('❌');
-                const weightMatch = line.match(/(\d\.\d+)$/);
-                const weight = weightMatch ? weightMatch[1] : "0.5";
+                const weight = line.match(/(\d\.\d+)$/)[1];
                 
-                const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
+                const middle = line.substring(line.indexOf(typeMark) + typeMark.length, explStart).trim();
                 const correct = middle.match(/UP|RIGHT|LEFT|DOWN$/)[0];
-                const qAndOpts = middle.substring(0, middle.length - correct.length);
+                const qAndO = middle.substring(0, middle.length - correct.length).trim();
                 
-                const qSplit = qAndOpts.split('?');
+                const qSplit = qAndO.split('?');
                 const question = qSplit[0] + "?";
                 const optsRaw = qSplit[1] || "";
-                const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(o => o.trim()).filter(o => o.length > 0);
                 
+                // FIXED: Better splitting for merged options like "First LawSecond Law"
+                const opts = optsRaw.replace(/([a-z])([A-Z])/g, '$1|$2').split('|').map(s => s.trim()).filter(s => s.length > 0);
+
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
                 let explanation = explFull, hint = "Logic Focus.";
                 const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
                 if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
 
-                return { id, ds: id.substring(0,5), tp: "Module", ty: type, q: question, u: opts[0]||"A", r: opts[1]||"B", l: opts[2]||"C", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
+                return { id: line.substring(0,10), ds: line.substring(0,5), tp: "Module", ty: typeMark, q: question, u: opts[0]||"A", r: opts[1]||"B", l: opts[2]||"C", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
             } catch (e) { return null; }
         }).filter(x => x !== null);
     }
 
-    /* --- UI ENGINE --- */
-    const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
+    /* --- CORE ENGINE --- */
+    const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
 
-    function init() { 
-        RAW_DATA = parseAtomic(RAW_PASTE_DATA);
-        document.getElementById('loader').remove(); 
-        renderDatasetSelect(); 
-    }
+    function init() { RAW_DATA = parseAtomic(RAW_PASTE_DATA); document.getElementById('loader').remove(); renderDatasetSelect(); }
 
     function addToLog(msg, action) {
         const tape = document.getElementById('history-tape');
         tape.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
         const div = document.createElement('div');
-        div.className = "log-item active";
-        div.innerHTML = `> ${msg}`;
+        div.className = "log-item active"; div.innerHTML = `> ${msg}`;
         if (action) div.onclick = () => { if(!isTransitioning) action(); };
         tape.prepend(div);
-    }
-
-    function updateHUD() {
-        document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`;
-        const progress = (CUR_INDEX / SESSION_LIMIT) * 100;
-        document.getElementById('progress-bar').style.width = progress + "%";
     }
 
     function renderMenuCard(q, up, lt, rt, dn) {
@@ -2169,18 +2118,16 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         s.appendChild(c); bindPhysics(c);
     }
 
-    /* --- NAVIGATION --- */
-    function renderDatasetSelect() { MODE = "DATASET_SELECT"; document.getElementById('rank-ui').innerText = "DIFFICULTY"; addToLog("SELECT DIFFICULTY", null); renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); }
-    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(`${ds}`, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-    function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(`${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); }
-    function renderRangeSelect(genre) { MODE = "RANGE_SELECT"; CUR_GENRE = genre; addToLog(`${genre}`, () => renderGenreSelect(CUR_TOPIC)); renderMenuCard("SESSION VOLUME", "10 CARDS", "20 CARDS", "30 CARDS", "50 CARDS"); }
+    function renderDatasetSelect() { MODE = "DATASET_SELECT"; document.getElementById('rank-ui').innerText = "DIFFICULTY"; addToLog("START", null); renderMenuCard("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(ds, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+    function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(tp, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
+    function renderRangeSelect(genre) { MODE = "RANGE_SELECT"; CUR_GENRE = genre; addToLog(genre, () => renderGenreSelect(CUR_TOPIC)); renderMenuCard("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
 
-    /* --- SESSION LOGIC --- */
     function startQuiz(limit) {
-        SESSION_LIMIT = limit; CUR_INDEX = 1;
-        addToLog(`VOLUME: ${limit} Qs`, () => renderRangeSelect(CUR_GENRE));
+        SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; SCORE = 0;
+        addToLog(`${limit}`, () => renderRangeSelect(CUR_GENRE));
         POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET);
-        for (let i = POOL.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [POOL[i], POOL[j]] = [POOL[j], POOL[i]]; }
+        POOL.sort(() => Math.random() - 0.5);
         POOL = POOL.slice(0, SESSION_LIMIT);
         MODE = "QUIZ"; renderNext();
     }
@@ -2188,47 +2135,36 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     function renderNext() {
         const s = document.getElementById('stack'); s.innerHTML = "";
         if(!POOL.length) { renderEnd(); return; }
-        updateHUD();
-        const rawQ = POOL[0];
-        const q = { ...rawQ };
+        document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`;
+        document.getElementById('progress-bar').style.width = `${(CUR_INDEX/SESSION_LIMIT)*100}%`;
+        
+        const rawQ = POOL[0]; const q = { ...rawQ };
         const items = [{ t: rawQ.u, c: rawQ.c==="UP" }, { t: rawQ.r, c: rawQ.c==="RIGHT" }, { t: rawQ.l, c: rawQ.c==="LEFT" }];
         items.sort(() => Math.random() - 0.5);
         q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
         q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
 
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `
-            <div class="card-q">${formatChem(q.q)}</div>
-            <div class="swipe-label sl-up">${q.u}</div>
-            <div class="swipe-label sl-left">${q.l}</div>
-            <div class="swipe-label sl-right">${q.r}</div>
-            <div class="swipe-label sl-down sl-down-hint">⬇ APPLY LOGIC</div>
-            <div class="overlay">
-                <div class="overlay-label">LOGIC ANALYSIS</div>
-                <div class="overlay-body">${formatChem(q.ex)}</div>
-                <button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button>
-            </div>`;
+        c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
         s.appendChild(c); bindPhysics(c, q);
     }
 
     function renderEnd() {
-        const s = document.getElementById('stack'); s.innerHTML = "";
-        const c = document.createElement('div'); c.className = "card";
-        document.getElementById('rank-ui').innerText = "FINISH";
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.5rem">${SCORE} XP</span></div><button class="btn" onclick="location.reload()">RESTART</button>`;
-        s.appendChild(c);
+        MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
+        document.getElementById('rank-ui').innerText = "COMPLETE";
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div>`;
+        s.appendChild(c); bindPhysics(c, {});
     }
 
-    /* --- PHYSICS --- */
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
         const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        el.onmousedown = el.ontouchstart = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
+        el.onmousedown = el.ontouchstart = e => { active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
         window.onmousemove = window.ontouchmove = e => {
             if(!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
             el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
             const ang = Math.atan2(-y, x) * (180/Math.PI);
-            Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
+            Object.values(labels).forEach(l => l ? l.style.opacity = 0 : null);
             if (Math.abs(x) > 20 || Math.abs(y) > 20) {
                 let dir = (ang>=45&&ang<135)?"up":(ang>=135||ang<-135)?"lt":(ang>=-135&&ang<-45)?"dn":"rt";
                 if(labels[dir]) labels[dir].style.opacity = 1;
@@ -2238,23 +2174,23 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         window.onmouseup = window.ontouchend = () => {
             if(!active) return; active=false;
             if(Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, triggerDir);
-            else { el.style.transition="0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform="none"; }
+            else { el.style.transition="0.4s"; el.style.transform="none"; }
         };
     }
 
     function handleAction(el, data, dir) {
-        if(MODE === "DATASET_SELECT") { renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D"); return; }
-        if(MODE === "TOPIC_SELECT") { renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical"); return; }
-        if(MODE === "GENRE_SELECT") { renderRangeSelect(dir); return; }
-        if(MODE === "RANGE_SELECT") { const ranges = { UP: 10, LEFT: 20, RIGHT: 30, DOWN: 50 }; startQuiz(ranges[dir]); return; }
-
-        if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-        const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
-        if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
-        
-        POOL.shift(); CUR_INDEX++; renderNext();
+        if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
+        else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
+        else if(MODE === "GENRE_SELECT") renderRangeSelect(dir);
+        else if(MODE === "RANGE_SELECT") startQuiz(dir==="UP"?10:dir==="LT"?20:dir==="RT"?30:50);
+        else if(MODE === "END") { if(dir==="UP") startQuiz(SESSION_LIMIT); else renderDatasetSelect(); }
+        else {
+            if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
+            const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
+            if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
+            POOL.shift(); CUR_INDEX++; renderNext();
+        }
     }
-
     window.onload = init;
 </script>
 </body>
