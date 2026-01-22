@@ -5,7 +5,9 @@ const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx
 const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
 /* 2. DATA SOURCE - PASTE YOUR FULL DATASET BELOW */
-const RAW_PASTE_DATA = id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
+const RAW_PASTE_DATA = 
+
+id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
 SET_A_0003	SET_A	Quantum	CONCEPT	Which quantum number defines the main energy shell and size of an orbital?	Principal (n)	Azimuthal (l)	Magnetic (m)	UP	❌ Azimuthal (l) determines shape. || ❌ Magnetic (m) determines orientation. || ✅ The Principal Quantum Number (n) corresponds to the radial distance from the nucleus and the primary energy level.	Shell number.	0.3														
