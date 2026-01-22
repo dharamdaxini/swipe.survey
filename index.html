@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V108.0 | Final Steel</title>
+    <title>Alchemist V109.0 | Niche Selection</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -12,38 +12,38 @@
         sub { font-size: 0.75em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4em; }
 
-        /* Portal UI Fix (Landing Page) */
-        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-        #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.5rem; text-transform: uppercase; font-weight: 900; }
-        #portal textarea { width: 100%; height: 320px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 20px; border-radius: 12px; margin: 25px 0; font-size: 13px; outline: none; line-height: 1.5; }
-        
+        /* HUD Header */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-        /* V81.1 Legacy Magnetic Stack (Lower Base) */
+        /* V81.1 Legacy Magnetic Stack */
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; transform-origin: center center; transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.5vmin, 26px); line-height: 1.45; font-weight: 600; color: #ffffff; width: 100%; max-height: 85%; overflow-y: auto; scrollbar-width: none; }
 
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); color: #fff; font-weight: 900; font-size: clamp(0.9rem, 3.5vw, 1.5rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); padding: 20px; text-align: center; }
 
-        /* Overlay Styling */
+        /* Hint/Analysis Overlay */
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
         
-        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); transition: transform 0.1s; }
+        /* Data Portal UI */
+        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+        #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; }
+        #portal textarea { width: 100%; height: 320px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 20px; border-radius: 12px; margin: 25px 0; font-size: 12px; outline: none; }
+        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
         .btn-gold { background: var(--gold); }
     </style>
 </head>
 <body>
 
 <div id="portal">
-    <h1>Alchemist_V108</h1>
+    <h1>Alchemist_V109</h1>
     <textarea id="data-input" placeholder="PASTE_CSV_DATA_HERE"></textarea>
-    <button class="btn btn-gold" onclick="vaultInit()">INITIALIZE SESSION</button>
+    <button class="btn btn-gold" onclick="vaultInit()">START ARCHITECTURE</button>
 </div>
 
 <div id="header">
@@ -54,38 +54,111 @@
 <div id="stack"></div>
 
 <script>
-    let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0, MODE = "MENU", INDEX = 1, IS_REVIEW = false;
+    let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0;
+    let MODE = "INIT", INDEX = 1, IS_REVIEW = false;
+    
+    // Niche Selection State
+    let SEL_TOPIC = "", SEL_VOL = 20, SEL_DEPTH = "", SEL_DOMAIN = "";
 
     window.onload = () => {
-        const cached = localStorage.getItem('alch_v108_vault');
-        if (cached) document.getElementById('data-input').value = cached;
+        const cached = localStorage.getItem('alch_v109_vault');
+        if (cached) document.getElementById('data-input').value = saved;
     };
 
     function vaultInit() {
         const raw = document.getElementById('data-input').value.trim();
         if (!raw) return;
-        localStorage.setItem('alch_v108_vault', raw);
+        localStorage.setItem('alch_v109_vault', raw);
         parse(raw);
         document.getElementById('portal').style.display = 'none';
         ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
     }
 
     function parse(raw) {
-        VAULT = raw.split(/\r?\n/).map(line => {
+        const lines = raw.split(/\r?\n/);
+        VAULT = lines.map(line => {
             const regex = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
             const c = (line.match(regex) || []).map(x => x.replace(/^"|"$/g, '').trim());
-            // Mapping: 0:id, 1:set, 2:topic, 3:type, 4:q, 5:u, 6:r, 7:l, 8:ans, 9:expl, 10:hint
             if (c.length < 11) return null;
-            return { id: c[0], ds: c[1], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9], hint: c[10] };
+            return { id: c[0], ds: c[1], topic: c[2], type: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9], hint: c[10] };
         }).filter(x => x && x.id.toLowerCase() !== "id");
-        renderMenu("SELECT DOMAIN", "SET A", "SET B", "SET C", "SET D");
+        renderNiche_1_Topic();
     }
 
-    const format = (t) => t ? t.toString()
-        .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>')
-        .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')
-        .replace(/\^(\d+)/g, '<sup>$1</sup>')
-        .replace(/lambda/g, '&lambda;').replace(/theta/g, '&theta;') : "";
+    /* --- NICHE SELECTION FUNNEL --- */
+    function renderNiche_1_Topic() {
+        MODE = "SEL_1";
+        renderSlide("1. CORE TOPIC", "SET A", "SET B", "SET C", "SET D");
+    }
+    function renderNiche_2_Vol() {
+        MODE = "SEL_2";
+        renderSlide("2. TOTAL Qs", "10 Qs", "20 Qs", "30 Qs", "50 Qs");
+    }
+    function renderNiche_3_Depth() {
+        MODE = "SEL_3";
+        renderSlide("3. DEPTH", "CONCEPT", "MATH", "APPLICATION", "LOGIC");
+    }
+    function renderNiche_4_Domain() {
+        MODE = "SEL_4";
+        renderSlide("4. DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL");
+    }
+
+    function startQuiz() {
+        MODE = "QUIZ"; IS_REVIEW = false; INDEX = 1; SCORE = 0; MISTAKES = [];
+        // Filtering logic based on funnel selections
+        POOL = VAULT.filter(v => v.ds === SEL_TOPIC && v.type === SEL_DEPTH)
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, SEL_VOL);
+        
+        // Fallback if filter is too strict for current dataset
+        if(POOL.length === 0) {
+            POOL = VAULT.filter(v => v.ds === SEL_TOPIC).slice(0, SEL_VOL);
+        }
+        renderNext();
+    }
+
+    function startReview() {
+        MODE = "QUIZ"; IS_REVIEW = true; INDEX = 1; 
+        POOL = [...MISTAKES];
+        renderNext();
+    }
+
+    /* --- RENDERING ENGINE --- */
+    function renderSlide(q, up, lt, rt, dn) {
+        const s = document.getElementById('stack'); s.innerHTML = "";
+        const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
+        s.appendChild(c); bindPhysics(c, {});
+    }
+
+    function renderNext() {
+        const s = document.getElementById('stack'); s.innerHTML = "";
+        if (!POOL.length) {
+            renderSlide("SESSION END", "RESTART", "MENU", "NEXT NICHE", MISTAKES.length > 0 ? "REVIEW ANALYSIS" : "");
+            MODE = "END";
+            return;
+        }
+        const q = { ...POOL[0] };
+        const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
+        q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
+        q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
+
+        const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `
+            <div class="card-q">${format(q.q)}</div>
+            <div class="swipe-label sl-up">${q.u}</div>
+            <div class="swipe-label sl-left">${q.l}</div>
+            <div class="swipe-label sl-right">${q.r}</div>
+            <div class="swipe-label sl-down">⬇ ${IS_REVIEW ? 'VIEW ANALYSIS' : 'VIEW HINT'}</div>
+            <div class="overlay"><div class="overlay-body">${IS_REVIEW ? format(q.expl) : format(q.hint)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>
+        `;
+        s.appendChild(c); bindPhysics(c, q);
+        updateHUD();
+    }
+
+    /* --- LOGIC & PHYSICS --- */
+    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/\^(\d+)/g, '<sup>$1</sup>') : "";
+    function updateHUD() { document.getElementById('p-text').innerText = `${INDEX} / ${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, dir=null;
@@ -96,7 +169,7 @@
             let dx = e.touches[0].clientX-sx, dy = e.touches[0].clientY-sy; const dist = Math.sqrt(dx*dx+dy*dy);
             if (dist > 38) { x=dx*(38/dist); y=dy*(38/dist); } else { x=dx; y=dy; }
             requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
-            const ang = Math.atan2(-dy, dx)*(180/PI_RAD());
+            const ang = Math.atan2(-dy, dx)*(180/Math.PI);
             Object.values(lbs).forEach(l => { if(l) l.style.opacity=0; });
             if (dist > 20) {
                 let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
@@ -105,52 +178,20 @@
         };
         window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>30) route(el, data, dir); else { el.style.transition="0.45s cubic-bezier(0.175,0.885,0.32,1.275)"; el.style.transform="none"; } };
     }
-    const PI_RAD = () => Math.PI;
-
-    function renderMenu(q, up, lt, rt, dn) {
-        MODE="MENU"; const s=document.getElementById('stack'); s.innerHTML=""; const c=document.createElement('div'); c.className="card";
-        c.innerHTML=`<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div>${dn?`<div class="swipe-label sl-down">${dn}</div>`:''}`;
-        s.appendChild(c); bindPhysics(c,{});
-    }
-
-    function start(set) { MODE="QUIZ"; IS_REVIEW=false; INDEX=1; SCORE=0; MISTAKES=[]; POOL=VAULT.filter(v=>v.ds===set).sort(()=>0.5-Math.random()).slice(0,20); renderNext(); }
-    function startReview() { MODE="QUIZ"; IS_REVIEW=true; INDEX=1; POOL=[...MISTAKES]; renderNext(); }
-
-    function renderNext() {
-        const s=document.getElementById('stack'); s.innerHTML="";
-        if(!POOL.length) { 
-            renderMenu("SESSION COMPLETE", "RESTART", "MAIN MENU", "NEXT SET", MISTAKES.length > 0 ? "REVIEW MISTAKES" : ""); 
-            return; 
-        }
-        const q={...POOL[0]}; const opts=[{t:q.u,c:q.ans==="UP"},{t:q.r,c:q.ans==="RIGHT"},{t:q.l,c:q.ans==="LEFT"}].sort(()=>Math.random()-0.5);
-        q.u=opts[0].t; q.r=opts[1].t; q.l=opts[2].t; q.ans=opts[0].c?"UP":(opts[1].c?"RIGHT":"LEFT");
-        const c=document.createElement('div'); c.className="card";
-        c.innerHTML=`
-            <div class="card-q">${format(q.q)}</div>
-            <div class="swipe-label sl-up">${q.u}</div>
-            <div class="swipe-label sl-left">${q.l}</div>
-            <div class="swipe-label sl-right">${q.r}</div>
-            <div class="swipe-label sl-down">⬇ ${IS_REVIEW ? 'VIEW ANALYSIS' : 'VIEW HINT'}</div>
-            <div class="overlay">
-                <div class="overlay-body">
-                    ${IS_REVIEW ? '<strong style="color:var(--blue)">ANALYSIS:</strong><br>'+format(q.expl) : '<strong style="color:var(--gold)">HINT:</strong><br>'+format(q.hint)}
-                </div>
-                <button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button>
-            </div>`;
-        s.appendChild(c); bindPhysics(c, q); updateHUD();
-    }
-
-    function updateHUD() { document.getElementById('p-text').innerText=`${INDEX} / ${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText=`${SCORE} XP`; document.getElementById('progress-bar').style.width=`${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
     function route(el, data, dir) {
-        if(MODE==="MENU") { 
-            if(dir==="DN" && el.innerText.includes("REVIEW")) startReview();
-            else if(dir==="UP") start("SET_A"); 
-            else if(dir==="LT") start("SET_B"); 
-            else if(dir==="RT") start("SET_C"); 
+        if (MODE === "SEL_1") { SEL_TOPIC = dir === "UP" ? "SET_A" : dir === "LT" ? "SET_B" : dir === "RT" ? "SET_C" : "SET_D"; renderNiche_2_Vol(); }
+        else if (MODE === "SEL_2") { SEL_VOL = dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50; renderNiche_3_Depth(); }
+        else if (MODE === "SEL_3") { SEL_DEPTH = dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "APPLICATION" : "LOGIC"; renderNiche_4_Domain(); }
+        else if (MODE === "SEL_4") { SEL_DOMAIN = dir === "UP" ? "PHYSICAL" : dir === "LT" ? "ORGANIC" : dir === "RT" ? "INORGANIC" : "ANALYTICAL"; startQuiz(); }
+        else if (MODE === "END") {
+            if (dir === "UP") startQuiz();
+            else if (dir === "LT") renderNiche_1_Topic();
+            else if (dir === "RT") renderNiche_1_Topic(); 
+            else if (dir === "DN" && MISTAKES.length > 0) startReview();
         } else {
-            if (dir==="DN"){el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return;}
-            if (dir===data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10;
+            if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
+            if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10;
             else if (!IS_REVIEW) MISTAKES.push(data);
             POOL.shift(); INDEX++; renderNext();
         }
