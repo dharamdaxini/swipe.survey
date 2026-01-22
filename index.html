@@ -3,50 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V106.2 | Legacy Physics</title>
+    <title>Alchemist V106.3 | Magnetic Anchor</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
         
-        /* Formula Visuality */
+        /* Chemistry Precision Rendering */
         sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.4em; }
 
-        /* HUD & History */
+        /* HUD & Progress */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
+
+        /* Terminal Logs */
         #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
         .log-item { margin-bottom: 4px; color: #333; text-transform: uppercase; transition: 0.3s; }
         .log-item.active { color: var(--green); font-weight: 900; }
 
-        /* V81.1 Card Physics Styling */
-        #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; perspective: 1500px; display: flex; align-items: center; justify-content: center; }
+        /* Center-Locked Magnetic Stack */
+        #stack { 
+            position: absolute; top: 52%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 94%; max-width: 420px; height: 60vh; 
+            perspective: 1500px; display: flex; align-items: center; justify-content: center; z-index: 500;
+        }
+
         .card { 
             position: absolute; width: 100%; height: 100%; background: var(--card); 
             border-radius: 44px; border: 1px solid var(--border); padding: 35px; 
             display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; 
-            box-shadow: 0 40px 100px rgba(0,0,0,0.9); 
-            will-change: transform, opacity;
-            transform-origin: center center; /* Signature V81.1 Anchor */
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity;
+            transform-origin: center center;
+            transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
+
         .card-q { font-family: var(--font-chem); font-size: clamp(22px, 5.5vmin, 30px); line-height: 1.35; font-weight: 600; color: #ffffff; width: 100%; max-height: 80%; overflow-y: auto; scrollbar-width: none; }
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: #fff; font-weight: 900; font-size: clamp(0.9rem, 3.5vw, 1.6rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); padding: 20px; text-align: center; }
         
-        /* Overlays & Buttons */
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #dddddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
+        
         #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 10px; font-weight: 900; }
     </style>
 </head>
 <body>
 
-<div id="loader">V81.1_PHYSICS_RESTORED</div>
+<div id="loader">MAGNETIC_LOCK_ACTIVE</div>
 
 <div id="header">
     <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
@@ -57,7 +66,7 @@
 <div id="stack"></div>
 
 <script>
-    /* --- VAULT DATA --- */
+    /* --- DATASET INJECTION POINT --- */
     const VAULT_DATA = `id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
@@ -2117,36 +2126,49 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    /* V81.1 PHYSICS ENGINE */
+    /* MAGNETIC PHYSICS ENGINE */
     function bindPhysics(el, data) {
         let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
         const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        
+        const MAX_RADIUS = 38; 
+
         el.onmousedown = el.ontouchstart = e => { 
             active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; 
             el.style.transition = "none"; 
         };
         
         window.onmousemove = window.ontouchmove = e => { 
-            if (!active) return; const p = e.touches ? e.touches[0] : e; 
-            x = p.clientX - sx; y = p.clientY - sy; 
+            if (!active) return; 
+            const p = e.touches ? e.touches[0] : e; 
+            let dx = p.clientX - sx; let dy = p.clientY - sy; 
+            const distance = Math.sqrt(dx*dx + dy*dy);
             
-            /* V81.1 High-Performance Transform */
-            el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/18}deg) scale(1.02)`; 
+            if (distance > MAX_RADIUS) {
+                const ratio = MAX_RADIUS / distance;
+                x = dx * ratio; y = dy * ratio;
+            } else { x = dx; y = dy; }
             
-            const ang = Math.atan2(-y, x) * (180 / Math.PI);
+            requestAnimationFrame(() => {
+                if (active) {
+                    el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; 
+                }
+            });
+            
+            const ang = Math.atan2(-dy, dx) * (180 / Math.PI);
             Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; });
-            if (Math.abs(x) > 20 || Math.abs(y) > 20) {
+            if (distance > 20) {
                 let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
                 if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase();
             }
         };
         
-        window.onmouseup = window.ontouchend = () => { 
+        window.onmouseup = window.ontouchend = e => { 
             if (!active) return; active = false; 
-            if (Math.abs(x) > 110 || Math.abs(y) > 110) handleAction(el, data, td); 
+            const p = e.changedTouches ? e.changedTouches[0] : e;
+            const finalDist = Math.sqrt(Math.pow(p.clientX - sx, 2) + Math.pow(p.clientY - sy, 2));
+
+            if (finalDist > 30) { handleAction(el, data, td); } 
             else { 
-                /* V81.1 Signature Elastic Snap-back */
                 el.style.transition = "transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; 
                 el.style.transform = "none"; 
             } 
