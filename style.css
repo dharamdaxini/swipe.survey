@@ -1,228 +1,70 @@
 :root {
-    --color-bg: #f4f4f5;
-    --color-card: #ffffff;
-    --color-text: #18181b;
-    --color-subtext: #71717a;
-    --color-true: #22c55e;
-    --color-false: #ef4444;
-    --color-plausible: #eab308;
-    --color-skip: #64748b;
-    --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                   0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --font-stack: -apple-system, BlinkMacSystemFont,
-                  "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg: #000; --card: #111; --border: #222; 
+    --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
+    --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
 }
 
-/* ================= RESET ================= */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
+/* HARDWARE ACCELERATION & RESET */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
+body { 
+    margin: 0; height: 100vh; background: var(--bg); color: #fff;
+    font-family: var(--font-ui); overflow: hidden; touch-action: none; 
+    display: flex; flex-direction: column;
 }
 
-/* ================= BODY LOCK ================= */
-body {
-    font-family: var(--font-stack);
-    background-color: var(--color-bg);
-    color: var(--color-text);
+sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
+sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
 
-    height: 100svh;
-    width: 100vw;
+/* HUD */
+#header { width: 90%; margin: 25px auto 0; z-index: 100; flex-shrink: 0; }
+.header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.7rem; color: #555; letter-spacing: 2px; }
+.progress-track { width: 100%; height: 2px; background: #1a1a1a; margin-top: 10px; border-radius: 1px; overflow: hidden; }
+#progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-    overflow: hidden;              /* HARD LOCK */
-    overscroll-behavior: none;     /* Disable pull-to-refresh */
-    touch-action: none;            /* Prevent browser gesture hijack */
-
-    display: flex;
-    flex-direction: column;
-
-    user-select: none;
-    -webkit-user-select: none;
+/* STACK ENGINE */
+#stack { 
+    position: relative; width: 92%; max-width: 400px; height: 70vh; 
+    margin: auto; perspective: 1200px; display: flex; align-items: center; justify-content: center;
 }
 
-/* ================= LEGEND ================= */
-.legend {
-    display: flex;
-    justify-content: space-around;
-    padding: 1rem;
-    font-size: 0.75rem;
-    color: var(--color-subtext);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-    z-index: 10;
+.card { 
+    position: absolute; width: 100%; height: 90%; background: var(--card); border-radius: 40px; border: 1px solid var(--border);
+    padding: 40px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
+    will-change: transform, opacity; transform: translate3d(0,0,0);
 }
 
-.legend-item .icon {
-    display: block;
-    text-align: center;
-    font-size: 1.2rem;
-    margin-bottom: 2px;
+/* PHYSICS STATES */
+.card.study-active { filter: blur(20px) brightness(0.2); opacity: 0.5; transform: scale(0.85) translateY(40px) !important; pointer-events: none; }
+
+/* MATH TYPOGRAPHY UPGRADE */
+.card-q { 
+    font-family: var(--font-chem); font-size: 1.6rem; line-height: 1.5; font-weight: 600; 
+    text-align: center; color: #f0f0f0; text-rendering: optimizeLegibility; 
 }
 
-/* ================= APP CONTAINER ================= */
-#app-container {
-    flex: 1;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
-    position: relative;
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-
-    overflow: hidden; /* prevents internal drift */
+/* VECTOR LABELS */
+.swipe-label {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase;
+    border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px;
 }
 
-/* ================= CARD STACK ================= */
-#card-stack {
-    position: relative;
-    width: 90%;
-    aspect-ratio: 3 / 4;
-    max-height: 60svh;
-
-    overflow: visible;
+/* HINT SPECIFIC STYLING */
+.sl-down-hint { 
+    color: var(--blue) !important; font-size: 1.1rem !important; 
+    text-transform: none !important; font-family: var(--font-chem) !important; 
+    padding: 20px 40px; line-height: 1.4; white-space: pre-wrap;
 }
 
-/* ================= CARD ================= */
-.card {
-    position: absolute;
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    background: var(--color-card);
-    border-radius: 16px;
-    box-shadow: var(--shadow-card);
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
-    padding: 2rem;
-    text-align: center;
-
-    cursor: grab;
-
-    /* CRITICAL FOR SWIPE */
-    touch-action: none;
-    will-change: transform;
-    transform-origin: 50% 100%;
-
-    
-    will-change: transform;
-    transform: translate3d(0, 0, 0); /* Force GPU Acceleration */
-    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1); /* Faster snap */
-    touch-action: none;
-    user-select: none;
+/* OVERLAY */
+.overlay {
+    position: absolute; inset: 0; background: #0d0d0d; z-index: 1100; padding: 40px;
+    opacity: 0; pointer-events: none; border-radius: 40px; transition: opacity 0.3s ease;
+    display: flex; flex-direction: column; justify-content: center; overflow-y: auto;
 }
+.overlay.active { opacity: 1; pointer-events: auto; }
+.overlay-label { font-size: 0.7rem; color: var(--gold); font-family: var(--font-code); margin-bottom: 10px; letter-spacing: 2px; }
+.overlay-body { font-size: 1.15rem; line-height: 1.6; color: #bbb; margin-bottom: 30px; font-family: var(--font-chem); }
+.btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer;}
 
-/* Remove rotation to stop the "wobble" lag */
-.card.dragging {
-    transition: none !important;
-}
-}
-
-.card:active {
-    cursor: grabbing;
-}
-
-.card h3 {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    color: var(--color-subtext);
-    margin-bottom: 1rem;
-    letter-spacing: 0.1em;
-}
-
-.card p {
-    font-size: 1.25rem;
-    line-height: 1.5;
-    font-weight: 500;
-}
-
-/* ================= CONTROLS ================= */
-.controls {
-    display: flex;
-    gap: 0.5rem;
-
-    margin-top: 2rem;
-    width: 90%;
-
-    justify-content: space-between;
-}
-
-.btn {
-    flex: 1;
-    padding: 12px 0;
-
-    background: white;
-    border-radius: 8px;
-
-    font-weight: 600;
-    font-size: 0.85rem;
-
-    cursor: pointer;
-
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-
-    transition: transform 0.1s ease;
-}
-
-.btn:active {
-    transform: scale(0.96);
-}
-
-.btn-skip {
-    color: var(--color-skip);
-    border: 1px solid var(--color-skip);
-}
-
-.btn-false {
-    color: var(--color-false);
-    border: 1px solid var(--color-false);
-}
-
-.btn-plausible {
-    color: var(--color-plausible);
-    border: 1px solid var(--color-plausible);
-}
-
-.btn-true {
-    color: var(--color-true);
-    border: 1px solid var(--color-true);
-}
-
-/* ================= SUMMARY (UNCHANGED, STABLE) ================= */
-#summary-view {
-    position: fixed;
-    inset: 0;
-
-    background: var(--color-bg);
-    z-index: 100;
-
-    display: flex;
-    flex-direction: column;
-
-    padding: 2rem;
-
-    opacity: 0;
-    pointer-events: none;
-
-    transition: opacity 0.3s ease;
-}
-
-#summary-view.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.hidden {
-    display: none;
-}
+#loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; }
