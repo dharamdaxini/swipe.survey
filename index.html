@@ -3,38 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V83.0 | Atomic Engine</title>
+    <title>Alchemist V84.0 | Industrial Engine</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
     <style>
-        :root { --bg: #000; --card: #111; --border: #222; --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
+        :root {
+            --bg: #000; --card: #111; --border: #222; 
+            --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
+            --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
+        }
+
+        /* --- BASIC UI --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
         sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
         sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
+
+        /* --- HUD --- */
         #header { width: 90%; margin: 20px auto 5px; z-index: 100; flex-shrink: 0; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.7rem; color: #555; letter-spacing: 2px; }
         .progress-track { width: 100%; height: 2px; background: #1a1a1a; margin-top: 10px; border-radius: 1px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
-        #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.8rem; text-align: right; padding-right: 5px; border-right: 1px solid #333; mask-image: linear-gradient(to bottom, transparent 0%, black 20%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%); }
+
+        /* --- TAPE LOG --- */
+        #history-tape {
+            width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; 
+            overflow-y: auto; display: flex; flex-direction: column-reverse; 
+            font-family: var(--font-code); font-size: 0.8rem; text-align: right; 
+            padding-right: 5px; border-right: 1px solid #333;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%);
+        }
         .log-item { margin-bottom: 3px; color: #555; cursor: pointer; transition: 0.2s; }
         .log-item.active { color: var(--green); font-weight: bold; }
-        #stack { position: relative; width: 92%; max-width: 400px; height: 60vh; margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center; }
+
+        /* --- STACK --- */
+        #stack { position: relative; width: 92%; max-width: 400px; height: 65vh; margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9); will-change: transform, opacity; transform: translate3d(0,0,0); backface-visibility: hidden; align-items: center; text-align: center; }
+        
+        /* LIQUID TYPOGRAPHY */
         .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.5vmin, 26px); line-height: 1.3; font-weight: 600; color: #f0f0f0; text-rendering: optimizeLegibility; width: 100%; max-height: 70%; overflow-y: auto; scrollbar-width: none; }
+        .card-q::-webkit-scrollbar { display: none; }
+
+        /* LABELS & OVERLAY */
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px; }
         .sl-down-hint { color: var(--blue) !important; font-size: 1.1rem !important; text-transform: none !important; font-family: var(--font-chem) !important; padding: 30px; line-height: 1.4; white-space: pre-wrap; }
         .overlay { position: absolute; inset: 0; background: #0d0d0d; z-index: 1100; padding: 40px; opacity: 0; pointer-events: none; border-radius: 40px; transition: opacity 0.3s ease; display: flex; flex-direction: column; justify-content: center; overflow-y: auto; }
         .overlay.active { opacity: 1; pointer-events: auto; }
-        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 10px;}
+        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 10px; font-family: var(--font-ui); }
+        
         #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; }
     </style>
 </head>
 <body>
 
-<div id="loader">ATOMIC LOAD...</div>
+<div id="loader">INITIALIZING CORE...</div>
 
 <div id="header">
-    <div class="header-meta"><span id="rank-ui">ID: BOOT</span><span id="xp-ui">0 XP</span></div>
+    <div class="header-meta"><span id="rank-ui">ALCHEMIST</span><span id="xp-ui">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
@@ -2044,60 +2071,44 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
+`; // ^^^ PASTE YOUR FULL DATASET HERE ^^^
 
-    /* --- V83.0 ATOMIC PARSER (No Loops, High Speed) --- */
-    const parseAtomic = (text) => {
+    /* --- GLOBAL CONFIG --- */
+    const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
+    let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
+    let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
+
+    /* --- PARSER ENGINE --- */
+    function parseSafe(text) {
+        if(!text) return [];
         const lines = text.trim().split('\n');
         return lines.map(line => {
-            if (line.length < 50) return null;
             try {
-                // Slicing by known keywords instead of regex loops
-                const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
-                if(!typeMark) return null;
-                
+                if (line.length < 30 || !line.includes('❌')) return null;
                 const id = line.substring(0, 10);
-                const type = typeMark[0];
+                const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
+                const type = typeMark ? typeMark[0] : "CONCEPT";
                 const explStart = line.indexOf('❌');
                 const weightMatch = line.match(/\d\.\d+$/);
                 const weight = weightMatch ? weightMatch[0] : "0.5";
-                
-                // Get part between Type and Explanation
                 const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
                 const correct = middle.match(/UP|RIGHT|LEFT|DOWN$/)[0];
                 const qAndOpts = middle.substring(0, middle.length - correct.length);
-                
                 const qSplit = qAndOpts.split('?');
                 const question = qSplit[0] + "?";
                 const optsRaw = qSplit[1] || "";
-                const opts = optsRaw.replace(/([a-z])([A-Z])/g, '$1|$2').split('|');
-
+                const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|');
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
-                let explanation = explFull;
-                let hint = "Logic first.";
+                let explanation = explFull, hint = "Apply logic.";
                 const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
                 if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
-
-                return {
-                    id: id, ds: id.substring(0,5), tp: "Chemistry", ty: type,
-                    q: question, u: opts[0] || "A", r: opts[1] || "B", l: opts[2] || "C",
-                    c: correct, ex: explanation, h: hint, w: parseFloat(weight)
-                };
+                return { id, ds: id.substring(0,5), tp: "Chemistry", ty: type, q: question, u: opts[0] || "A", r: opts[1] || "B", l: opts[2] || "C", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
             } catch (e) { return null; }
         }).filter(x => x !== null);
-    };
-
-    const RAW_DATA = parseAtomic(RAW_PASTE_DATA);
-
-    /* --- APP LOGIC --- */
-    let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
-    let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
-
-    const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
-
-    function init() { 
-        document.getElementById('loader').remove();
-        renderDatasetSelect(); 
     }
+
+    /* --- CORE LOGIC --- */
+    const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
 
     function addToLog(msg, action) {
         const tape = document.getElementById('history-tape');
@@ -2109,16 +2120,16 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         tape.prepend(div);
     }
 
-    function renderDatasetSelect() { MODE = "DATASET_SELECT"; addToLog("DIFFICULTY SELECT", null); renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); }
-    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(`${ds}`, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-    function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(`${tp}`, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); }
-
     function renderMenuCard(q, up, lt, rt, dn) {
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
         c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
         s.appendChild(c); bindPhysics(c);
     }
+
+    function renderDatasetSelect() { MODE = "DATASET_SELECT"; addToLog("INIT_PROTOCOL: SELECT DIFFICULTY", null); renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); }
+    function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(`ACCESSING: ${ds}`, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+    function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(`DOMAIN_SET: ${tp}`, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); }
 
     function startQuiz(genre) {
         CUR_GENRE = genre;
@@ -2133,13 +2144,13 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         if(!POOL.length) { renderEnd(); return; }
         const q = POOL[0]; const c = document.createElement('div'); c.className = "card";
         c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${formatChem(q.h)}</div><div class="overlay"><div class="overlay-body" style="font-family:var(--font-chem); font-size:1.2rem; line-height:1.6;">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">NEXT</button></div>`;
-        s.appendChild(c); bindPhysics(c, q);
+        s.appendChild(c); document.getElementById('rank-ui').innerText = q.id; bindPhysics(c, q);
     }
 
     function renderEnd() {
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">SESSION COMPLETE<br>${SCORE} XP</div><button class="btn" onclick="location.reload()">RESTART</button>`;
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><button class="btn" onclick="location.reload()">RESTART</button>`;
         s.appendChild(c);
     }
 
@@ -2166,16 +2177,21 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     }
 
     function handleAction(el, data, dir) {
-        if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LEFT"?"SET_B":dir === "RIGHT"?"SET_C":"SET_D");
-        else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LEFT"?"Organic":dir === "RIGHT"?"Inorganic":"Analytical");
+        if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
+        else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
         else if(MODE === "GENRE_SELECT") startQuiz(dir);
         else {
             if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-            if (dir.replace('LT','LEFT').replace('RT','RIGHT') === data.c) SCORE += 10; else MISTAKES.push(data);
+            if (dir.replace('LT','LEFT').replace('RT','RIGHT') === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
             POOL.shift(); renderNext();
         }
     }
-    window.onload = init;
+
+    window.onload = () => { 
+        RAW_DATA = parseSafe(RAW_PASTE_DATA);
+        document.getElementById('loader').remove(); 
+        renderDatasetSelect(); 
+    };
 </script>
 </body>
 </html>
