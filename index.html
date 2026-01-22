@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V123.1 | LOCK-STATE FIX</title>
+    <title>ALCHEMIST V124.0 | DEEP DIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -38,11 +38,11 @@
     </style>
 </head>
 <body>
-<div class="v-tag">LOCK_STATE_FIX_V123.1</div>
+<div class="v-tag">DEEP_DIVE_V124.0</div>
 <div id="portal">
-    <h1>Alchemist_V123.1</h1>
+    <h1>Alchemist_V124</h1>
     <textarea id="data-input" placeholder="PASTE_12_COLUMN_DATA_HERE"></textarea>
-    <button class="btn btn-gold" onclick="masterInitialize()">SYNC DATA & START</button>
+    <button class="btn btn-gold" onclick="masterInitialize()">SYNC DATA & ACTIVATE</button>
 </div>
 <div id="header">
     <div class="header-meta"><span id="p-text">READY</span><span id="score-text">0 XP</span></div>
@@ -56,7 +56,7 @@
     function masterInitialize() {
         const raw = document.getElementById('data-input').value.trim();
         if (!raw) return alert("DATASET NOT DETECTED");
-        localStorage.setItem('alch_v123_vault', raw);
+        localStorage.setItem('alch_v124_vault', raw);
         VAULT = raw.split(/\r?\n/).map(line => {
             const c = line.split(/\t/);
             return c.length >= 11 ? { id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9], hint: c[10], context: c[11] || "---" } : null;
@@ -103,15 +103,20 @@
         const c = document.createElement('div'); c.className = "card";
         if (MODE === "REVIEW") {
             const correctText = q.ans === "UP" ? q.u : (q.ans === "RIGHT" ? q.r : q.l);
-            c.innerHTML = `<div class="review-content"><span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span><span class="review-label">CORRECT ANS</span><span class="review-text" style="color:var(--green)">${format(correctText)}</span><span class="review-label">LOGIC</span><span class="review-text">${format(q.expl)}</span><span class="review-label">CONTEXT</span><span class="review-text" style="color:var(--blue)">${format(q.context)}</span></div><div class="swipe-label sl-rt">NEXT</div>`;
+            c.innerHTML = `<div class="review-content"><span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span><span class="review-label">CORRECT ANS</span><span class="review-text" style="color:var(--green)">${format(correctText)}</span><span class="review-label">ANALYSIS</span><span class="review-text">${format(q.expl)}</span><span class="review-label">CONTEXT</span><span class="review-text" style="color:var(--blue)">${format(q.context)}</span></div><div class="swipe-label sl-rt">NEXT</div>`;
         } else {
             const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
             q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
             q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
+            
             let dnLabel = "⬇ LOCKED", overlayBody = "---";
-            if (SEL_PATH === "LEARN") { dnLabel = "⬇ VIEW LOGIC"; overlayBody = `<strong style='color:var(--blue)'>ANALYSIS</strong><br>${format(q.expl)}<br><br><strong style='color:var(--gold)'>CONTEXT</strong><br>${format(q.context)}`; }
+            if (SEL_PATH === "LEARN") { 
+                dnLabel = "⬇ DEEP DIVE"; 
+                overlayBody = `<strong style='color:var(--blue)'>ANALYSIS</strong><br>${format(q.expl)}<br><br><strong style='color:var(--gold)'>CONTEXT</strong><br>${format(q.context)}`; 
+            }
             else if (SEL_PATH === "QUIZ_LEARN") { dnLabel = "⬇ VIEW HINT"; overlayBody = `<strong style='color:var(--gold)'>HINT</strong><br>${format(q.hint)}`; }
             else if (SEL_PATH === "QUIZ") { dnLabel = "⬇ SKIP (UNSURE)"; }
+            
             c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${dnLabel}</div><div class="overlay"><div class="overlay-body">${overlayBody}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">RETURN</button></div>`;
         }
         s.appendChild(c); bindPhysics(c, q); updateHUD();
@@ -163,10 +168,8 @@
             if (dir === "DN") {
                 if (SEL_PATH === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
                 if (SEL_PATH === "TEST") { el.style.transform = "none"; return; }
-                // LEARN FIX: The following 3 lines strictly handle the overlay and STOP the routing.
-                el.querySelector('.overlay').classList.add('active'); 
-                el.style.transform = "none"; 
-                return; // BREAKS the loop here.
+                el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; 
+                return; 
             }
             if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; else if (!IS_REVIEW) MISTAKES.push(data);
             POOL.shift(); INDEX++; renderNext();
