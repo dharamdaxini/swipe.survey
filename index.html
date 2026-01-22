@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V112.8 | HARD-FORCE</title>
+    <title>ALCHEMIST V113.0 | FORCE-INJECT</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -12,12 +12,12 @@
         sub { font-size: 0.75em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4em; }
 
-        /* Version Anchor */
-        .v-anchor { position: absolute; bottom: 10px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 0.6rem; color: #333; letter-spacing: 2px; z-index: 10000; pointer-events: none; }
+        /* VERSION FOOTER: Verify this says V113.0 */
+        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #444; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
 
-        /* Portal UI */
+        /* PORTAL UI */
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
-        #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.5rem; text-transform: uppercase; font-weight: 900; }
+        #portal h1 { color: var(--gold); letter-spacing: 5px; margin: 0; font-size: 1.6rem; text-transform: uppercase; font-weight: 900; }
         #portal textarea { width: 100%; height: 320px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 25px; border-radius: 12px; margin: 25px 0; font-size: 14px; outline: none; line-height: 1.5; }
         
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
@@ -33,7 +33,7 @@
 
         .review-content { text-align: left; width: 100%; height: 100%; overflow-y: auto; scrollbar-width: none; padding-top: 10px; }
         .review-label { font-family: var(--font-code); font-size: 0.7rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
-        .review-text { font-family: var(--font-chem); font-size: 1.1rem; line-height: 1.5; color: #eee; margin-bottom: 25px; display: block; }
+        .review-text { font-family: var(--font-chem); font-size: 1.15rem; line-height: 1.5; color: #eee; margin-bottom: 25px; display: block; }
         .review-ans { color: var(--green); font-weight: 900; border-left: 2px solid var(--green); padding-left: 15px; }
 
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
@@ -41,17 +41,17 @@
 
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-        .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
+        .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
     </style>
 </head>
 <body>
 
-<div class="v-anchor">STRICT_DEPLOY_ACTIVE_V112.8</div>
+<div class="v-tag">DEPLOY_INSTANCE_V113.0</div>
 
 <div id="portal">
-    <h1>Alchemist_V112.8</h1>
+    <h1>Alchemist_V113</h1>
     <textarea id="data-input" placeholder="PASTE_CSV_DATA_HERE"></textarea>
-    <button class="btn btn-gold" onclick="masterInit()">SYNC & INITIALIZE</button>
+    <button class="btn btn-gold" onclick="hardInit()">SYNC & INITIALIZE</button>
 </div>
 
 <div id="header">
@@ -67,14 +67,14 @@
     let SEL_MODE = "", SEL_VOL = 20, SEL_DEPTH = "", SEL_DOMAIN = "", SEL_DIFF = "";
 
     window.onload = () => {
-        const cached = localStorage.getItem('alch_v112_vault');
+        const cached = localStorage.getItem('alch_v113_vault');
         if (cached) document.getElementById('data-input').value = cached;
     };
 
-    function masterInit() {
+    function hardInit() {
         const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return alert("VAULT EMPTY: Paste dataset.");
-        localStorage.setItem('alch_v112_vault', raw);
+        if (!raw) return alert("VAULT_EMPTY: Paste dataset.");
+        localStorage.setItem('alch_v113_vault', raw);
         
         const lines = raw.split(/\r?\n/);
         VAULT = lines.map(line => {
@@ -139,14 +139,14 @@
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
         if (SEL_MODE === "PURE QUIZ") {
             const acc = Math.round(((SEL_VOL - MISTAKES.length) / SEL_VOL) * 100);
-            c.innerHTML = `<div class="card-q">RESULTS</div><div style="text-align:left;font-size:0.9rem;color:#aaa"><p>1. <strong>Accuracy:</strong> ${acc}% precision.</p><p>2. <strong>Next:</strong> ${acc < 70 ? "Try LEARN mode." : "Up the Difficulty."}</p></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">NEW NICHE</div>`;
+            c.innerHTML = `<div class="card-q">RESULTS</div><div style="text-align:left;font-size:0.95rem;color:#aaa"><p>1. <strong>Accuracy:</strong> ${acc}% precision.</p><p>2. <strong>Next:</strong> ${acc < 70 ? "Try LEARN mode." : "Up the Difficulty."}</p></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">NEW NICHE</div>`;
         } else {
             c.innerHTML = `<div class="card-q">SESSION END</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">NEW NICHE</div><div class="swipe-label sl-down">${MISTAKES.length > 0 ? 'REVIEW ANALYSIS' : ''}</div>`;
         }
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>') : "";
+    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/theta/g,'&theta;').replace(/lambda/g,'&lambda;') : "";
     function updateHUD() { document.getElementById('p-text').innerText = `${INDEX} / ${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
     function bindPhysics(el, data) {
