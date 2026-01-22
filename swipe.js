@@ -1,52 +1,58 @@
 let DATABASE = [], POOL = [], MISTAKES = [], SCORE = 0;
 let MODE = "MENU_DIFF", CUR_DATASET = "", CUR_TOPIC = "", CUR_DEPTH = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
-const NEXT_LVL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-function initVault() {
-    const lines = VAULT_DATA.trim().split('\n');
+window.onload = () => {
+    const saved = localStorage.getItem('alchemist_vault');
+    if (saved) document.getElementById('data-input').value = saved;
+};
+
+function saveAndInject() {
+    const raw = document.getElementById('data-input').value.trim();
+    if (!raw) return alert("VAULT_EMPTY");
+    localStorage.setItem('alchemist_vault', raw);
+    processData(raw);
+    document.getElementById('portal').style.display = 'none';
+    ['header', 'history-tape', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
+}
+
+function processData(raw) {
+    const lines = raw.split('\n');
     DATABASE = lines.map(line => {
         try {
             if (!line.includes('❌')) return null;
-            const id = line.substring(0, 10), ds = id.substring(0, 5);
+            const parts = line.split(/\s{2,}/); // Split by 2+ spaces (common in spreadsheet pastes)
+            
+            // Step 1: Meta
+            const id = line.substring(0, 10);
+            const ds = id.substring(0, 5);
             const type = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"].find(t => line.includes(t)) || "CONCEPT";
-            const explStart = line.indexOf('❌'), weightMatch = line.match(/(\d\.\d+)$/);
-            const weight = weightMatch ? weightMatch[1] : "0.5";
+            
+            // Step 2: Content
+            const explStart = line.indexOf('❌');
             const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
             const correct = ["UP", "RIGHT", "LEFT", "DOWN"].find(d => middle.endsWith(d)) || "RIGHT";
-            const content = middle.substring(0, middle.length - correct.length).trim();
+            const rawContent = middle.substring(0, middle.length - correct.length).trim();
             
-            // HYPER-ROBUST SPLIT
-            let question = "", optsRaw = "";
-            const qBreak = content.lastIndexOf('?');
-            
+            // Step 3: Question vs Options (Splits by last '?')
+            const qBreak = rawContent.lastIndexOf('?');
+            let question = rawContent, optsPart = "";
             if (qBreak !== -1) {
-                question = content.substring(0, qBreak + 1);
-                optsRaw = content.substring(qBreak + 1).trim();
-            } else {
-                // Force-rip if '?' is missing: finds the first Capitalized word after 50 chars
-                const forceBreak = content.search(/(.{50,})([A-Z][a-z]+)/);
-                if(forceBreak !== -1) {
-                    question = content.substring(0, forceBreak + 50).trim();
-                    optsRaw = content.substring(forceBreak + 50).trim();
-                } else {
-                    question = "Data Format Error: " + id;
-                    optsRaw = "FixRowFixRowFixRow";
-                }
+                question = rawContent.substring(0, qBreak + 1);
+                optsPart = rawContent.substring(qBreak + 1).trim();
             }
 
-            // Greedy Option Ripping: Handles Formulas and CamelCase
-            const opts = optsRaw
-                .replace(/([a-z0-9\)])([A-Z])/g, '$1|$2') 
-                .split('|').map(s => s.trim()).filter(s => s.length > 0);
+            // Step 4: Option Extraction (Splits by Tabs, Multiple Spaces, or CamelCase)
+            const opts = optsPart.split(/\t|\s{2,}|(?<=[a-z])(?=[A-Z])/)
+                        .map(s => s.trim()).filter(s => s.length > 0);
 
-            const cleanEx = line.substring(explStart, line.lastIndexOf(weight)).replace(/[❌✅]/g, '').trim();
-            return { id, ds, ty: type, q: question, u: opts[0]||"Check Data", r: opts[1]||"Check Data", l: opts[2]||"Check Data", c: correct, ex: cleanEx };
+            const cleanEx = line.substring(explStart).split(/\d\.\d+$/)[0].replace(/[❌✅]/g, '').trim();
+            return { id, ds, ty: type, q: question, u: opts[0]||"Opt A", r: opts[1]||"Opt B", l: opts[2]||"Opt C", c: correct, ex: cleanEx };
         } catch (e) { return null; }
     }).filter(x => x !== null);
-    if(document.getElementById('loader')) document.getElementById('loader').remove();
     renderDiff();
 }
 
+/* PHYSICS & RENDERING (V81.1 PHYSICS) */
 const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
 function updateHUD() { document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`; document.getElementById('progress-bar').style.width = `${(CUR_INDEX / SESSION_LIMIT) * 100}%`; }
 function addToLog(msg, action) { const tape = document.getElementById('history-tape'); tape.querySelectorAll('.active').forEach(el => el.classList.remove('active')); const div = document.createElement('div'); div.className = "log-item active"; div.innerHTML = `> ${msg}`; if (action) div.onclick = action; tape.prepend(div); }
@@ -72,16 +78,14 @@ function renderNext() {
 
 function renderEnd() {
     MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW MISTAKES</div>`;
+    c.innerHTML = `<div class="card-q">COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">NEXT SET</div><div class="swipe-label sl-down">REVIEW</div>`;
     s.appendChild(c); bindPhysics(c, {});
 }
 
-/* V81.1 LEGACY MAGNETIC PHYSICS */
 function bindPhysics(el, data) {
     let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
     const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
     const MAX_RADIUS = 38; 
-
     el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; };
     window.onmousemove = window.ontouchmove = e => { 
         if (!active) return; 
@@ -99,9 +103,8 @@ function bindPhysics(el, data) {
     };
     window.onmouseup = window.ontouchend = e => { 
         if (!active) return; active = false; 
-        const p = e.changedTouches ? e.changedTouches[0] : e;
-        const finalDist = Math.sqrt(Math.pow(p.clientX - sx, 2) + Math.pow(p.clientY - sy, 2));
-        if (finalDist > 30) { handleAction(el, data, td); } 
+        const finalDist = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+        if (finalDist > 30) handleAction(el, data, td); 
         else { el.style.transition = "transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } 
     };
 }
@@ -113,7 +116,6 @@ function handleAction(el, data, dir) {
     else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
     else if (MODE === "END") {
         if (dir === "UP") startQuiz(SESSION_LIMIT); else if (dir === "LT") renderDiff();
-        else if (dir === "RT") { CUR_DATASET = NEXT_LVL[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); }
         else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); }
     } else {
         if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
@@ -123,4 +125,3 @@ function handleAction(el, data, dir) {
         POOL.shift(); CUR_INDEX++; renderNext();
     }
 }
-window.onload = initVault;
