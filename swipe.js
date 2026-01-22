@@ -4,7 +4,7 @@ const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_
 
 function injectData() {
     const rawText = document.getElementById('raw-input').value.trim();
-    if(!rawText) return alert("Injection Failed: Clipboard empty.");
+    if(!rawText) return alert("Injection Error: Data Source Empty.");
     
     DATABASE = rawText.split('\n').map(line => {
         try {
@@ -15,16 +15,26 @@ function injectData() {
             const explStart = line.indexOf('❌');
             const weightMatch = line.match(/(\d\.\d+)$/);
             const weight = weightMatch ? weightMatch[1] : "0.5";
+            
             const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
             const directions = ["UP", "RIGHT", "LEFT", "DOWN"];
             const correct = directions.find(d => middle.endsWith(d)) || "RIGHT";
             const qAndO = middle.substring(0, middle.length - correct.length).trim();
+            
             const qSplit = qAndO.split('?');
             const question = qSplit[0] + "?";
-            const opts = (qSplit[1] || "").replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
+            const optsRaw = (qSplit[1] || "").trim();
+
+            /* --- OPTION TEXT FIX: The CamelCase Splitter --- */
+            // This detects patterns like "OrderFirst" and turns them into "Order|First"
+            const opts = optsRaw
+                .replace(/([a-z0-9])([A-Z])/g, '$1|$2') 
+                .split('|')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+
             const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
-            
-            return { id, ds, tp: "Module", ty: type, q: question, u: opts[0], r: opts[1], l: opts[2], c: correct, ex: explFull, w: weight };
+            return { id, ds, tp: "Chemistry", ty: type, q: question, u: opts[0]||"Opt A", r: opts[1]||"Opt B", l: opts[2]||"Opt C", c: correct, ex: explFull, h: ds + " " + type };
         } catch (e) { return null; }
     }).filter(x => x !== null);
 
