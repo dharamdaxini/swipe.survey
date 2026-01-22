@@ -3,50 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V99 | Direct Injection</title>
+    <title>Alchemist V100.2 | Final Production</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
     <style>
-        :root { --bg: #000; --card: #121212; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        :root {
+            --bg: #000; --card: #111; --border: #262626; 
+            --gold: #ffd600; --green: #2ecc71; --blue: #3498db;
+            --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
+        }
+
+        /* --- GLOBAL & FORMULA STYLING --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-        
-        /* PORTAL UI */
-        #portal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
-        #portal textarea { width: 100%; height: 200px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 12px; }
-        #portal h1 { font-weight: 900; letter-spacing: 5px; margin: 0; }
-        
-        /* HUD & ARCHITECTURE */
-        #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; display: none; }
-        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #888; letter-spacing: 2px; }
-        .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
-        #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: none; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
-        
-        /* STACK */
-        #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; display: none; align-items: center; justify-content: center; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); }
-        .card-q { font-family: var(--font-chem); font-size: clamp(22px, 5.5vmin, 30px); line-height: 1.35; font-weight: 600; color: #fff; overflow-y: auto; scrollbar-width: none; }
-        
-        /* CHEMISTRY RENDERING */
         sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.4em; }
 
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.9); color: #fff; font-weight: 900; font-size: 2rem; text-transform: uppercase; border-radius: 44px; opacity: 0; pointer-events: none; border: 2px solid var(--gold); }
-        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 40px; opacity: 0; border-radius: 44px; display: none; flex-direction: column; justify-content: center; border: 1px solid var(--gold); }
-        .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-        .overlay-body { font-size: 1.3rem; line-height: 1.7; color: #ccc; margin-bottom: 40px; font-family: var(--font-chem); text-align: left; overflow-y: auto; }
+        /* --- HUD & NAVIGATION --- */
+        #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
+        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
+        .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
+
+        #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: none; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
+        .log-item { margin-bottom: 4px; color: #333; text-transform: uppercase; transition: 0.3s; }
+        .log-item.active { color: var(--green); font-weight: 900; }
+
+        /* --- GESTURE ENGINE (STACK) --- */
+        #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; perspective: 1500px; display: none; align-items: center; justify-content: center; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; }
+        .card-q { font-family: var(--font-chem); font-size: clamp(22px, 5.5vmin, 30px); line-height: 1.35; font-weight: 600; color: #ffffff; width: 100%; max-height: 80%; overflow-y: auto; scrollbar-width: none; }
+
+        /* --- LABELS & OVERLAYS --- */
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: #fff; font-weight: 900; font-size: 2rem; text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); }
         
-        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-        #inject-btn { background: var(--gold); }
+        /* Fixed Swipe-Down Overlay */
+        .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; justify-content: flex-start; border: 1px solid var(--gold); text-align: left; }
+        .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
+        .overlay-meta { font-family: var(--font-code); font-size: 0.7rem; color: var(--gold); margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #dddddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
+        .overlay-hint { font-size: 0.85rem; color: var(--blue); font-family: var(--font-code); font-style: italic; margin-bottom: 20px; }
+
+        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); transition: transform 0.2s; }
+        .btn:active { transform: scale(0.95); }
+
+        /* --- PORTAL (Injection Gate) --- */
+        #portal { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+        #portal h1 { font-weight: 900; letter-spacing: 5px; margin: 0; color: var(--gold); }
+        #portal textarea { width: 100%; height: 200px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 12px; outline: none; }
+        #inject-btn { background: var(--gold); color: #000; width: 100%; max-width: 300px; }
     </style>
 </head>
 <body>
 
 <div id="portal">
-    <h1>ALCHEMIST V99</h1>
-    <p style="color:#666">DIRECT INJECTION MODE</p>
-    <textarea id="raw-input" placeholder="Paste your 1,400 lines here..."></textarea>
-    <button class="btn" id="inject-btn" onclick="injectData()">INJECT & START</button>
+    <h1>ALCHEMIST V100</h1>
+    <p style="color:#666">READY FOR 1,400+ LINES INJECTION</p>
+    <textarea id="raw-input" placeholder="Paste your messy data here..."></textarea>
+    <button class="btn" id="inject-btn" onclick="injectData()">INJECT & INITIALIZE</button>
 </div>
 
 <div id="header">
@@ -64,8 +79,9 @@
 
     function injectData() {
         const rawText = document.getElementById('raw-input').value.trim();
-        if(!rawText) return alert("Clipboard is empty.");
+        if(!rawText) return alert("Injection Error: Data Source Empty.");
         
+        // POSITIONAL PARSING ENGINE (Bulletproof)
         DATABASE = rawText.split('\n').map(line => {
             try {
                 if (!line.includes('❌')) return null;
@@ -73,39 +89,115 @@
                 const ds = id.substring(0, 5);
                 const type = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"].find(t => line.includes(t)) || "CONCEPT";
                 const explStart = line.indexOf('❌');
-                const weight = (line.match(/(\d\.\d+)$/) || [null, "0.5"])[1];
+                const weightMatch = line.match(/(\d\.\d+)$/);
+                const weight = weightMatch ? weightMatch[1] : "0.5";
                 const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
-                const dirs = ["UP", "RIGHT", "LEFT", "DOWN"];
-                const correct = dirs.find(d => middle.endsWith(d)) || "RIGHT";
+                const directions = ["UP", "RIGHT", "LEFT", "DOWN"];
+                const correct = directions.find(d => middle.endsWith(d)) || "RIGHT";
                 const qAndO = middle.substring(0, middle.length - correct.length).trim();
                 const qSplit = qAndO.split('?');
                 const question = qSplit[0] + "?";
                 const opts = (qSplit[1] || "").replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
-                return { id, ds, tp: "Module", ty: type, q: question, u: opts[0], r: opts[1], l: opts[2], c: correct, ex: explFull };
+                return { id, ds, tp: "Chemistry", ty: type, q: question, u: opts[0], r: opts[1], l: opts[2], c: correct, ex: explFull, h: ds + " " + type };
             } catch (e) { return null; }
         }).filter(x => x !== null);
 
-        document.getElementById('portal').style.display = 'none';
-        document.getElementById('header').style.display = 'block';
-        document.getElementById('history-tape').style.display = 'flex';
-        document.getElementById('stack').style.display = 'flex';
-        renderDiff();
+        document.getElementById('portal').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('portal').style.display = 'none';
+            document.getElementById('header').style.display = 'block';
+            document.getElementById('history-tape').style.display = 'flex';
+            document.getElementById('stack').style.display = 'flex';
+            renderDiff();
+        }, 400);
     }
 
     const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
     function updateHUD() { document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`; document.getElementById('progress-bar').style.width = `${(CUR_INDEX / SESSION_LIMIT) * 100}%`; }
     function addToLog(msg, action) { const tape = document.getElementById('history-tape'); tape.querySelectorAll('.active').forEach(el => el.classList.remove('active')); const div = document.createElement('div'); div.className = "log-item active"; div.innerHTML = `> ${msg}`; if (action) div.onclick = action; tape.prepend(div); }
     function renderMenu(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; s.appendChild(c); bindPhysics(c, {}); }
-    function renderDiff() { MODE = "MENU_DIFF"; CUR_INDEX = 0; SCORE = 0; addToLog("READY", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+
+    function renderDiff() { MODE = "MENU_DIFF"; CUR_INDEX = 0; SCORE = 0; addToLog("SYSTEM_SYNC", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
     function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds.replace(/\s/g, '_'); addToLog(ds, renderDiff); renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
     function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; addToLog(tp, () => renderTopic(CUR_DATASET)); renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
     function renderVolume(genre) { MODE = "MENU_VOLUME"; CUR_GENRE = genre; addToLog(genre, () => renderDepth(CUR_TOPIC)); renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
     function startQuiz(limit) { SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; MISTAKES = []; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => Math.random() - 0.5).slice(0, SESSION_LIMIT); MODE = "QUIZ"; renderNext(); }
-    function renderNext() { const s = document.getElementById('stack'); s.innerHTML = ""; if (!POOL.length) { renderEnd(); return; } updateHUD(); const q = { ...POOL[0] }; const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5); q.u = items[0].t; q.r = items[1].t; q.l = items[2].t; q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT"); const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">${format(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`; s.appendChild(c); bindPhysics(c, q); }
-    function renderEnd() { MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold)">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`; s.appendChild(c); bindPhysics(c, {}); }
-    function bindPhysics(el, data) { let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null; const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') }; el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; }; window.onmousemove = window.ontouchmove = e => { if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy; el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`; const ang = Math.atan2(-y, x) * (180 / Math.PI); Object.values(labels).forEach(l => { if (l) l.style.opacity = 0; }); if (Math.abs(x) > 20 || Math.abs(y) > 20) { let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt"; if (labels[d]) labels[d].style.opacity = 1; td = d.toUpperCase(); } }; window.onmouseup = window.ontouchend = () => { if (!active) return; active = false; if (Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, td); else { el.style.transition = "0.4s"; el.style.transform = "none"; } }; }
-    function handleAction(el, data, dir) { if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D"); else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical"); else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC"); else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50); else if (MODE === "END") { if (dir === "UP") startQuiz(SESSION_LIMIT); else if (dir === "LT") renderDiff(); else if (dir === "RT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); } else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); } } else { if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; } if (dir.replace('LT', 'LEFT').replace('RT', 'RIGHT') === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = SCORE + " XP"; } else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); } POOL.shift(); CUR_INDEX++; renderNext(); } }
+
+    function renderNext() {
+        const s = document.getElementById('stack'); s.innerHTML = "";
+        if (!POOL.length) { renderEnd(); return; }
+        updateHUD();
+        const q = { ...POOL[0] };
+        const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
+        q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
+        q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
+
+        // Clean Explanation for Swipe-Down
+        let cleanEx = q.ex.replace(/[❌✅]/g, '').replace(/\d\.\d+$/, '').trim();
+
+        const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `
+            <div class="card-q">${format(q.q)}</div>
+            <div class="swipe-label sl-up">${q.u}</div>
+            <div class="swipe-label sl-left">${q.l}</div>
+            <div class="swipe-label sl-right">${q.r}</div>
+            <div class="swipe-label sl-down">⬇ VIEW LOGIC</div>
+            <div class="overlay">
+                <div class="overlay-meta">${q.id} | ${q.ty}</div>
+                <div class="overlay-body">${format(cleanEx)}</div>
+                <div class="overlay-hint">> CONCEPT: ${q.h} Analysis</div>
+                <button class="btn" onclick="this.parentElement.classList.remove('active')">BACK TO CARD</button>
+            </div>
+        `;
+        s.appendChild(c); bindPhysics(c, q);
+    }
+
+    function renderEnd() {
+        MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">LEVEL UP</div><div class="swipe-label sl-down">REVIEW</div>`;
+        s.appendChild(c); bindPhysics(c, {});
+    }
+
+    function bindPhysics(el, data) {
+        let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
+        const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
+        el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; };
+        window.onmousemove = window.ontouchmove = e => {
+            if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
+            el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
+            const ang = Math.atan2(-y, x) * (180 / Math.PI);
+            Object.values(labels).forEach(l => { if (l) l.style.opacity = 0; });
+            if (Math.abs(x) > 20 || Math.abs(y) > 20) {
+                let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
+                if (labels[d]) labels[d].style.opacity = 1; td = d.toUpperCase();
+            }
+        };
+        window.onmouseup = window.ontouchend = () => {
+            if (!active) return; active = false;
+            if (Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, td);
+            else { el.style.transition = "0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; }
+        };
+    }
+
+    function handleAction(el, data, dir) {
+        if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D");
+        else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical");
+        else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC");
+        else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
+        else if (MODE === "END") {
+            if (dir === "UP") startQuiz(SESSION_LIMIT);
+            else if (dir === "LT") renderDiff();
+            else if (dir === "RT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(SESSION_LIMIT); }
+            else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); }
+        } else {
+            if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
+            const ad = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT');
+            if (ad === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
+            else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); }
+            POOL.shift(); CUR_INDEX++; renderNext();
+        }
+    }
 </script>
 </body>
 </html>
