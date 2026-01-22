@@ -1,98 +1,198 @@
-let DATABASE = [], POOL = [], SCORE = 0, MODE = "MENU_DIFF", CUR_DATASET = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
+/* --- GLOBAL STATE --- */
+let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0;
+let MODE = "INIT", INDEX = 1, IS_REVIEW = false;
+let SEL_PATH = "", SEL_VOL = 20, SEL_DEPTH = "", SEL_DOMAIN = "", SEL_DIFF = "";
 
+/* --- INITIALIZATION & PERSISTENCE --- */
 window.onload = () => {
-    const saved = localStorage.getItem('alchemist_vault');
-    if (saved) document.getElementById('data-input').value = saved;
+    // Force cache bypass via URL versioning
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!urlParams.get('v')) { window.location.search = '?v=117.1'; }
+    
+    const cached = localStorage.getItem('alch_v117_vault');
+    if (cached) document.getElementById('data-input').value = cached;
 };
 
-function vaultAndInject() {
+function masterInit() {
     const raw = document.getElementById('data-input').value.trim();
-    if (!raw) return;
-    localStorage.setItem('alchemist_vault', raw);
-    processData(raw);
-    document.getElementById('portal').style.display = 'none';
-    ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
-}
-
-function processData(raw) {
+    if (!raw) return alert("VAULT EMPTY: Please paste your CSV data.");
+    localStorage.setItem('alch_v117_vault', raw);
+    
+    // CSV Parser with Regex to handle commas inside quotes
     const lines = raw.split(/\r?\n/);
-    DATABASE = lines.map(line => {
-        const pattern = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
-        const cols = (line.match(pattern) || []).map(c => c.replace(/^"|"$/g, '').trim());
-        if (cols.length < 11) return null; // Ensure Hint column is reached
-        
-        return {
-            id: cols[0], ds: cols[1], tp: cols[2], ty: cols[3],
-            q: cols[4], u: cols[5], r: cols[6], l: cols[7],
-            c: cols[8] || "RIGHT", ex: cols[9] || "", hint: cols[10] || "No hint available"
+    VAULT = lines.map(line => {
+        const regex = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
+        const c = (line.match(regex) || []).map(x => x.replace(/^"|"$/g, '').trim());
+        if (c.length < 11) return null;
+        return { 
+            id: c[0], diff: c[1], domain: c[2], depth: c[3], 
+            q: c[4], u: c[5], r: c[6], l: c[7], 
+            ans: c[8], expl: c[9], hint: c[10] 
         };
-    }).filter(x => x !== null && x.id.toLowerCase() !== "id");
-    renderDiff();
+    }).filter(x => x && x.id.toLowerCase() !== "id");
+
+    document.getElementById('portal').style.display = 'none';
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('stack').style.display = 'flex';
+    renderSlide_1_Path();
 }
 
-const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>') : "";
+/* --- FUNNEL NAVIGATION --- */
+function renderSlide_1_Path() { MODE = "SEL_PATH"; renderSlide("CHOOSE YOUR PATH", "---", "LEARN (V81.1)", "QUIZ (V111.0)", "---"); }
+function renderSlide_2_Vol() { MODE = "SEL_VOL"; renderSlide("TOTAL QUESTIONS", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
+function renderSlide_3_Depth() { MODE = "SEL_DEPTH"; renderSlide("SELECT DEPTH", "CONCEPT", "MATH", "APPLICATION", "LOGIC"); }
+function renderSlide_4_Domain() { MODE = "SEL_DOMAIN"; renderSlide("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+function renderSlide_5_Diff() { MODE = "SEL_DIFF"; renderSlide("DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
 
-function bindPhysics(el, data) {
-    let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
-    const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-    const MAX_RADIUS = 38; 
-
-    el.ontouchstart = e => { active = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY; el.style.transition = "none"; };
-    window.ontouchmove = e => { 
-        if (!active) return; 
-        let dx = e.touches[0].clientX - sx, dy = e.touches[0].clientY - sy; 
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist > MAX_RADIUS) { x = dx * (MAX_RADIUS/dist); y = dy * (MAX_RADIUS/dist); } else { x = dx; y = dy; }
-        requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
-        const ang = Math.atan2(-dy, dx) * (180 / Math.PI);
-        Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; });
-        if (dist > 20) {
-            let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
-            if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase();
-        }
-    };
-    window.ontouchend = () => { if (!active) return; active = false; if (Math.sqrt(x*x + y*y) > 30) handleAction(el, data, td); else { el.style.transition = "0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } };
+function startSession() {
+    MODE = "ACTIVE"; IS_REVIEW = false; INDEX = 1; SCORE = 0; MISTAKES = [];
+    
+    // Filter Pool based on Niche Selection
+    let filtered = VAULT.filter(v => v.diff === SEL_DIFF);
+    // Secondary filters (if data exists for these niches)
+    const deepFilter = filtered.filter(v => v.depth.toUpperCase() === SEL_DEPTH && v.domain.toUpperCase() === SEL_DOMAIN);
+    if (deepFilter.length > 0) filtered = deepFilter;
+    
+    POOL = filtered.sort(() => 0.5 - Math.random()).slice(0, SEL_VOL);
+    renderNext();
 }
 
-function renderMenu(q, up, lt, rt, dn) { 
-    const s = document.getElementById('stack'); s.innerHTML = ""; 
-    const c = document.createElement('div'); c.className = "card"; 
-    c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; 
-    s.appendChild(c); bindPhysics(c, {}); 
+/* --- RENDER ENGINE --- */
+function renderSlide(q, up, lt, rt, dn) {
+    const s = document.getElementById('stack'); s.innerHTML = "";
+    const c = document.createElement('div'); c.className = "card";
+    c.innerHTML = `
+        <div class="card-q">${q}</div>
+        <div class="swipe-label sl-up">${up}</div>
+        <div class="swipe-label sl-left">${lt}</div>
+        <div class="swipe-label sl-right">${rt}</div>
+        <div class="swipe-label sl-down">${dn}</div>
+    `;
+    s.appendChild(c); bindPhysics(c, {});
 }
-
-function renderDiff() { MODE = "MENU_DIFF"; renderMenu("CHOOSE SET", "SET A", "SET B", "SET C", "SET D"); }
-function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds; renderMenu("DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-function renderVolume() { MODE = "MENU_VOLUME"; renderMenu("SESSION", "20 Qs", "50 Qs", "100 Qs", "GO BACK"); }
-function startQuiz(limit) { SESSION_LIMIT = limit; CUR_INDEX = 1; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => 0.5 - Math.random()).slice(0, limit); renderNext(); }
 
 function renderNext() {
     const s = document.getElementById('stack'); s.innerHTML = "";
-    if (!POOL.length) { renderDiff(); return; }
+    if (!POOL.length) { renderEnd(); return; }
+    
     const q = { ...POOL[0] };
-    const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
-    q.u = items[0].t; q.r = items[1].t; q.l = items[2].t; q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
     const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `
-        <div class="card-q">${format(q.q)}</div>
-        <div class="swipe-label sl-up">${q.u}</div>
-        <div class="swipe-label sl-left">${q.l}</div>
-        <div class="swipe-label sl-right">${q.r}</div>
-        <div class="swipe-label sl-down">⬇ VIEW HINT</div>
-        <div class="overlay">
-            <div class="overlay-body">HINT: ${format(q.hint)}<br><br>ANALYSIS: ${format(q.ex)}</div>
-            <button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button>
-        </div>
-    `;
-    s.appendChild(c); bindPhysics(c, q);
+
+    if (MODE === "REVIEW") {
+        const correctText = q.ans === "UP" ? q.u : (q.ans === "RIGHT" ? q.r : q.l);
+        c.innerHTML = `
+            <div class="review-content">
+                <span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span>
+                <span class="review-label">CORRECT ANSWER</span><span class="review-text" style="color:var(--green)">${format(correctText)}</span>
+                <span class="review-label">LOGIC ANALYSIS</span><span class="review-text">${format(q.expl)}</span>
+            </div>
+            <div class="swipe-label sl-rt">NEXT ENTRY</div>
+        `;
+    } else {
+        // Randomize Options for Quiz integrity
+        const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
+        q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
+        q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
+
+        let dnLabel = (SEL_PATH === "QUIZ") ? "⬇ MARK AS UNSURE" : "⬇ VIEW ANALYSIS";
+        
+        c.innerHTML = `
+            <div class="card-q">${format(q.q)}</div>
+            <div class="swipe-label sl-up">${q.u}</div>
+            <div class="swipe-label sl-left">${q.l}</div>
+            <div class="swipe-label sl-right">${q.r}</div>
+            <div class="swipe-label sl-down">${dnLabel}</div>
+            <div class="overlay">
+                <div class="overlay-body">${format(q.expl)}</div>
+                <button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button>
+            </div>
+        `;
+    }
+    s.appendChild(c); bindPhysics(c, q); updateHUD();
 }
 
-function handleAction(el, data, dir) {
-    if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET_A" : dir === "LT" ? "SET_B" : dir === "RT" ? "SET_C" : "SET_D");
-    else if (MODE === "MENU_TOPIC") renderVolume();
-    else if (MODE === "MENU_VOLUME") { if(dir === "DN") renderDiff(); else startQuiz(dir === "UP" ? 20 : dir === "LT" ? 50 : 100); }
+function renderEnd() {
+    MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
+    c.innerHTML = `
+        <div class="card-q">SESSION COMPLETE</div>
+        <div class="swipe-label sl-up">RESTART</div>
+        <div class="swipe-label sl-left">CORE MENU</div>
+        <div class="swipe-label sl-right">NEW NICHE</div>
+        <div class="swipe-label sl-down">${MISTAKES.length > 0 ? 'REVIEW MISTAKES' : 'PERFECT SCORE'}</div>
+    `;
+    s.appendChild(c); bindPhysics(c, {});
+}
+
+/* --- CORE ROUTING LOGIC --- */
+function route(el, data, dir) {
+    // FUNNEL ROUTING
+    if (MODE === "SEL_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ" : "LEARN"); renderSlide_2_Vol(); }
+    else if (MODE === "SEL_VOL") { SEL_VOL = parseInt(dir); renderSlide_3_Depth(); }
+    else if (MODE === "SEL_DEPTH") { SEL_DEPTH = dir; renderSlide_4_Domain(); }
+    else if (MODE === "SEL_DOMAIN") { SEL_DOMAIN = dir; renderSlide_5_Diff(); }
+    else if (MODE === "SEL_DIFF") { SEL_DIFF = dir; startSession(); }
+    
+    // END SLIDE ROUTING
+    else if (MODE === "END") { 
+        if (dir === "UP") startSession(); 
+        else if (dir === "DN" && MISTAKES.length > 0) { IS_REVIEW=true; POOL=[...MISTAKES]; INDEX=1; MODE="REVIEW"; renderNext(); } 
+        else renderSlide_1_Path(); 
+    }
+    
+    // REVIEW ROUTING
+    else if (MODE === "REVIEW") { if (dir === "RT") { POOL.shift(); INDEX++; renderNext(); } }
+    
+    // ACTIVE SESSION ROUTING
     else {
-        if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
-        POOL.shift(); CUR_INDEX++; renderNext();
+        if (dir === "DN") {
+            if (SEL_PATH === "QUIZ") {
+                MISTAKES.push(data); // "Unsure" counts as mistake for review
+                nextCard();
+            } else {
+                el.querySelector('.overlay').classList.add('active');
+                el.style.transform = "none";
+            }
+            return;
+        }
+        
+        // Answer Validation
+        const isCorrect = (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT'));
+        if (isCorrect) SCORE += 10; else if (!IS_REVIEW) MISTAKES.push(data);
+        nextCard();
     }
 }
+
+function nextCard() { POOL.shift(); INDEX++; renderNext(); }
+
+/* --- PHYSICS & UI UTILITIES --- */
+function bindPhysics(el, data) {
+    let x=0, y=0, sx=0, sy=0, active=false, dir=null;
+    el.ontouchstart = e => { active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; el.style.transition="none"; };
+    window.ontouchmove = e => { 
+        if (!active) return; 
+        let dx = e.touches[0].clientX-sx, dy = e.touches[0].clientY-sy; const dist = Math.sqrt(dx*dx+dy*dy);
+        if (dist > 38) { x=dx*(38/dist); y=dy*(38/dist); } else { x=dx; y=dy; }
+        requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
+        const ang = Math.atan2(-dy, dx)*(180/Math.PI);
+        el.querySelectorAll('.swipe-label').forEach(l => l.style.opacity=0);
+        if (dist > 20) {
+            let d = (ang >= 45 && ang < 135) ? ".sl-up" : (ang >= 135 || ang < -135) ? ".sl-left" : (ang >= -135 && ang < -45) ? ".sl-down" : ".sl-right";
+            const targetLabel = el.querySelector(d); 
+            if (targetLabel) { targetLabel.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); }
+        }
+    };
+    window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>30) route(el, data, dir); else { el.style.transition="0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform="none"; } };
+}
+
+function updateHUD() { 
+    document.getElementById('p-text').innerText = `${INDEX} / ${POOL.length + INDEX - 1}`; 
+    document.getElementById('score-text').innerText = `${SCORE} XP`; 
+    document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; 
+}
+
+const format = (t) => t ? t.toString()
+    .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>')
+    .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')
+    .replace(/\^(\d+)/g, '<sup>$1</sup>')
+    .replace(/theta/g,'&theta;')
+    .replace(/lambda/g,'&lambda;') : "";
