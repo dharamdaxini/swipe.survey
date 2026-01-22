@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V80.6 | Industrial Math</title>
+    <title>Alchemist V80.8 | Liquid Text</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #000; --card: #111; --border: #222; --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
+            --bg: #000; --card: #111; --border: #222; 
+            --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
             --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
         }
 
-        /* HARDWARE ACCELERATION & RESET */
+        /* RESET & PERFORMANCE */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
         body { 
             margin: 0; height: 100vh; background: var(--bg); color: #fff;
@@ -21,6 +22,7 @@
             display: flex; flex-direction: column;
         }
 
+        /* FORMULA FIXES */
         sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
         sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
 
@@ -30,7 +32,7 @@
         .progress-track { width: 100%; height: 2px; background: #1a1a1a; margin-top: 10px; border-radius: 1px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-        /* STACK ENGINE */
+        /* STACK ENGINE (Depth sorting) */
         #stack { 
             position: relative; width: 92%; max-width: 400px; height: 70vh; 
             margin: auto; perspective: 1200px; display: flex; align-items: center; justify-content: center;
@@ -38,31 +40,42 @@
         
         .card { 
             position: absolute; width: 100%; height: 90%; background: var(--card); border-radius: 40px; border: 1px solid var(--border);
-            padding: 40px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
+            padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9);
             will-change: transform, opacity; transform: translate3d(0,0,0);
+            backface-visibility: hidden;
+            /* Flex layout for centering content perfectly */
+            align-items: center; text-align: center;
         }
 
-        /* PHYSICS STATES */
-        .card.study-active { filter: blur(20px) brightness(0.2); opacity: 0.5; transform: scale(0.85) translateY(40px) !important; pointer-events: none; }
-        
-        /* MATH TYPOGRAPHY UPGRADE */
+        /* LIQUID TYPOGRAPHY: Scales with screen width to prevent cutting */
         .card-q { 
-            font-family: var(--font-chem); font-size: 1.6rem; line-height: 1.5; font-weight: 600; 
-            text-align: center; color: #f0f0f0; text-rendering: optimizeLegibility; 
+            font-family: var(--font-chem); 
+            /* Clamp: Minimum 1.1rem, Preferred 5vw, Maximum 1.7rem */
+            font-size: clamp(1.2rem, 5vw, 1.7rem); 
+            line-height: 1.4; 
+            font-weight: 600; 
+            color: #f0f0f0; 
+            text-rendering: optimizeLegibility;
+            width: 100%;
+            /* Safety Scroll: If text is excessively long, allow internal scroll instead of cutting */
+            max-height: 65%;
+            overflow-y: auto;
+            /* Hide scrollbar */
+            scrollbar-width: none; 
         }
+        .card-q::-webkit-scrollbar { display: none; }
 
-        /* VECTOR LABELS */
+        /* LABELS & HINTS */
         .swipe-label {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
             background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase;
             border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px;
         }
         
-        /* HINT SPECIFIC STYLING */
         .sl-down-hint { 
             color: var(--blue) !important; font-size: 1.1rem !important; 
             text-transform: none !important; font-family: var(--font-chem) !important; 
-            padding: 20px 40px; line-height: 1.4; white-space: pre-wrap;
+            padding: 30px; line-height: 1.4; white-space: pre-wrap;
         }
 
         /* OVERLAY */
@@ -72,7 +85,6 @@
             display: flex; flex-direction: column; justify-content: center; overflow-y: auto;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
-        .overlay-label { font-size: 0.7rem; color: var(--gold); font-family: var(--font-code); margin-bottom: 10px; letter-spacing: 2px; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #bbb; margin-bottom: 30px; font-family: var(--font-chem); }
         .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer;}
 
@@ -81,7 +93,7 @@
 </head>
 <body>
 
-<div id="loader">NEXUS V80.6</div>
+<div id="loader">ALCHEMIST V80.8</div>
 
 <div id="header">
     <div class="header-meta">
@@ -95,11 +107,10 @@
 
 <script>
     /* --- CONFIGURATION --- */
-    // ✅ NEW DEPLOYMENT URL INSERTED HERE
     const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
     const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-    /* --- DATA REPOSITORY (100Q) --- */
+    /* --- 100Q DATA REPOSITORY --- */
     const RAW_DATA = [
         {"id": "SET_A_0001", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "In a second-order reaction rate = k[A]², why is the half-life t₁/₂ dependent on initial concentration?", "u": "Rate decreases too slowly", "r": "Derivative depends on [A]²", "l": "Integral diverges", "c": "RIGHT", "ex": "✅ Integrating 1/[A]² yields t = 1/(k[A]₀).", "h": "Integration of power rule."},
         {"id": "SET_A_0002", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Why must the Hamiltonian operator Ĥ be Hermitian?", "u": "Real eigenvalues", "r": "Complex waves", "l": "Boundary conditions", "c": "UP", "ex": "✅ Hermiticity guarantees real energy eigenvalues.", "h": "Real spectrum."},
@@ -182,7 +193,7 @@
         {"id": "SET_A_0079", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Ideal Mixing Enthalpy 0:", "u": "Interactions identical", "r": "Entropy", "l": "Vol", "c": "UP", "ex": "✅ No energy diff.", "h": "Same same."},
         {"id": "SET_A_0080", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Reversible drive force:", "u": "Infinitesimal", "r": "Large", "l": "Zero", "c": "UP", "ex": "✅ Equilibrium step.", "h": "Tiny."},
         {"id": "SET_A_0081", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Tunneling exp depends on:", "u": "Barrier width", "r": "Temp", "l": "Spin", "c": "UP", "ex": "✅ Decay length.", "h": "Width."},
-        {"id": "SET_A_0082", "ds": "SET_A", "tp": "Analytical", "ty": "MATH", "q": "T=0.1, Abs is:", "u": "1.0", "r": "0.1", "l": "2.0", "c": "UP", "ex": "✅ -log(0.1).", "h": "Log."},
+        {"id": "SET_A_0082", "ds": "SET_A", "tp": "Analytical Chemistry", "ty": "MATH", "q": "T=0.1, Abs is:", "u": "1.0", "r": "0.1", "l": "2.0", "c": "UP", "ex": "✅ -log(0.1).", "h": "Log."},
         {"id": "SET_A_0083", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Fugacity replaces:", "u": "Pressure", "r": "Vol", "l": "Temp", "c": "UP", "ex": "✅ Effective P.", "h": "Press."},
         {"id": "SET_A_0084", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Transition State curvature:", "u": "Neg one way", "r": "Pos", "l": "Zero", "c": "UP", "ex": "✅ Saddle point.", "h": "Saddle."},
         {"id": "SET_A_0085", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Frank-Condon vertical:", "u": "Fast elec/Slow nuc", "r": "Mom", "l": "Quant", "c": "UP", "ex": "✅ Time scale sep.", "h": "Frozen."},
@@ -210,8 +221,11 @@
 
     function init() { setTimeout(() => { document.getElementById('loader').remove(); renderDatasetSelect(); }, 800); }
 
-    /* --- MENU RENDERERS --- */
-    function renderDatasetSelect() { MODE = "DATASET_SELECT"; renderMenuCard("SELECT CURRICULUM", "SET A", "SET B", "SET C", "SET D"); }
+    /* --- MENU RENDERERS (UPDATED LABELS) --- */
+    function renderDatasetSelect() { 
+        MODE = "DATASET_SELECT"; 
+        renderMenuCard("SELECT DIFFICULTY", "LEVEL 1 (Core)", "LEVEL 2 (Applied)", "LEVEL 3 (Advanced)", "LEVEL 4 (Expert)"); 
+    }
     
     function renderTopicSelect(ds) { 
         MODE = "TOPIC_SELECT"; CUR_DATASET = ds; 
@@ -237,7 +251,6 @@
         CUR_GENRE = genre;
         
         // INTELLIGENT TOPIC CLUSTERING
-        // Maps the 4 UI buttons to the specific sub-topics in the 100Q dataset
         POOL = RAW_DATA.filter(q => {
             const matchDS = q.ds === CUR_DATASET;
             const t = q.tp.toLowerCase();
@@ -270,14 +283,15 @@
         }
 
         if(!POOL.length) { 
-            alert(`No questions found for ${CUR_TOPIC} > ${CUR_GENRE}. Try the other button!`); 
-            renderDatasetSelect(); 
-            return; 
+            // Fallback: If Niche is empty, try loading Generic Topic
+            alert(`Niche empty. Trying broad search for ${CUR_TOPIC}...`);
+            POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET && q.tp.toLowerCase().includes(CUR_TOPIC.toLowerCase()));
+            if(!POOL.length) { renderDatasetSelect(); return; }
         }
         renderNext();
     }
 
-    /* --- MAIN RENDERER --- */
+    /* --- MAIN RENDERER (FLASHCARD + HINT SUPPORT) --- */
     function renderNext() {
         const s = document.getElementById('stack'); s.innerHTML = "";
         if(!POOL.length) { renderEnd(); return; }
@@ -325,6 +339,7 @@
         bindPhysics(c, q);
     }
 
+    /* --- END CARD (4-WAY NAVIGATION) --- */
     function renderEnd() {
         MODE = "SESSION_END";
         const s = document.getElementById('stack'); s.innerHTML = "";
@@ -342,6 +357,7 @@
         s.appendChild(c); bindPhysics(c, {});
     }
 
+    /* --- UNIVERSAL PHYSICS ENGINE --- */
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
         const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
@@ -376,47 +392,60 @@
         el.addEventListener('touchstart', start); el.addEventListener('touchmove', move); el.addEventListener('touchend', end);
     }
 
+    /* --- ACTION ROUTER WITH FREEZE FIX --- */
     function handleAction(el, data, x, y, dir) {
         isTransitioning = true;
         
-        if (MODE === "DATASET_SELECT") {
-            const map = { UP: "SET_A", LEFT: "SET_B", RIGHT: "SET_C", DOWN: "SET_D" };
-            renderTopicSelect(map[dir]);
-        }
-        else if (MODE === "TOPIC_SELECT") {
-            const map = { UP: "Physical", LEFT: "Organic", RIGHT: "Inorganic", DOWN: "Analytical" };
-            renderGenreSelect(map[dir]);
-        }
-        else if (MODE === "GENRE_SELECT") {
-            if (dir === "UP") startQuiz("CONCEPT");
-            else if (dir === "DOWN") startQuiz("APPLICATION");
-            else { isTransitioning = false; return; }
-        }
-        else if (MODE === "QUIZ" || MODE === "REVIEW") {
-            const correct = dir === (data.c || data.correct);
-            if(correct) SCORE += (MODE === "REVIEW" ? 5 : 10);
-            else if(MODE === "QUIZ" && !MISTAKES.some(m => m.id === data.id)) MISTAKES.push(data);
-
-            new Image().src = `${ENDPOINT}?target=Telemetry&questionId=${data.id}&result=${correct}&vectorChoice=${dir}&latency=${Date.now()-startTime}`;
-            POOL.shift(); renderNext();
-        }
-        else if (MODE === "SESSION_END") {
-            if (dir === "UP") location.reload();
-            else if (dir === "DOWN") {
-                if(MISTAKES.length === 0) { alert("No mistakes to review!"); location.reload(); return; }
-                MODE = "REVIEW"; POOL = [...MISTAKES]; MISTAKES = []; renderNext();
-            }
-            else if (dir === "LEFT") renderTopicSelect(CUR_DATASET);
-            else if (dir === "RIGHT") {
-                CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A";
-                alert(`Advancing to ${CUR_DATASET}...`);
-                startQuiz(CUR_GENRE);
-            }
-        }
-
+        // 1. ANIMATE CARD OFF SCREEN
         el.style.transition = "transform 0.4s ease-in, opacity 0.3s";
-        el.style.transform = `translate3d(${x*12}px,${y*12}px,0)`; el.style.opacity = "0";
-        setTimeout(() => { el.remove(); isTransitioning=false; updateUI(); }, 400);
+        el.style.transform = `translate3d(${x*12}px,${y*12}px,0)`; 
+        el.style.opacity = "0";
+
+        // 2. WAIT FOR ANIMATION TO FINISH BEFORE LOADING NEXT
+        setTimeout(() => {
+            el.remove(); // Remove old card from DOM
+
+            // NOW PROCESS LOGIC
+            if (MODE === "DATASET_SELECT") {
+                const map = { UP: "SET_A", LEFT: "SET_B", RIGHT: "SET_C", DOWN: "SET_D" };
+                renderTopicSelect(map[dir]);
+            }
+            else if (MODE === "TOPIC_SELECT") {
+                const map = { UP: "Physical", LEFT: "Organic", RIGHT: "Inorganic", DOWN: "Analytical" };
+                renderGenreSelect(map[dir]);
+            }
+            else if (MODE === "GENRE_SELECT") {
+                if (dir === "UP") startQuiz("CONCEPT");
+                else if (dir === "DOWN") startQuiz("APPLICATION");
+                else isTransitioning = false; 
+            }
+            else if (MODE === "QUIZ" || MODE === "REVIEW") {
+                const correct = dir === (data.c || data.correct);
+                if(correct) SCORE += (MODE === "REVIEW" ? 5 : 10);
+                else if(MODE === "QUIZ" && !MISTAKES.some(m => m.id === data.id)) MISTAKES.push(data);
+
+                new Image().src = `${ENDPOINT}?target=Telemetry&questionId=${data.id}&result=${correct}&vectorChoice=${dir}&latency=${Date.now()-startTime}`;
+                
+                POOL.shift(); // Remove processed question
+                renderNext(); // Load next question
+            }
+            else if (MODE === "SESSION_END") {
+                if (dir === "UP") location.reload();
+                else if (dir === "DOWN") {
+                    if(MISTAKES.length === 0) { alert("No mistakes to review!"); location.reload(); return; }
+                    MODE = "REVIEW"; POOL = [...MISTAKES]; MISTAKES = []; renderNext();
+                }
+                else if (dir === "LEFT") renderTopicSelect(CUR_DATASET);
+                else if (dir === "RIGHT") {
+                    CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A";
+                    alert(`Advancing to ${CUR_DATASET}...`);
+                    startQuiz(CUR_GENRE);
+                }
+            }
+            
+            isTransitioning = false;
+            updateUI();
+        }, 400); // 400ms delay matches CSS transition
     }
 
     function updateUI() { document.getElementById('xp-ui').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(SCORE % 100)}%`; }
