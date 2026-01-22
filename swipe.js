@@ -1,11 +1,12 @@
-/* --- ALCHEMIST V83.1 ATOMIC ENGINE --- */
+/* --- ALCHEMIST V84.1 LABEL-FIX ENGINE --- */
 
 /* 1. CONFIGURATION */
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
 const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-/* 2. DATA SOURCE - PASTE YOUR FULL DATASET BELOW */
-const RAW_PASTE_DATA = '
+/* 2. DATA SOURCE (PASTE YOUR FULL DATASET HERE) */
+const RAW_PASTE_DATA = `
+
 
 id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
@@ -1408,7 +1409,6 @@ SET_D_0347	SET_D	Kinetics	MATH	The 'Salt Effect' on neutral molecules (z=0) is:	
 SET_D_0348	SET_D	Thermodynamics	CONCEPT	Why is the 'Triple Point' unique?	F = C - P + 2 = 0 (Invariant)	It is at 0C	It is at 1 atm	UP	❌ 0C/1atm is Melting. || ✅ Degrees of Freedom is zero. You cannot change T or P without losing a phase.	Fixed point.	0.55														
 SET_D_0349	SET_D	Quantum	CONCEPT	Why is 'Spin' half-integer for Fermions?	Relativistic Quantum Mechanics (Dirac Equation)	Experiment only	It is integer	UP	❌ Experiment matches theory. || ❌ Integer is Boson. || ✅ Dirac's derivation of the electron requires a 4-component spinor, leading naturally to s=1/2.	Dirac math.	0.8														
 SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is proportional to:	Heat Capacity Cv	Temperature	Pressure	UP	❌ Temp is driver. || ❌ Pressure is wrong. || ✅ Systems with high ability to store heat (Cv) also show large spontaneous energy fluctuations.	Energy noise.	0.75														
-'																									
 																									
 																									
 																									
@@ -2007,123 +2007,59 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
+																									
+`; // <--- Paste 1400 lines between these backticks
 
-/* 3. ATOMIC PARSER (High Performance, No-Hang) */
-const parseAtomic = (text) => {
+/* 3. PARSER (Surgical Column Recovery) */
+function parseSafe(text) {
+    if(!text) return [];
     const lines = text.trim().split('\n');
-    const cleanRows = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line.length < 40 || !line.includes('❌')) continue;
-
+    return lines.map(line => {
         try {
+            if (line.length < 30 || !line.includes('❌')) return null;
             const id = line.substring(0, 10);
-            const set = id.substring(0, 5);
-            
-            // Extract Type using standard delimiters
-            const typeMatch = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
-            const type = typeMatch ? typeMatch[0] : "CONCEPT";
-
-            // Find anchors
-            const explIndex = line.indexOf('❌');
+            const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
+            const type = typeMark ? typeMark[0] : "CONCEPT";
+            const explStart = line.indexOf('❌');
             const weightMatch = line.match(/\d\.\d+$/);
             const weight = weightMatch ? weightMatch[0] : "0.5";
-
-            // Extract Correct Direction
-            const dirBlob = line.substring(0, explIndex).trim();
-            const correctMatch = dirBlob.match(/(UP|RIGHT|LEFT|DOWN)$/);
-            const correct = correctMatch ? correctMatch[0] : "RIGHT";
-
-            // Slice Question & Options
-            const startQ = line.indexOf(type) + type.length;
-            const endQ = line.indexOf(correct);
-            const qBlob = line.substring(startQ, endQ).trim();
             
-            const qSplit = qBlob.split('?');
+            const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
+            const correct = middle.match(/UP|RIGHT|LEFT|DOWN$/)[0];
+            const qAndOpts = middle.substring(0, middle.length - correct.length);
+            
+            const qSplit = qAndOpts.split('?');
             const question = qSplit[0] + "?";
-            const optsRaw = qSplit.slice(1).join('?');
+            const optsRaw = qSplit[1] || "";
             
-            // CamelCase split for merged options
+            // Fix merged options (e.g., "First LawSecond Law")
             const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|');
-
-            // Split Explanation & Hint
-            const explFull = line.substring(explIndex, line.lastIndexOf(weight)).trim();
-            let explanation = explFull;
-            let hint = "Apply fundamental logic.";
+            
+            const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
+            let explanation = explFull, hint = "Use fundamental analysis.";
             const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
-            if (hintMatch) {
-                explanation = hintMatch[1];
-                hint = hintMatch[2];
-            }
+            if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
 
-            cleanRows.push({
-                id, ds: set, tp: "Niche Module", ty: type,
-                q: question, u: opts[0] || "A", r: opts[1] || "B", l: opts[2] || "C",
-                c: correct, ex: explanation, h: hint, w: parseFloat(weight),
-                dg: `Scientific Review: ${explanation.replace(/❌|✅/g,'').trim()}`
-            });
-        } catch (e) { console.warn(`Error on line ${i}:`, e); }
-    }
-    return cleanRows;
-};
-
-/* 4. APP STATE & SANITIZER */
-let RAW_DATA = parseAtomic(RAW_PASTE_DATA);
-let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false, startTime = 0;
-let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
-
-const formatChem = (t) => {
-    if (!t) return "";
-    return t.toString()
-        .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>') // Scientific Notation
-        .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')       // Chemical Formulas
-        .replace(/->/g, '→').replace(/<=>/g, '⇌')               // Arrows
-        .replace(/\|\|/g, '<br><br>');                           // Line breaks
-};
-
-/* 5. INITIALIZATION */
-function init() { 
-    const loader = document.getElementById('loader');
-    if (loader) loader.remove();
-    
-    if (RAW_DATA.length === 0) {
-        addToLog("CRITICAL: 0 RECORDS LOADED", null);
-        alert("Data Ingestion Failed. Check RAW_PASTE_DATA format.");
-    } else {
-        addToLog(`ALCHEMIST ONLINE: ${RAW_DATA.length} MODULES`, null);
-    }
-    renderDatasetSelect();
+            return { id, ds: id.substring(0,5), tp: "Chemistry", ty: type, q: question, u: opts[0]||"OptA", r: opts[1]||"OptB", l: opts[2]||"OptC", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
+        } catch (e) { return null; }
+    }).filter(x => x !== null);
 }
 
-/* 6. UI NAVIGATION (Tape Log) */
+/* 4. APP STATE */
+let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
+let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
+
+const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
+
+/* 5. UI & LOG NAVIGATION */
 function addToLog(msg, action) {
     const tape = document.getElementById('history-tape');
-    if (!tape) return;
     tape.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
     const div = document.createElement('div');
     div.className = "log-item active";
     div.innerHTML = `> ${msg}`;
-    if (action) div.onclick = () => { if (!isTransitioning) action(); };
+    if (action) div.onclick = () => { if(!isTransitioning) action(); };
     tape.prepend(div);
-}
-
-function renderDatasetSelect() { 
-    MODE = "DATASET_SELECT"; 
-    addToLog("SELECT DIFFICULTY", null);
-    renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); 
-}
-
-function renderTopicSelect(ds) { 
-    MODE = "TOPIC_SELECT"; CUR_DATASET = ds; 
-    addToLog(`${ds}`, renderDatasetSelect);
-    renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); 
-}
-
-function renderGenreSelect(tp) { 
-    MODE = "GENRE_SELECT"; CUR_TOPIC = tp; 
-    addToLog(`${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET));
-    renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); 
 }
 
 function renderMenuCard(q, up, lt, rt, dn) {
@@ -2133,116 +2069,89 @@ function renderMenuCard(q, up, lt, rt, dn) {
     s.appendChild(c); bindPhysics(c);
 }
 
-/* 7. RUNTIME SHUFFLE & SLICING */
+function renderDatasetSelect() { MODE = "DATASET_SELECT"; addToLog("SELECT DIFFICULTY", null); renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); }
+function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(`SET: ${ds}`, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(`DOMAIN: ${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); }
+
+/* 6. SESSION LOGIC */
 function startQuiz(genre) {
     CUR_GENRE = genre;
-    addToLog(`DEPTH: ${genre}`, () => renderGenreSelect(CUR_TOPIC));
-    
-    // Filter by Dataset and Topic Keywords
-    POOL = RAW_DATA.filter(q => {
-        const matchDS = q.ds === CUR_DATASET;
-        const topicLower = (q.tp || "").toLowerCase();
-        const searchTarget = CUR_TOPIC.toLowerCase();
-        return matchDS; // Broad filter for stability
-    });
-
-    // Fisher-Yates Shuffle
-    for (let i = POOL.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [POOL[i], POOL[j]] = [POOL[j], POOL[i]];
-    }
-
-    POOL = POOL.slice(0, 40); // Cap at 40 questions per session
+    POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET);
+    for (let i = POOL.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [POOL[i], POOL[j]] = [POOL[j], POOL[i]]; }
+    POOL = POOL.slice(0, 30);
     renderNext();
 }
 
 function renderNext() {
     const s = document.getElementById('stack'); s.innerHTML = "";
-    if (!POOL.length) { renderEnd(); return; }
+    if(!POOL.length) { renderEnd(); return; }
     
-    // Option Shuffle (Clone to prevent database mutation)
-    const q = { ...POOL[0] };
-    const slots = [
-        { label: q.u, isCorrect: q.c === "UP" },
-        { label: q.r, isCorrect: q.c === "RIGHT" },
-        { label: q.l, isCorrect: q.c === "LEFT" }
-    ].sort(() => Math.random() - 0.5);
-
-    q.u = slots[0].label; q.r = slots[1].label; q.l = slots[2].label;
-    q.c = slots[0].isCorrect ? "UP" : (slots[1].isCorrect ? "RIGHT" : "LEFT");
+    // CLONE AND SHUFFLE OPTIONS
+    const rawQ = POOL[0];
+    const q = { ...rawQ };
+    const items = [
+        { text: rawQ.u, isCorrect: rawQ.c === "UP" },
+        { text: rawQ.r, isCorrect: rawQ.c === "RIGHT" },
+        { text: rawQ.l, isCorrect: rawQ.c === "LEFT" }
+    ];
+    // Fisher-Yates Shuffle
+    for (let i = 2; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+    
+    // REASSIGN TO SLOTS
+    q.u = items[0].text;
+    q.r = items[1].text;
+    q.l = items[2].text;
+    q.c = items[0].isCorrect ? "UP" : (items[1].isCorrect ? "RIGHT" : "LEFT");
 
     const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${formatChem(q.h)}</div><div class="overlay"><div class="overlay-body" style="font-family:var(--font-chem); font-size:1.2rem; line-height:1.6;">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button></div>`;
-    s.appendChild(c); bindPhysics(c, q);
+    c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${formatChem(q.h)}</div><div class="overlay"><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button></div>`;
+    s.appendChild(c); document.getElementById('rank-ui').innerText = q.id; bindPhysics(c, q);
 }
 
-/* 8. COMPLETION & TELEMETRY */
 function renderEnd() {
-    MODE = "SESSION_END";
     const s = document.getElementById('stack'); s.innerHTML = "";
     const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><button class="btn" onclick="location.reload()">RESTART SESSION</button><button class="btn" style="background:#333; color:#fff" onclick="downloadSummary()">DOWNLOAD INTELLIGENCE</button>`;
+    c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><button class="btn" onclick="location.reload()">RESTART</button>`;
     s.appendChild(c);
 }
 
-window.downloadSummary = function() {
-    let content = `ALCHEMIST INTELLIGENCE REPORT\nSCORE: ${SCORE}\n------------------\n\n`;
-    MISTAKES.forEach(m => {
-        content += `Q: ${m.q}\nDETAILED ANALYSIS: ${m.dg || m.ex}\n\n`;
-    });
-    const blob = new Blob([content], {type: 'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `ALCHEMIST_REPORT_${Date.now()}.txt`;
-    a.click();
-};
-
-/* 9. PHYSICS ENGINE (V83.1) */
+/* 7. PHYSICS & ACTIONS */
 function bindPhysics(el, data) {
     let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
     const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-    
-    const start = e => { active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
-    const move = e => {
-        if (!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
+    el.onmousedown = el.ontouchstart = e => { active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
+    window.onmousemove = window.ontouchmove = e => {
+        if(!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
         el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
         const ang = Math.atan2(-y, x) * (180/Math.PI);
         Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
         if (Math.abs(x) > 20 || Math.abs(y) > 20) {
             let dir = (ang>=45&&ang<135)?"up":(ang>=135||ang<-135)?"lt":(ang>=-135&&ang<-45)?"dn":"rt";
-            if (labels[dir]) labels[dir].style.opacity = 1;
+            if(labels[dir]) labels[dir].style.opacity = 1;
             triggerDir = dir.toUpperCase();
         }
     };
-    const end = () => {
-        active=false;
-        if (Math.abs(x) > 100 || Math.abs(y) > 100) {
-            handleAction(el, data, triggerDir);
-        } else {
-            el.style.transition="0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-            el.style.transform="none";
-        }
+    window.onmouseup = window.ontouchend = () => {
+        if(!active) return; active=false;
+        if(Math.abs(x) > 100 || Math.abs(y) > 100) handleAction(el, data, triggerDir);
+        else { el.style.transition="0.4s"; el.style.transform="none"; }
     };
-    
-    el.onmousedown = el.ontouchstart = start;
-    window.onmousemove = window.ontouchmove = move;
-    window.onmouseup = window.ontouchend = end;
 }
 
 function handleAction(el, data, dir) {
-    if (MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
-    else if (MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
-    else if (MODE === "GENRE_SELECT") startQuiz(dir);
+    if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
+    else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
+    else if(MODE === "GENRE_SELECT") startQuiz(dir);
     else {
         if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-        const actualDir = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT');
-        if (actualDir === data.c) SCORE += 10; else MISTAKES.push(data);
-        
-        // Push to telemetry (Silent)
-        new Image().src = `${ENDPOINT}?id=${data.id}&res=${actualDir===data.c}`;
-        
+        const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
+        if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
         POOL.shift(); renderNext();
     }
 }
 
-window.onload = init;
+window.onload = () => { 
+    RAW_DATA = parseSafe(RAW_PASTE_DATA);
+    document.getElementById('loader').remove(); 
+    renderDatasetSelect(); 
+};
