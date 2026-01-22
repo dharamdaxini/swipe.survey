@@ -3,39 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V125.1 | REPOSITORY FIXED</title>
+    <title>ALCHEMIST V126.0 | INDUSTRIAL</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; padding: 40px; overflow-y: auto; }
-        h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 20px 0; font-size: 1.6rem; text-transform: uppercase; font-weight: 900; text-align: center; }
-        .section-label { font-family: var(--font-code); font-size: 0.7rem; color: #555; margin: 20px 0 10px; letter-spacing: 2px; text-transform: uppercase; }
-        textarea { width: 100%; height: 180px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; font-size: 12px; outline: none; line-height: 1.4; }
-        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .topic-tile { background: var(--card); border: 1px solid var(--border); padding: 18px; border-radius: 14px; text-align: left; }
-        .topic-tile:active { border-color: var(--gold); background: #1a1a1a; }
-        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.85rem; display: block; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; }
-        .topic-meta { color: #555; font-size: 0.65rem; font-family: var(--font-code); }
+        
+        /* PORTAL & INDUSTRIAL UI */
+        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; }
+        h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 15px 0; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; text-align: center; }
+        
+        .storage-meter { width: 100%; height: 2px; background: #222; margin-bottom: 20px; position: relative; }
+        #storage-fill { position: absolute; height: 100%; background: var(--blue); width: 0%; transition: 0.5s; }
+        .storage-label { font-size: 9px; font-family: var(--font-code); color: #555; text-align: right; display: block; margin-top: 4px; }
+
+        .section-label { font-family: var(--font-code); font-size: 0.65rem; color: #555; margin: 15px 0 8px; letter-spacing: 2px; text-transform: uppercase; }
+        textarea { width: 100%; height: 150px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 12px; border-radius: 12px; font-size: 11px; outline: none; }
+        
+        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .topic-tile { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; position: relative; overflow: hidden; }
+        .topic-tile:active { border-color: var(--gold); background: #161616; }
+        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.8rem; display: block; margin-bottom: 3px; }
+        .topic-meta { color: #555; font-size: 0.6rem; font-family: var(--font-code); }
+
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
-        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.8rem; color: #777; font-weight: 900; }
-        .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 10px; border-radius: 2px; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
+        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; font-weight: 900; }
+        .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 8px; border-radius: 2px; }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.3s; }
+
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); }
-        .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.2vmin, 22px); line-height: 1.45; font-weight: 600; color: #ffffff; }
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.94); backdrop-filter: blur(8px); color: #fff; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; border-radius: 44px; z-index: 10; opacity: 0; pointer-events: none; border: 3px solid var(--gold); }
-        #global-overlay { position: fixed; inset: 0; background: #080808; z-index: 10000; padding: 40px; display: none; flex-direction: column; text-align: left; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); }
+        .card-q { font-family: var(--font-chem); font-size: clamp(16px, 4vmin, 20px); line-height: 1.45; font-weight: 600; color: #ffffff; }
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); color: #fff; font-weight: 900; font-size: 1rem; text-transform: uppercase; border-radius: 40px; z-index: 10; opacity: 0; pointer-events: none; border: 3px solid var(--gold); }
+        
+        #global-overlay { position: fixed; inset: 0; background: #080808; z-index: 10000; padding: 40px; display: none; flex-direction: column; }
         #global-overlay.active { display: flex; }
-        .overlay-body { font-size: 1.05rem; line-height: 1.5; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 25px; scrollbar-width: none; }
-        .btn { width: 100%; padding: 20px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); margin-top: 10px; }
+        .overlay-body { font-size: 1rem; line-height: 1.5; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
+        
+        .btn { width: 100%; padding: 18px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); margin-top: 8px; font-size: 13px; }
         .btn-gold { background: var(--gold); }
-        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #333; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
+        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 9px; color: #222; letter-spacing: 2px; pointer-events: none; }
     </style>
 </head>
 <body>
-<div class="v-tag">DIRECT_REGISTER_V125.1</div>
+<div class="v-tag">INDUSTRIAL_V126.0_INDEXED_DB</div>
 
 <div id="global-overlay">
     <div id="overlay-content" class="overlay-body"></div>
@@ -43,14 +55,17 @@
 </div>
 
 <div id="portal">
-    <h1>Alchemist_V125.1</h1>
-    <div class="section-label">MY_CHEMISTRY_VAULT</div>
+    <h1>Alchemist_V126</h1>
+    <div class="storage-meter"><div id="storage-fill"></div></div>
+    <span id="storage-status" class="storage-label">READY_FOR_MASS_INGESTION</span>
+
+    <div class="section-label">ACTIVE_VAULTS</div>
     <div id="library"></div>
 
-    <div class="section-label">PASTE_DATASET_HERE</div>
-    <textarea id="data-input" placeholder="SET_A_0001 [TAB] SET_A [TAB] Thermodynamics..."></textarea>
-    <button class="btn btn-gold" onclick="importDataset()">CONVERT & REGISTER</button>
-    <button class="btn" style="background:#111; color:#444; border:1px solid #222;" onclick="clearLibrary()">PURGE ALL VAULTS</button>
+    <div class="section-label">MASS_IMPORT_TSV (5000+ ROWS)</div>
+    <textarea id="data-input" placeholder="SET_0001 [TAB] SET_NAME [TAB] Topic..."></textarea>
+    <button id="import-btn" class="btn btn-gold" onclick="importDataset()">CONVERT & REGISTER</button>
+    <button class="btn" style="background:#111; color:#333; border:none;" onclick="clearLibrary()">PURGE ALL</button>
 </div>
 
 <div id="header">
@@ -61,59 +76,115 @@
 <div id="stack"></div>
 
 <script>
+    let db;
+    const DB_NAME = "AlchemistDB";
+    const STORE_NAME = "Vaults";
     let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0, MODE = "INIT", INDEX = 1;
     let SEL_PATH = "", SEL_CORE = "", SEL_DOMAIN = "", SEL_DEPTH = "", SEL_VOL = 20, SEL_DIFF = "";
 
-    window.onload = refreshLibrary;
+    // 1. Initialize IndexedDB
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = e => {
+        db = e.target.result;
+        db.createObjectStore(STORE_NAME);
+    };
+    request.onsuccess = e => {
+        db = e.target.result;
+        refreshLibrary();
+        updateStorageStatus();
+    };
 
     function refreshLibrary() {
-        const lib = JSON.parse(localStorage.getItem('alch_lib_v125') || '{}');
+        const transaction = db.transaction([STORE_NAME], "readonly");
+        const store = transaction.objectStore(STORE_NAME);
         const container = document.getElementById('library');
         container.innerHTML = "";
-        Object.keys(lib).forEach(name => {
-            const div = document.createElement('div');
-            div.className = "topic-tile";
-            div.onclick = () => loadDataset(name);
-            div.innerHTML = `<span class="topic-name">${name}</span><span class="topic-meta">${lib[name].length} CARDS</span>`;
-            container.appendChild(div);
-        });
-        if (!Object.keys(lib).length) container.innerHTML = "<div style='color:#333; font-size:11px; grid-column:span 2;'>VAULT EMPTY. PASTE TSV DATA BELOW.</div>";
+        
+        store.openCursor().onsuccess = e => {
+            const cursor = e.target.result;
+            if (cursor) {
+                const div = document.createElement('div');
+                div.className = "topic-tile";
+                div.onclick = () => loadDataset(cursor.key);
+                div.innerHTML = `<span class="topic-name">${cursor.key}</span><span class="topic-meta">${cursor.value.length} CARDS</span>`;
+                container.appendChild(div);
+                cursor.continue();
+            }
+        };
     }
 
-    function importDataset() {
+    async function importDataset() {
         const raw = document.getElementById('data-input').value.trim();
+        const btn = document.getElementById('import-btn');
         if (!raw) return alert("INPUT EMPTY");
         
+        btn.disabled = true;
+        btn.innerText = "PROCESSING MASSIVE DATA...";
+
         const lines = raw.split(/\r?\n/);
-        const parsed = lines.map(line => {
-            // DYNAMIC DELIMITER: Handles Tabs or 4+ spaces from LLM outputs
+        const total = lines.length;
+        let parsed = [];
+
+        // Chunking process to keep UI responsive
+        for (let i = 0; i < total; i++) {
+            let line = lines[i];
             let c = line.split(/\t/);
             if (c.length < 5) c = line.split(/\s{3,}/); 
-            
-            if (c.length < 9) return null;
-            return { id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9]||"---", hint: c[10]||"---", context: c[11]||"---" };
-        }).filter(x => x && x.id.toLowerCase() !== "id");
+            if (c.length >= 9 && c[0].toLowerCase() !== "id") {
+                parsed.push({ id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9]||"---", hint: c[10]||"---", context: c[11]||"---" });
+            }
+            if (i % 500 === 0) await new Promise(r => setTimeout(r, 0)); // Yield to thread
+        }
 
-        if (!parsed.length) return alert("PARSE ERROR: Ensure data is Tab-Separated.");
+        if (!parsed.length) {
+            btn.disabled = false; btn.innerText = "CONVERT & REGISTER";
+            return alert("PARSE ERROR: Ensure Tab separation.");
+        }
 
         const topicName = parsed[0].set || `VAULT_${Date.now().toString().slice(-4)}`;
-        const lib = JSON.parse(localStorage.getItem('alch_lib_v125') || '{}');
-        lib[topicName] = parsed;
-        localStorage.setItem('alch_lib_v125', JSON.stringify(lib));
-        
-        document.getElementById('data-input').value = "";
-        refreshLibrary();
-        alert(`SUCCESS: ${topicName} Registered.`);
+        const transaction = db.transaction([STORE_NAME], "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+        store.put(parsed, topicName);
+
+        transaction.oncomplete = () => {
+            document.getElementById('data-input').value = "";
+            btn.disabled = false;
+            btn.innerText = "CONVERT & REGISTER";
+            refreshLibrary();
+            updateStorageStatus();
+            alert(`SUCCESS: ${topicName} registered with ${parsed.length} rows.`);
+        };
+    }
+
+    async function updateStorageStatus() {
+        if (navigator.storage && navigator.storage.estimate) {
+            const {usage, quota} = await navigator.storage.estimate();
+            const percent = ((usage / quota) * 100).toFixed(2);
+            document.getElementById('storage-fill').style.width = percent + "%";
+            document.getElementById('storage-status').innerText = `USED: ${(usage/1024/1024).toFixed(2)}MB / ${(quota/1024/1024/1024).toFixed(1)}GB (${percent}%)`;
+        }
     }
 
     function loadDataset(name) {
-        const lib = JSON.parse(localStorage.getItem('alch_lib_v125'));
-        VAULT = lib[name];
-        document.getElementById('portal').style.display = 'none';
-        ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
-        renderS0();
+        const transaction = db.transaction([STORE_NAME], "readonly");
+        const store = transaction.objectStore(STORE_NAME);
+        store.get(name).onsuccess = e => {
+            VAULT = e.target.result;
+            document.getElementById('portal').style.display = 'none';
+            ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
+            renderS0();
+        };
     }
 
+    function clearLibrary() {
+        if(confirm("Wipe all vaults?")) {
+            const transaction = db.transaction([STORE_NAME], "readwrite");
+            transaction.objectStore(STORE_NAME).clear();
+            transaction.oncomplete = () => { refreshLibrary(); updateStorageStatus(); };
+        }
+    }
+
+    // --- LOGIC RE-USE FROM V125 ---
     function renderS0() { MODE = "S_PATH"; renderSlide("SELECT MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
     function renderS1() { MODE = "S_CORE"; renderSlide("CORE TOPIC", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
     function renderS2() {
@@ -161,7 +232,6 @@
     }
     function closeOverlay() { document.getElementById('global-overlay').classList.remove('active'); }
     function renderEnd() { MODE = "END"; document.getElementById('stack').innerHTML = "<div class='card'><div class='card-q'>MISSION COMPLETE</div><div class='swipe-label sl-up'>RESTART</div><div class='swipe-label sl-left'>VAULT</div></div>"; bindPhysics(document.querySelector('.card'), {}); }
-    function clearLibrary() { if(confirm("Purge Library?")) { localStorage.removeItem('alch_lib_v125'); refreshLibrary(); } }
     const format = (t) => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;') : "";
     function updateHUD() { document.getElementById('p-text').innerText = `${INDEX}/${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
