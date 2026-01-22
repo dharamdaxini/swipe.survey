@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V118.1 | BIPOLAR CORE</title>
+    <title>ALCHEMIST V120.0 | TOTAL CONTROL</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
@@ -26,20 +26,19 @@
         .review-content { text-align: left; width: 100%; height: 100%; overflow-y: auto; scrollbar-width: none; padding-top: 10px; }
         .review-label { font-family: var(--font-code); font-size: 0.7rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; display: block; }
         .review-text { font-family: var(--font-chem); font-size: 1.15rem; line-height: 1.5; color: #eee; margin-bottom: 25px; display: block; }
-        .review-ans { color: var(--green); font-weight: 900; border-left: 2px solid var(--green); padding-left: 15px; }
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); transition: transform 0.1s; }
         .btn-gold { background: var(--gold); }
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
-        .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
+        .overlay-body { font-size: 1.05rem; line-height: 1.5; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
     </style>
 </head>
 <body>
-<div class="v-tag">BIPOLAR_CORE_V118.1</div>
+<div class="v-tag">TOTAL_CONTROL_V120.0</div>
 <div id="portal">
-    <h1>Alchemist_V118</h1>
-    <textarea id="data-input" placeholder="PASTE_TAB_SEPARATED_DATA_HERE"></textarea>
-    <button class="btn btn-gold" onclick="masterInitialize()">INITIALIZE V118</button>
+    <h1>Alchemist_V120</h1>
+    <textarea id="data-input" placeholder="PASTE_DATA_HERE"></textarea>
+    <button class="btn btn-gold" onclick="masterInitialize()">SYNC & INITIALIZE</button>
 </div>
 <div id="header">
     <div class="header-meta"><span id="p-text">READY</span><span id="score-text">0 XP</span></div>
@@ -51,26 +50,26 @@
     let SEL_PATH = "", SEL_VOL = 20, SEL_DEPTH = "", SEL_DOMAIN = "", SEL_DIFF = "";
 
     window.onload = () => {
-        const cached = localStorage.getItem('alch_v118_vault');
+        const cached = localStorage.getItem('alch_v119_vault');
         if (cached) document.getElementById('data-input').value = cached;
     };
 
     function masterInitialize() {
         const raw = document.getElementById('data-input').value.trim();
         if (!raw) return alert("VAULT EMPTY");
-        localStorage.setItem('alch_v118_vault', raw);
+        localStorage.setItem('alch_v119_vault', raw);
         const lines = raw.split(/\r?\n/);
         VAULT = lines.map(line => {
-            const c = line.split(/\t/); // STRICT TAB PARSER
+            const c = line.split(/\t/);
             if (c.length < 11) return null;
-            return { id: c[0], diff: c[1], domain: c[2], depth: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9], hint: c[10] };
+            return { id: c[0], diff: c[1], domain: c[2], depth: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9], hint: c[10], context: c[11] || "---" };
         }).filter(x => x && x.id.toLowerCase() !== "id");
         document.getElementById('portal').style.display = 'none';
         ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
         renderS0();
     }
 
-    function renderS0() { MODE = "SEL_PATH"; renderSlide("CHOOSE CORE ENGINE", "---", "LEARN (ANALYSIS)", "QUIZ (SKIP)", "---"); }
+    function renderS0() { MODE = "SEL_PATH"; renderSlide("CHOOSE MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
     function renderS1() { MODE = "SEL_VOL"; renderSlide("VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
     function renderS2() { MODE = "SEL_DEPTH"; renderSlide("DEPTH", "CONCEPT", "MATH", "APPLICATION", "LOGIC"); }
     function renderS3() { MODE = "SEL_DOMAIN"; renderSlide("DOMAIN", "THERMO", "KINETICS", "QUANTUM", "OTHER"); }
@@ -98,24 +97,34 @@
         const c = document.createElement('div'); c.className = "card";
         if (MODE === "REVIEW") {
             const correctText = q.ans === "UP" ? q.u : (q.ans === "RIGHT" ? q.r : q.l);
-            c.innerHTML = `<div class="review-content"><span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span><span class="review-label">CORRECT</span><span class="review-text review-ans">${format(correctText)}</span><span class="review-label">LOGIC</span><span class="review-text">${format(q.expl)}</span></div><div class="swipe-label sl-rt">NEXT</div>`;
+            c.innerHTML = `<div class="review-content"><span class="review-label">QUESTION</span><span class="review-text">${format(q.q)}</span><span class="review-label">CORRECT ANS</span><span class="review-text" style="color:var(--green)">${format(correctText)}</span><span class="review-label">ANALYSIS</span><span class="review-text">${format(q.expl)}</span><span class="review-label">CONTEXT</span><span class="review-text" style="color:var(--blue)">${format(q.context)}</span></div><div class="swipe-label sl-rt">NEXT</div>`;
         } else {
             const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
             q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
             q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
-            let dnLabel = (SEL_PATH === "QUIZ") ? "⬇ SKIP & FLAG" : "⬇ VIEW LOGIC";
-            c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${dnLabel}</div><div class="overlay"><div class="overlay-body">${format(q.expl)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
+            
+            let dnLabel = "⬇ LOCKED", overlayBody = "---";
+            if (SEL_PATH === "LEARN") { dnLabel = "⬇ VIEW LOGIC"; overlayBody = `<strong style='color:var(--blue)'>ANALYSIS</strong><br>${format(q.expl)}<br><br><strong style='color:var(--gold)'>CONTEXT</strong><br>${format(q.context)}`; }
+            else if (SEL_PATH === "QUIZ_LEARN") { dnLabel = "⬇ VIEW HINT"; overlayBody = `<strong style='color:var(--gold)'>HINT</strong><br>${format(q.hint)}`; }
+            else if (SEL_PATH === "QUIZ") { dnLabel = "⬇ SKIP (UNSURE)"; }
+
+            c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${dnLabel}</div><div class="overlay"><div class="overlay-body">${overlayBody}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">RETURN</button></div>`;
         }
         s.appendChild(c); bindPhysics(c, q); updateHUD();
     }
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">CYCLE COMPLETE</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">CORE SWITCH</div><div class="swipe-label sl-right">NEW NICHE</div><div class="swipe-label sl-down">${MISTAKES.length > 0 ? 'REVIEW ERRORS' : ''}</div>`;
+        if (SEL_PATH === "TEST") {
+            const acc = Math.round(((SEL_VOL - MISTAKES.length) / SEL_VOL) * 100);
+            c.innerHTML = `<div class="card-q">TEST COMPLETE</div><div style="text-align:left;font-size:0.95rem;color:#aaa"><p>Score: <strong>${acc}%</strong></p><p>Review is disabled for Test mode to maintain integrity.</p></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div>`;
+        } else {
+            c.innerHTML = `<div class="card-q">CYCLE COMPLETE</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">CORE SWITCH</div><div class="swipe-label sl-right">NEW NICHE</div><div class="swipe-label sl-down">${MISTAKES.length > 0 ? 'REVIEW ERRORS' : ''}</div>`;
+        }
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;').replace(/Psi/g,'&Psi;') : "";
+    const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;').replace(/lambda/g,'&lambda;') : "";
     function updateHUD() { document.getElementById('p-text').innerText = `${INDEX} / ${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
     function bindPhysics(el, data) {
@@ -137,17 +146,21 @@
     }
 
     function route(el, data, dir) {
-        if (MODE === "SEL_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ" : "LEARN"); renderS1(); }
+        if (MODE === "SEL_PATH") { 
+            SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); 
+            renderS1(); 
+        }
         else if (MODE === "SEL_VOL") { SEL_VOL = parseInt(dir) || 20; renderS2(); }
         else if (MODE === "SEL_DEPTH") { SEL_DEPTH = dir; renderS3(); }
         else if (MODE === "SEL_DOMAIN") { SEL_DOMAIN = dir; renderS4(); }
         else if (MODE === "SEL_DIFF") { SEL_DIFF = dir; start(); }
-        else if (MODE === "END") { if (dir === "UP") start(); else if (dir === "DN" && MISTAKES.length > 0) { IS_REVIEW=true; POOL=[...MISTAKES]; INDEX=1; MODE="REVIEW"; renderNext(); } else renderS0(); }
+        else if (MODE === "END") { if (dir === "UP") start(); else if (dir === "DN" && SEL_PATH !== "TEST") { IS_REVIEW=true; POOL=[...MISTAKES]; INDEX=1; MODE="REVIEW"; renderNext(); } else renderS0(); }
         else if (MODE === "REVIEW") { if (dir === "RT") { POOL.shift(); INDEX++; renderNext(); } }
         else {
             if (dir === "DN") {
                 if (SEL_PATH === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
-                else { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
+                if (SEL_PATH === "TEST") { el.style.transform = "none"; return; }
+                el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return;
             }
             if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; else if (!IS_REVIEW) MISTAKES.push(data);
             POOL.shift(); INDEX++; renderNext();
