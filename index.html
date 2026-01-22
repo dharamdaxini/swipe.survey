@@ -3,50 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V99.0 | Locked UI</title>
+    <title>Alchemist V106 | Locked UI</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #000; --card: #111; --border: #262626; 
-            --gold: #ffd600; --green: #2ecc71; --blue: #3498db;
-            --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
-        }
-
+        :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-
-        /* Formula Visuality */
         sub { font-size: 0.7em; vertical-align: baseline; position: relative; bottom: -0.2em; }
         sup { font-size: 0.7em; vertical-align: baseline; position: relative; top: -0.4em; }
-
-        /* UI Components */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
         .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px rgba(255, 214, 0, 0.4); }
-
         #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 10vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.75rem; text-align: right; border-right: 2px solid #222; padding-right: 12px; mask-image: linear-gradient(to bottom, transparent 0%, black 40%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40%); }
         .log-item { margin-bottom: 4px; color: #333; text-transform: uppercase; transition: 0.3s; }
         .log-item.active { color: var(--green); font-weight: 900; }
-
         #stack { position: relative; width: 94%; max-width: 420px; height: 62vh; margin: 0 auto 30px; perspective: 1500px; display: flex; align-items: center; justify-content: center; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); will-change: transform, opacity; }
         .card-q { font-family: var(--font-chem); font-size: clamp(22px, 5.5vmin, 30px); line-height: 1.35; font-weight: 600; color: #ffffff; width: 100%; max-height: 80%; overflow-y: auto; scrollbar-width: none; }
-
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: #fff; font-weight: 900; font-size: clamp(1rem, 4vw, 1.8rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 3px solid var(--gold); padding: 20px; text-align: center; }
-        
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: #fff; font-weight: 900; font-size: clamp(1rem, 4vw, 1.8rem); text-transform: uppercase; border-radius: 44px; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.1s; border: 2px solid var(--gold); padding: 20px; text-align: center; }
         .overlay { position: absolute; inset: 0; background: #080808; z-index: 1100; padding: 35px; border-radius: 44px; display: none; flex-direction: column; border: 1px solid var(--gold); text-align: left; }
         .overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #dddddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
-        
         .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
-
         #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 10px; font-weight: 900; }
     </style>
 </head>
 <body>
 
-<div id="loader">V99_REMASTERED</div>
+<div id="loader">LOCKED_V106_ACTIVE</div>
 
 <div id="header">
     <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
@@ -57,7 +42,7 @@
 <div id="stack"></div>
 
 <script>
-    /* --- DATA VAULT --- */
+    /* --- DATASET INJECTION POINT --- */
     const VAULT_DATA = `id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
@@ -2075,11 +2060,16 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
                 const dirs = ["UP", "RIGHT", "LEFT", "DOWN"];
                 const correct = dirs.find(d => middle.endsWith(d)) || "RIGHT";
                 const qAndO = middle.substring(0, middle.length - correct.length).trim();
-                const qSplit = qAndO.split('?'), question = qSplit[0] + "?", optsRaw = (qSplit[1] || "").trim();
-
-                const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim()).filter(s => s.length > 0);
-                const cleanEx = line.substring(explStart, line.lastIndexOf(weight)).replace(/[❌✅]/g, '').trim();
                 
+                // FIXED RIP LOGIC: Anchor on '?' and rip the remainder
+                const qIndex = qAndO.lastIndexOf('?');
+                const question = qAndO.substring(0, qIndex + 1);
+                const optsRaw = qAndO.substring(qIndex + 1).trim();
+
+                // Splits "OrderFirstOrderZeroOrder" into separate buttons
+                const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
+
+                const cleanEx = line.substring(explStart, line.lastIndexOf(weight)).replace(/[❌✅]/g, '').trim();
                 return { id, ds, ty: type, q: question, u: opts[0]||"Opt A", r: opts[1]||"Opt B", l: opts[2]||"Opt C", c: correct, ex: cleanEx };
             } catch (e) { return null; }
         }).filter(x => x !== null);
@@ -2090,9 +2080,9 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
     function updateHUD() { document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`; document.getElementById('progress-bar').style.width = `${(CUR_INDEX / SESSION_LIMIT) * 100}%`; }
     function addToLog(msg, action) { const tape = document.getElementById('history-tape'); tape.querySelectorAll('.active').forEach(el => el.classList.remove('active')); const div = document.createElement('div'); div.className = "log-item active"; div.innerHTML = `> ${msg}`; if (action) div.onclick = action; tape.prepend(div); }
-    function renderMenu(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; bindPhysics(c, {}); s.appendChild(c); }
+    function renderMenu(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; s.appendChild(c); bindPhysics(c, {}); }
     
-    function renderDiff() { MODE = "MENU_DIFF"; CUR_INDEX = 0; SCORE = 0; addToLog("SYSTEM_READY", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+    function renderDiff() { MODE = "MENU_DIFF"; CUR_INDEX = 0; SCORE = 0; addToLog("READY", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
     function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds.replace(/\s/g, '_'); addToLog(ds, renderDiff); renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
     function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; addToLog(tp, () => renderTopic(CUR_DATASET)); renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
     function renderVolume(genre) { MODE = "MENU_VOLUME"; CUR_GENRE = genre; addToLog(genre, () => renderDepth(CUR_TOPIC)); renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
@@ -2126,8 +2116,8 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 
     function handleAction(el, data, dir) {
         if (MODE === "MENU_DIFF") renderTopic(dir === "UP" ? "SET A" : dir === "LT" ? "SET B" : dir === "RT" ? "SET C" : "SET D");
-        else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical");
-        else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC");
+        else if (MODE === "MENU_TOPIC") renderTopic(CUR_DATASET); // Fixed logic loop
+        else if (MODE === "MENU_DEPTH") renderVolume(CUR_TOPIC);
         else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
         else if (MODE === "END") {
             if (dir === "UP") startQuiz(SESSION_LIMIT);
