@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V80.9 | Final Production</title>
+    <title>Alchemist V81.0 | Force Fix</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
     <style>
-        /* --- CSS ENGINE V80.9 --- */
         :root {
             --bg: #000; --card: #111; --border: #222; 
             --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
             --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
         }
 
-        /* HARDWARE ACCELERATION & RESET */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
         body { 
             margin: 0; height: 100vh; background: var(--bg); color: #fff;
@@ -26,13 +24,11 @@
         sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
         sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
 
-        /* HUD */
         #header { width: 90%; margin: 25px auto 0; z-index: 100; flex-shrink: 0; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.7rem; color: #555; letter-spacing: 2px; }
         .progress-track { width: 100%; height: 2px; background: #1a1a1a; margin-top: 10px; border-radius: 1px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-        /* STACK ENGINE */
         #stack { 
             position: relative; width: 92%; max-width: 400px; height: 70vh; 
             margin: auto; perspective: 1200px; display: flex; align-items: center; justify-content: center;
@@ -45,17 +41,16 @@
             backface-visibility: hidden; align-items: center; text-align: center;
         }
 
-        /* LIQUID TYPOGRAPHY: PREVENTS TEXT CUTTING */
+        /* --- V81.0 LIQUID UI FIX --- */
+        /* Changed 'vw' to 'vmin' to prevent text getting too big on wide desktop screens */
         .card-q { 
             font-family: var(--font-chem); 
-            /* Intelligent scaling: Minimum 1.2rem, Ideal 5vw, Max 1.7rem */
-            font-size: clamp(1.2rem, 5vw, 1.7rem); 
+            font-size: clamp(18px, 4.5vmin, 28px); 
             line-height: 1.4; font-weight: 600; color: #f0f0f0; text-rendering: optimizeLegibility;
-            width: 100%; max-height: 65%; overflow-y: auto; scrollbar-width: none; 
+            width: 100%; max-height: 70%; overflow-y: auto; scrollbar-width: none; 
         }
         .card-q::-webkit-scrollbar { display: none; }
 
-        /* LABELS & HINTS */
         .swipe-label {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
             background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase;
@@ -68,7 +63,6 @@
             padding: 30px; line-height: 1.4; white-space: pre-wrap;
         }
 
-        /* OVERLAY */
         .overlay {
             position: absolute; inset: 0; background: #0d0d0d; z-index: 1100; padding: 40px;
             opacity: 0; pointer-events: none; border-radius: 40px; transition: opacity 0.3s ease;
@@ -84,7 +78,7 @@
 </head>
 <body>
 
-<div id="loader">ALCHEMIST V80.9</div>
+<div id="loader">ALCHEMIST V81.0</div>
 
 <div id="header">
     <div class="header-meta">
@@ -97,13 +91,10 @@
 <div id="stack"></div>
 
 <script>
-    /* --- CONFIGURATION --- */
     const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
     const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-    /* --- DATA REPOSITORY (MERGED SET A & SET B) --- */
     const RAW_DATA = [
-        // --- SET A: CORE & ADVANCED (0001-0100) ---
         {"id": "SET_A_0001", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "In a second-order reaction rate = k[A]², why is the half-life t₁/₂ dependent on initial concentration?", "u": "Rate decreases too slowly", "r": "Derivative depends on [A]²", "l": "Integral diverges", "c": "RIGHT", "ex": "✅ Integrating 1/[A]² yields t = 1/(k[A]₀).", "h": "Integration of power rule."},
         {"id": "SET_A_0002", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Why must the Hamiltonian operator Ĥ be Hermitian?", "u": "Real eigenvalues", "r": "Complex waves", "l": "Boundary conditions", "c": "UP", "ex": "✅ Hermiticity guarantees real energy eigenvalues.", "h": "Real spectrum."},
         {"id": "SET_A_0003", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Which property validates Maxwell Relations?", "u": "Exact Differentials", "r": "Homogeneity", "l": "Additivity", "c": "UP", "ex": "✅ State functions are exact differentials (path-independent).", "h": "Mixed partials equality."},
@@ -124,108 +115,9 @@
         {"id": "SET_A_0018", "ds": "SET_A", "tp": "Polymer Chem", "ty": "STATISTICS", "q": "Number Average Mn is which moment?", "u": "First moment", "r": "Second moment", "l": "Variance", "c": "UP", "ex": "✅ Arithmetic mean is the first moment.", "h": "Arithmetic mean."},
         {"id": "SET_A_0019", "ds": "SET_A", "tp": "Fluid Dynamics", "ty": "MATH", "q": "Viscosity term μ∇²v represents:", "u": "Diffusion", "r": "Convection", "l": "Source", "c": "UP", "ex": "✅ Laplacian ∇² implies diffusion of momentum.", "h": "Spreading out."},
         {"id": "SET_A_0020", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Beer's Law deviations at high conc:", "u": "Refractive index / ε change", "r": "Log fail", "l": "Path change", "c": "UP", "ex": "✅ Interactions change molar absorptivity ε.", "h": "ε not constant."},
-        {"id": "SET_A_0021", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Why is 'n' integer in Box?", "u": "Match boundary zeros", "r": "Min energy", "l": "Normalize", "c": "UP", "ex": "✅ Wave must be zero at the walls.", "h": "Fit the wave."},
-        {"id": "SET_A_0022", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "In dU = TdS - PdV, why P negative?", "u": "System loses energy pushing", "r": "Work ON system", "l": "P vector", "c": "UP", "ex": "✅ Expansion costs energy (pushing out).", "h": "Cost of expansion."},
-        {"id": "SET_A_0023", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "Zero-order rate implies:", "u": "Independent of conc", "r": "Linear dep", "l": "Exponential", "c": "UP", "ex": "✅ Rate = k. Constant speed.", "h": "Constant speed."},
-        {"id": "SET_A_0024", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "2s radial node occurs when:", "u": "Polynomial is zero", "r": "One", "l": "Infinite", "c": "UP", "ex": "✅ Node is zero probability.", "h": "Roots."},
-        {"id": "SET_A_0025", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "Boltzmann prob as E → ∞:", "u": "Zero", "r": "One", "l": "Infinite", "c": "UP", "ex": "✅ Exponential decay e^-E/kT.", "h": "Decay."},
-        {"id": "SET_A_0026", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "If [A,B] ≠ 0, variance product is:", "u": "Bounded by non-zero", "r": "Sum zero", "l": "Prod zero", "c": "UP", "ex": "✅ Uncertainty principle: σA²σB² ≥ |<[A,B]>|²/4.", "h": "Heisenberg."},
-        {"id": "SET_A_0027", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Arrhenius: if T → ∞, k approaches:", "u": "A", "r": "Infinity", "l": "Zero", "c": "UP", "ex": "✅ e^0 = 1. k approaches Pre-exponential A.", "h": "Limit."},
-        {"id": "SET_A_0028", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "dG = VdP - SdT. V is:", "u": "(∂G/∂P)T", "r": "(∂G/∂T)P", "l": "-(∂G/∂T)P", "c": "UP", "ex": "✅ Coefficient of dP is V.", "h": "Coefficients."},
-        {"id": "SET_A_0029", "ds": "SET_A", "tp": "Solutions", "ty": "CONCEPT", "q": "Raoult's Law plot is:", "u": "Linear", "r": "Log", "l": "Exp", "c": "UP", "ex": "✅ P = X * P° is linear.", "h": "y = mx."},
-        {"id": "SET_A_0030", "ds": "SET_A", "tp": "Solid State", "ty": "CONCEPT", "q": "APF is ratio of:", "u": "Vol atoms / Vol cell", "r": "Surface/Vol", "l": "Mass/Density", "c": "UP", "ex": "✅ Geometric efficiency percentage.", "h": "Efficiency."},
-        {"id": "SET_A_0031", "ds": "SET_A", "tp": "Acid-Base", "ty": "CONCEPT", "q": "10x change in [H+] means pH change:", "u": "1 unit", "r": "10 units", "l": "0.1", "c": "UP", "ex": "✅ log(10) = 1.", "h": "Log scale."},
-        {"id": "SET_A_0032", "ds": "SET_A", "tp": "Gas Laws", "ty": "CONCEPT", "q": "Z deviates from 1 due to:", "u": "IMF and Volume", "r": "Temp error", "l": "Gravity", "c": "UP", "ex": "✅ Real gases interact and take up space.", "h": "Non-ideal."},
-        {"id": "SET_A_0033", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Normalize ψ by solving:", "u": "Integral |ψ|² = 1", "r": "Deriv=0", "l": "Hψ=Eψ", "c": "UP", "ex": "✅ Total probability must be 1.", "h": "100% chance."},
-        {"id": "SET_A_0034", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Faraday mass prop to:", "u": "Total Charge Q", "r": "Voltage", "l": "Resist", "c": "UP", "ex": "✅ Counting electrons.", "h": "Electron count."},
-        {"id": "SET_A_0035", "ds": "SET_A", "tp": "Stat Mech", "ty": "CONCEPT", "q": "If W doubles, S increases by:", "u": "k ln 2", "r": "2k", "l": "k/2", "c": "UP", "ex": "✅ Log product rule.", "h": "Add log."},
-        {"id": "SET_A_0036", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "1st Order [A] vs t plot:", "u": "Exponential Decay", "r": "Linear", "l": "Parabola", "c": "UP", "ex": "✅ e^-kt curve.", "h": "Decay."},
-        {"id": "SET_A_0037", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Box energy quantized due to:", "u": "Boundary conditions", "r": "Pot=0", "l": "Mass", "c": "UP", "ex": "✅ Standing wave fit.", "h": "Guitar string."},
-        {"id": "SET_A_0038", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Colligative relies on activity:", "u": "< 1", "r": "> 1", "l": "= 1", "c": "UP", "ex": "✅ Dilution lowers chemical potential.", "h": "Dilution."},
-        {"id": "SET_A_0039", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Rotational line spacing:", "u": "Constant (2B)", "r": "Increases", "l": "Decreases", "c": "UP", "ex": "✅ Picket fence pattern.", "h": "Constant gap."},
-        {"id": "SET_A_0040", "ds": "SET_A", "tp": "Bonding", "ty": "CONCEPT", "q": "Bond Order formula:", "u": "(Bond - Anti)/2", "r": "Sum/2", "l": "Prod", "c": "UP", "ex": "✅ Net bonding electrons.", "h": "Net glue."},
-        {"id": "SET_A_0041", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Why K dimensionless?", "u": "Uses Activities", "r": "Units cancel", "l": "Pressure", "c": "UP", "ex": "✅ Ratio to standard state.", "h": "Ratio."},
-        {"id": "SET_A_0042", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Rate doubles every 10C. Curve is:", "u": "Exponential", "r": "Linear", "l": "Log", "c": "UP", "ex": "✅ Geometric growth.", "h": "Growth."},
-        {"id": "SET_A_0043", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Prob at Node:", "u": "Zero", "r": "Small", "l": "Undef", "c": "UP", "ex": "✅ Node = Zero Amp.", "h": "Zero."},
-        {"id": "SET_A_0044", "ds": "SET_A", "tp": "Chromatography", "ty": "CONCEPT", "q": "Resolution depends on separation and:", "u": "Width", "r": "Height", "l": "Area", "c": "UP", "ex": "✅ Narrow peaks help.", "h": "Spread."},
-        {"id": "SET_A_0045", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Why Work path-dependent?", "u": "Area under curve varies", "r": "V state func", "l": "dG exact", "c": "UP", "ex": "✅ Integral depends on path.", "h": "Area."},
-        {"id": "SET_A_0046", "ds": "SET_A", "tp": "Nuclear", "ty": "CONCEPT", "q": "Low count decay dist:", "u": "Poisson", "r": "Gauss", "l": "Binomial", "c": "UP", "ex": "✅ Rare random events.", "h": "Rare."},
-        {"id": "SET_A_0047", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "H-atom degeneracy (2s=2p) due to:", "u": "Symmetry", "r": "Mass", "l": "Spin", "c": "UP", "ex": "✅ Spherical symmetry.", "h": "Sym."},
-        {"id": "SET_A_0048", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Zero-order k units:", "u": "M/s", "r": "1/s", "l": "1/Ms", "c": "UP", "ex": "✅ Match Rate units.", "h": "Rate units."},
-        {"id": "SET_A_0049", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Approx Activity with Conc because:", "u": "γ ≈ 1 dilute", "r": "Unmeasurable", "l": "Meters", "c": "UP", "ex": "✅ Ideal solution approx.", "h": "Ideal."},
-        {"id": "SET_A_0050", "ds": "SET_A", "tp": "Group Theory", "ty": "CONCEPT", "q": "Trace of Matrix is:", "u": "Character", "r": "Det", "l": "Eigenval", "c": "UP", "ex": "✅ Sum of diagonals.", "h": "Char."},
-        {"id": "SET_A_0051", "ds": "SET_A", "tp": "Enzyme Kinetics", "ty": "MATH", "q": "Slope of Lineweaver-Burk:", "u": "Km/Vmax", "r": "Vmax/Km", "l": "1/Vmax", "c": "UP", "ex": "✅ Double reciprocal form.", "h": "Reciprocal."},
-        {"id": "SET_A_0052", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Why L² is l(l+1) not l²?", "u": "Uncertainty/Commutation", "r": "Integer", "l": "Vector", "c": "UP", "ex": "✅ Components don't commute (wobble).", "h": "Wobble."},
-        {"id": "SET_A_0053", "ds": "SET_A", "tp": "Solutions", "ty": "MATH", "q": "Debye-Huckel log(γ) dep on I:", "u": "Sqrt(I)", "r": "Linear", "l": "InvSq", "c": "UP", "ex": "✅ Screening length physics.", "h": "Root."},
-        {"id": "SET_A_0054", "ds": "SET_A", "tp": "Spectroscopy", "ty": "MATH", "q": "Pascal's triangle in NMR from:", "u": "Binomial expansion", "r": "Fourier", "l": "Gauss", "c": "UP", "ex": "✅ Combinatorics of spin flips.", "h": "Coin flip."},
-        {"id": "SET_A_0055", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Ideal U indep of V because:", "u": "No interactions", "r": "P constant", "l": "T constant", "c": "UP", "ex": "✅ Distance costs no energy.", "h": "No forces."},
-        {"id": "SET_A_0056", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "A->B->C, k1>>k2. Rate limit:", "u": "B->C", "r": "A->B", "l": "Sum", "c": "UP", "ex": "✅ Fast step waits for slow step.", "h": "Bottleneck."},
-        {"id": "SET_A_0057", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "Equipartition energy per quad term:", "u": "1/2 kT", "r": "kT", "l": "3/2 kT", "c": "UP", "ex": "✅ Gaussian integral result.", "h": "Half kT."},
-        {"id": "SET_A_0058", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Cond decreases with root Conc due to:", "u": "Atmosphere drag", "r": "Neutral", "l": "Viscosity", "c": "UP", "ex": "✅ Relaxation effect.", "h": "Drag."},
-        {"id": "SET_A_0059", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Radial prob has r² because:", "u": "Volume element", "r": "Norm", "l": "Repulsion", "c": "UP", "ex": "✅ Shell volume 4πr².", "h": "Shell vol."},
-        {"id": "SET_A_0060", "ds": "SET_A", "tp": "Thermodynamics", "ty": "MATH", "q": "d(G/T)/dT relates to:", "u": "Enthalpy", "r": "Entropy", "l": "Cp", "c": "UP", "ex": "✅ Gibbs-Helmholtz.", "h": "H."},
-        {"id": "SET_A_0061", "ds": "SET_A", "tp": "Surface Chem", "ty": "MATH", "q": "Capillary rise balances tension vs:", "u": "Gravity", "r": "Visc", "l": "Press", "c": "UP", "ex": "✅ Weight of column.", "h": "Weight."},
-        {"id": "SET_A_0062", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Why 'A' approx constant?", "u": "Root T weak vs Exp", "r": "Const", "l": "Exp T", "c": "UP", "ex": "✅ Exponential term dominates.", "h": "Weak dep."},
-        {"id": "SET_A_0063", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Huckel Deloc Energy is:", "u": "Pi sys - Isolated", "r": "Gap", "l": "Sum", "c": "UP", "ex": "✅ Stabilization benefit.", "h": "Benefit."},
-        {"id": "SET_A_0064", "ds": "SET_A", "tp": "Thermodynamics", "ty": "MATH", "q": "Critical Point singularity:", "u": "1st/2nd derivs 0", "r": "T inf", "l": "V 0", "c": "UP", "ex": "✅ Flat inflection.", "h": "Flat."},
-        {"id": "SET_A_0065", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Anti-Stokes weak because:", "u": "Low excited pop", "r": "Scatter eff", "l": "Loss", "c": "UP", "ex": "✅ Boltzmann.", "h": "Start high."},
-        {"id": "SET_A_0066", "ds": "SET_A", "tp": "Solutions", "ty": "CONCEPT", "q": "Van't Hoff i corrects:", "u": "Particle count", "r": "Interact", "l": "Vol", "c": "UP", "ex": "✅ Dissociation count.", "h": "Count."},
-        {"id": "SET_A_0067", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Born-Oppenheimer:", "u": "Sep Elec/Nuc", "r": "No rep", "l": "Class", "c": "UP", "ex": "✅ Mass difference.", "h": "Heavy/Slow."},
-        {"id": "SET_A_0068", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Autocatalytic curve:", "u": "Sigmoidal", "r": "Linear", "l": "Decay", "c": "UP", "ex": "✅ Self-feeding.", "h": "S-shape."},
-        {"id": "SET_A_0069", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Carnot eff < 1 because:", "u": "Tc=0 impossible", "r": "Friction", "l": "Leak", "c": "UP", "ex": "✅ Third Law.", "h": "Abs Zero."},
-        {"id": "SET_A_0070", "ds": "SET_A", "tp": "Solid State", "ty": "MATH", "q": "Miller index parallel:", "u": "Zero", "r": "Inf", "l": "One", "c": "UP", "ex": "✅ 1/Infinity.", "h": "Reciprocal."},
-        {"id": "SET_A_0071", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "ZPE non-zero because:", "u": "Uncertainty", "r": "Cons", "l": "Pauli", "c": "UP", "ex": "✅ Position/Momentum constraint.", "h": "Uncertainty."},
-        {"id": "SET_A_0072", "ds": "SET_A", "tp": "Acid-Base", "ty": "MATH", "q": "pH = pKa at:", "u": "Inflection (Flat)", "r": "Equiv", "l": "Start", "c": "UP", "ex": "✅ Max buffering.", "h": "Buffer."},
-        {"id": "SET_A_0073", "ds": "SET_A", "tp": "Stat Mech", "ty": "MATH", "q": "S of combined system:", "u": "Additive", "r": "Mult", "l": "Exp", "c": "UP", "ex": "✅ Log product rule.", "h": "Add."},
-        {"id": "SET_A_0074", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Steady State means:", "u": "In=Out", "r": "Zero", "l": "Const", "c": "UP", "ex": "✅ Rate balance.", "h": "Balance."},
-        {"id": "SET_A_0075", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "μ = Molar G only for:", "u": "Pure", "r": "Mixt", "l": "Ideal", "c": "UP", "ex": "✅ No partial molarity.", "h": "Pure."},
-        {"id": "SET_A_0076", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Exchange Integral K:", "u": "Lowers E (Parallel)", "r": "Raises", "l": "Zero", "c": "UP", "ex": "✅ Antisymmetry benefit.", "h": "Hund."},
-        {"id": "SET_A_0077", "ds": "SET_A", "tp": "Spectroscopy", "ty": "MATH", "q": "Swap H for D, B constant:", "u": "Decreases", "r": "Inc", "l": "Same", "c": "UP", "ex": "✅ Inertia increases.", "h": "Heavy slow."},
-        {"id": "SET_A_0078", "ds": "SET_A", "tp": "Electrochem", "ty": "MATH", "q": "Cottrell decay:", "u": "t^-1/2", "r": "Exp", "l": "Inv", "c": "UP", "ex": "✅ Diffusion growth.", "h": "Root time."},
-        {"id": "SET_A_0079", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Ideal Mixing Enthalpy 0:", "u": "Interactions identical", "r": "Entropy", "l": "Vol", "c": "UP", "ex": "✅ No energy diff.", "h": "Same same."},
-        {"id": "SET_A_0080", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Reversible drive force:", "u": "Infinitesimal", "r": "Large", "l": "Zero", "c": "UP", "ex": "✅ Equilibrium step.", "h": "Tiny."},
-        {"id": "SET_A_0081", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Tunneling exp depends on:", "u": "Barrier width", "r": "Temp", "l": "Spin", "c": "UP", "ex": "✅ Decay length.", "h": "Width."},
-        {"id": "SET_A_0082", "ds": "SET_A", "tp": "Analytical Chemistry", "ty": "MATH", "q": "T=0.1, Abs is:", "u": "1.0", "r": "0.1", "l": "2.0", "c": "UP", "ex": "✅ -log(0.1).", "h": "Log."},
-        {"id": "SET_A_0083", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Fugacity replaces:", "u": "Pressure", "r": "Vol", "l": "Temp", "c": "UP", "ex": "✅ Effective P.", "h": "Press."},
-        {"id": "SET_A_0084", "ds": "SET_A", "tp": "Kinetics", "ty": "CONCEPT", "q": "Transition State curvature:", "u": "Neg one way", "r": "Pos", "l": "Zero", "c": "UP", "ex": "✅ Saddle point.", "h": "Saddle."},
-        {"id": "SET_A_0085", "ds": "SET_A", "tp": "Spectroscopy", "ty": "CONCEPT", "q": "Frank-Condon vertical:", "u": "Fast elec/Slow nuc", "r": "Mom", "l": "Quant", "c": "UP", "ex": "✅ Time scale sep.", "h": "Frozen."},
-        {"id": "SET_A_0086", "ds": "SET_A", "tp": "Stat Mech", "ty": "CONCEPT", "q": "Grand Canonical exch:", "u": "Part & Energy", "r": "E only", "l": "V", "c": "UP", "ex": "✅ Open system.", "h": "Open."},
-        {"id": "SET_A_0087", "ds": "SET_A", "tp": "Electrochem", "ty": "CONCEPT", "q": "Conc Cell source:", "u": "Entropy/Nernst", "r": "Res", "l": "Temp", "c": "UP", "ex": "✅ Mixing drive.", "h": "Mixing."},
-        {"id": "SET_A_0088", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Slater Det enforces:", "u": "Antisymmetry", "r": "Norm", "l": "Orth", "c": "UP", "ex": "✅ Pauli.", "h": "Sign flip."},
-        {"id": "SET_A_0089", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Joule-Thomson:", "u": "Cool/Heat expand", "r": "Explode", "l": "Liq", "c": "UP", "ex": "✅ Expansion temp change.", "h": "Fridge."},
-        {"id": "SET_A_0090", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "Large Keq means:", "u": "kf >> kr", "r": "Eq", "l": "kr >> kf", "c": "UP", "ex": "✅ Ratio.", "h": "Fast in."},
-        {"id": "SET_A_0091", "ds": "SET_A", "tp": "Quantum", "ty": "CONCEPT", "q": "Selection Rule:", "u": "Integral Zero", "r": "Gap", "l": "Spin", "c": "UP", "ex": "✅ Symmetry forbidden.", "h": "Zero."},
-        {"id": "SET_A_0092", "ds": "SET_A", "tp": "Thermodynamics", "ty": "MATH", "q": "Phase Rule origin:", "u": "Vars - Constraints", "r": "Atoms", "l": "Energy", "c": "UP", "ex": "✅ Algebra.", "h": "DOF."},
-        {"id": "SET_A_0093", "ds": "SET_A", "tp": "Spectroscopy", "ty": "MATH", "q": "Resolution m/dm depends:", "u": "Peak width", "r": "Ht", "l": "Mass e", "c": "UP", "ex": "✅ Sharpness.", "h": "Width."},
-        {"id": "SET_A_0094", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Residual Entropy Ice:", "u": "Config disorder", "r": "Tunnel", "l": "Vib", "c": "UP", "ex": "✅ Frozen states.", "h": "Frozen."},
-        {"id": "SET_A_0095", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "k_cat is:", "u": "Vmax/[E]", "r": "Km*V", "l": "V/K", "c": "UP", "ex": "✅ Efficiency.", "h": "Per site."},
-        {"id": "SET_A_0096", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Perturbation expand in:", "u": "Small param", "r": "t", "l": "V", "c": "UP", "ex": "✅ Taylor series.", "h": "Small."},
-        {"id": "SET_A_0097", "ds": "SET_A", "tp": "Solid State", "ty": "MATH", "q": "Bragg limit d:", "u": "d >= lambda/2", "r": "d >= lam", "l": "d >= 2lam", "c": "UP", "ex": "✅ sin theta max 1.", "h": "Limit."},
-        {"id": "SET_A_0098", "ds": "SET_A", "tp": "Thermodynamics", "ty": "CONCEPT", "q": "Activity coeff 1 when:", "u": "Conc -> 0", "r": "Inf", "l": "T -> 0", "c": "UP", "ex": "✅ Ideal.", "h": "Solitude."},
-        {"id": "SET_A_0099", "ds": "SET_A", "tp": "Quantum", "ty": "MATH", "q": "Spin-Orbit Z dep:", "u": "Z^4", "r": "Z^2", "l": "Z", "c": "UP", "ex": "✅ Relativistic.", "h": "Heavy."},
-        {"id": "SET_A_0100", "ds": "SET_A", "tp": "Kinetics", "ty": "MATH", "q": "[B] >> [A] order:", "u": "Pseudo-1st", "r": "0", "l": "2nd", "c": "UP", "ex": "✅ Swamping.", "h": "Pseudo."},
-
-        // --- SET B: INDUSTRIAL (0001-0050) ---
-        {"id": "SET_B_0001", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "In HPLC, high back-pressure usually indicates:", "u": "Blocked Column/Frit", "r": "Leak", "l": "Empty Solvent", "c": "UP", "ex": "✅ High pressure suggests a blockage in the flow path (frit, guard column, or tubing). Leaks cause low pressure.", "h": "Obstruction."},
-        {"id": "SET_B_0002", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Which detector is destructive in Gas Chromatography?", "u": "FID (Flame Ionization)", "r": "TCD (Thermal Cond)", "l": "ECD (Electron Capture)", "c": "UP", "ex": "✅ FID burns the sample in a hydrogen flame to measure ions. TCD and ECD are non-destructive.", "h": "Burning."},
-        {"id": "SET_B_0003", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Karl Fischer titration is used specifically to measure:", "u": "Water Content", "r": "Acid Strength", "l": "Metal Ions", "c": "UP", "ex": "✅ It is the industrial standard for trace moisture determination using iodine and SO2.", "h": "Moisture."},
-        {"id": "SET_B_0004", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "In UV-Vis, the 'Blank' correction removes signal from:", "u": "Solvent & Cuvette", "r": "Stray Light", "l": "Dark Current", "c": "UP", "ex": "✅ The blank subtracts absorbance caused by the solvent and the glass/quartz container.", "h": "Zeroing."},
-        {"id": "SET_B_0005", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "pH meter calibration requires buffers bracketing the:", "u": "Expected Sample pH", "r": "Extreme limits (1 & 14)", "l": "Neutral point (7)", "c": "UP", "ex": "✅ For accuracy, slope is calculated between buffers that bracket the sample's expected range.", "h": "Bracket."},
-        {"id": "SET_B_0006", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "In Mass Spec, the Molecular Ion peak (M+) represents:", "u": "Intact Molecule mass", "r": "Base Peak", "l": "Isotope", "c": "UP", "ex": "✅ M+ corresponds to the molecule losing one electron without fragmenting.", "h": "Parent."},
-        {"id": "SET_B_0007", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Reverse Phase HPLC uses:", "u": "Non-polar Stationary / Polar Mobile", "r": "Polar Stationary / Non-polar Mobile", "l": "Gas Mobile", "c": "UP", "ex": "✅ 'Reverse' means the stationary phase is non-polar (C18) and solvent is polar (Water/Methanol).", "h": "C18 Column."},
-        {"id": "SET_B_0008", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Beer-Lambert Law fails (deviates) when:", "u": "Solution is Concentrated", "r": "Path length is 1cm", "l": "Wavelength is UV", "c": "UP", "ex": "✅ At high concentration (>0.01M), molecular interactions shift the absorption spectrum.", "h": "Too crowded."},
-        {"id": "SET_B_0009", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "To separate volatile compounds (BP < 250°C), use:", "u": "Gas Chromatography", "r": "HPLC", "l": "TLC", "c": "UP", "ex": "✅ GC is ideal for volatile, thermally stable compounds. HPLC is for non-volatiles.", "h": "Volatile."},
-        {"id": "SET_B_0010", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Total Organic Carbon (TOC) analyzers oxidize carbon to:", "u": "CO2", "r": "CH4", "l": "CO", "c": "UP", "ex": "✅ Organic carbon is fully oxidized to CO2, which is then measured by IR or Conductivity.", "h": "Combustion."},
-        {"id": "SET_B_0011", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Conductivity measurement is strongly temperature dependent. The compensation factor is roughly:", "u": "2% per °C", "r": "10% per °C", "l": "0% (Independent)", "c": "UP", "ex": "✅ Ion mobility increases with heat. Most industrial controllers compensate ~2%/°C.", "h": "Temp Coeff."},
-        {"id": "SET_B_0012", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "In GC, the 'Retention Time' is used for:", "u": "Identification", "r": "Quantification", "l": "Cleaning", "c": "UP", "ex": "✅ Time represents 'What it is' (ID). Peak Area represents 'How much' (Quant).", "h": "Identity."},
-        {"id": "SET_B_0013", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Why use a Guard Column in HPLC?", "u": "Protect main column", "r": "Increase resolution", "l": "Speed up flow", "c": "UP", "ex": "✅ It is a sacrificial filter that catches particulates and chemical crud before the expensive analytical column.", "h": "Sacrificial shield."},
-        {"id": "SET_B_0014", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Potentiometric Titration detects the endpoint by measuring:", "u": "Voltage change (ΔE)", "r": "Color change", "l": "Current flow", "c": "UP", "ex": "✅ It uses an electrode (like pH or Redox) to find the inflection point in potential.", "h": "Potential."},
-        {"id": "SET_B_0015", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Dissolved Oxygen (DO) probes require maintenance of:", "u": "Membrane & Electrolyte", "r": "Glass Bulb", "l": "Filament", "c": "UP", "ex": "✅ Polarographic sensors consume electrolyte and the gas-permeable membrane fouls over time.", "h": "Sensor guts."},
-        {"id": "SET_B_0016", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "In IR Spectroscopy, the 'Fingerprint Region' is:", "u": "Below 1500 cm⁻¹", "r": "Above 3000 cm⁻¹", "l": "1500-2000 cm⁻¹", "c": "UP", "ex": "✅ Complex bending vibrations unique to the molecule occur here.", "h": "Unique pattern."},
-        {"id": "SET_B_0017", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Turbidity is measured in NTU using:", "u": "Light Scattering (90°)", "r": "Absorbance", "l": "Refraction", "c": "UP", "ex": "✅ Nephelometry measures light scattered at 90 degrees by suspended particles.", "h": "Scatter."},
-        {"id": "SET_B_0018", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "The Van Deemter equation H = A + B/u + Cu minimizes H to optimize:", "u": "Efficiency", "r": "Capacity", "l": "Retention", "c": "UP", "ex": "✅ H is Height Equivalent to Theoretical Plate. Lower H means sharper peaks (High Efficiency).", "h": "Plate height."},
-        {"id": "SET_B_0019", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "For analyzing trace metals (ppb level), use:", "u": "AAS or ICP-MS", "r": "Titration", "l": "FTIR", "c": "UP", "ex": "✅ Atomic Absorption (AAS) or Inductively Coupled Plasma (ICP) are standard for metals.", "h": "Atomic."},
-        {"id": "SET_B_0020", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Refractive Index (RI) detectors are:", "u": "Universal but low sensitivity", "r": "Selective and sensitive", "l": "Destructive", "c": "UP", "ex": "✅ Almost everything refracts light, so it detects almost anything, but has high noise floor.", "h": "Universal."}
+        {"id": "SET_B_0001", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "In HPLC, high back-pressure usually indicates:", "u": "Blocked Column/Frit", "r": "Leak", "l": "Empty Solvent", "c": "UP", "ex": "✅ High pressure suggests a blockage in the flow path.", "h": "Obstruction."},
+        {"id": "SET_B_0002", "ds": "SET_B", "tp": "Analytical", "ty": "CONCEPT", "q": "Which detector is destructive in GC?", "u": "FID (Flame Ionization)", "r": "TCD", "l": "ECD", "c": "UP", "ex": "✅ FID burns the sample to measure ions.", "h": "Burning."},
+        {"id": "SET_B_0003", "ds": "SET_B", "tp": "Analytical", "ty": "APPLICATION", "q": "Karl Fischer titration measures:", "u": "Water Content", "r": "Acid", "l": "Metals", "c": "UP", "ex": "✅ Industrial standard for trace moisture.", "h": "Moisture."}
     ];
 
     let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false, startTime = 0;
@@ -236,15 +128,18 @@
     function init() { 
         setTimeout(() => { document.getElementById('loader').remove(); renderDatasetSelect(); }, 800); 
         
-        // --- AUTO-SYNC LOGIC ---
-        const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]");
-        if(pending.length > 0 && navigator.onLine) {
-            console.log(`Syncing ${pending.length} offline sessions...`);
-            pending.forEach(p => {
-                new Image().src = `${ENDPOINT}?target=${p.target}&questionId=${p.questionId}&result=${p.result}&vectorChoice=${p.vectorChoice}&latency=${p.latency}`;
-            });
-            localStorage.removeItem('pendingUploads');
-        }
+        // --- AUTO-SYNC RECOVERY (V81.0) ---
+        // Wrapped in Try/Catch to prevent crashes in private browsing/file mode
+        try {
+            const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]");
+            if(pending.length > 0 && navigator.onLine) {
+                console.log(`Syncing ${pending.length} offline sessions...`);
+                pending.forEach(p => {
+                    new Image().src = `${ENDPOINT}?target=${p.target}&questionId=${p.questionId}&result=${p.result}&vectorChoice=${p.vectorChoice}&latency=${p.latency}`;
+                });
+                localStorage.removeItem('pendingUploads');
+            }
+        } catch(e) { console.log("Storage access restricted"); }
     }
 
     /* --- MENU RENDERERS --- */
@@ -276,7 +171,6 @@
     function startQuiz(genre) {
         CUR_GENRE = genre;
         
-        // TOPIC & GENRE FILTER
         POOL = RAW_DATA.filter(q => {
             const matchDS = q.ds === CUR_DATASET;
             const t = q.tp.toLowerCase();
@@ -290,7 +184,6 @@
                 matchTP = ["organic", "polymer", "acid"].some(k => t.includes(k));
             } else { matchTP = t.includes(CUR_TOPIC.toLowerCase()); }
 
-            // 4-WAY GENRE MAPPING
             let matchTY = false;
             if (CUR_GENRE === "CONCEPT") matchTY = q.ty === "CONCEPT";
             else if (CUR_GENRE === "MATH") matchTY = q.ty === "MATH";
@@ -301,13 +194,11 @@
             return matchDS && matchTP && matchTY;
         });
 
-        // SHUFFLE
         for (let i = POOL.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [POOL[i], POOL[j]] = [POOL[j], POOL[i]];
         }
 
-        // SILENT FALLBACK
         if(!POOL.length) { 
             POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET && q.tp.toLowerCase().includes(CUR_TOPIC.toLowerCase()));
             if(!POOL.length) { renderDatasetSelect(); return; }
@@ -362,6 +253,7 @@
         MODE = "SESSION_END";
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
+        
         const revCount = MISTAKES.length;
 
         c.innerHTML = `
@@ -381,23 +273,34 @@
         s.appendChild(c); bindPhysics(c, {});
     }
 
-    function submitSession() {
+    /* --- V81.0 GLOBAL EXPORTS FOR STABILITY --- */
+    window.submitSession = function() {
         const name = document.getElementById('userName').value.trim().toUpperCase();
         if(!name) { alert("Identify yourself."); return; }
         const payload = { target: "Telemetry", questionId: "SESSION_SUBMIT", result: name, vectorChoice: `Score: ${SCORE}`, latency: `Mistakes: ${MISTAKES.length}`, set: CUR_DATASET };
         
+        // V81.0: IMMEDIATE OFFLINE CHECK
+        if (!navigator.onLine) {
+            storeOffline(payload);
+            return;
+        }
+
         const img = new Image();
         img.src = `${ENDPOINT}?target=${payload.target}&questionId=${payload.questionId}&result=${payload.result}&vectorChoice=${payload.vectorChoice}&latency=${payload.latency}`;
         img.onload = () => { alert("UPLOAD COMPLETE."); document.getElementById('userName').disabled = true; };
-        img.onerror = () => {
-            alert("OFFLINE. Data saved to device.");
+        img.onerror = () => { storeOffline(payload); };
+    };
+
+    function storeOffline(payload) {
+        alert("OFFLINE. Data saved to device.");
+        try {
             const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]");
             pending.push(payload);
             localStorage.setItem('pendingUploads', JSON.stringify(pending));
-        };
+        } catch(e) { alert("Device Storage Full/Restricted"); }
     }
 
-    function downloadSummary() {
+    window.downloadSummary = function() {
         let content = `ALCHEMIST REPORT\nOPERATOR: ${document.getElementById('userName').value||"UNKNOWN"}\nSCORE: ${SCORE}\n\n`;
         if (MISTAKES.length === 0) content += "CLEAN RUN.\n";
         else {
@@ -410,7 +313,7 @@
         a.href = window.URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
         a.download = `PLAN_${Date.now()}.txt`;
         a.click();
-    }
+    };
 
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
