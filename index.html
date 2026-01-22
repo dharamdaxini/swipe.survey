@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V82.0 | Master Engine</title>
+    <title>Alchemist V82.0 | Auto-Refinery</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
@@ -14,6 +14,7 @@
             --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
         }
 
+        /* PERFORMANCE RESET */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
         body { 
             margin: 0; height: 100vh; background: var(--bg); color: #fff;
@@ -21,6 +22,7 @@
             display: flex; flex-direction: column;
         }
 
+        /* FORMULA FIXES */
         sub { font-size: 0.7em; vertical-align: sub; line-height: 0; }
         sup { font-size: 0.7em; vertical-align: super; line-height: 0; }
 
@@ -30,7 +32,7 @@
         .progress-track { width: 100%; height: 2px; background: #1a1a1a; margin-top: 10px; border-radius: 1px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
 
-        /* ACTIVE TAPE LOG */
+        /* TAPE LOG */
         #history-tape {
             width: 90%; margin: 0 auto; flex-grow: 1; max-height: 15vh; 
             overflow-y: auto; display: flex; flex-direction: column-reverse; 
@@ -56,7 +58,6 @@
             backface-visibility: hidden; align-items: center; text-align: center;
         }
 
-        /* LIQUID UI TYPOGRAPHY */
         .card-q { 
             font-family: var(--font-chem); 
             font-size: clamp(18px, 4.5vmin, 28px); 
@@ -96,8 +97,8 @@
 
     /* ----------------------------------------------------
        DATA INGESTION ENGINE
-       Paste your massive, messy text block inside the backticks below.
-       The engine will parse it automatically.
+       Paste your massive 1400-line messy text block inside the backticks below.
+       Do NOT worry about formatting errors; the code fixes them.
     ---------------------------------------------------- */
     const RAW_PASTE_DATA = `
 id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
@@ -2100,192 +2101,13 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
-    function addToLog(msg, action) {
-        const tape = document.getElementById('history-tape');
-        const oldItems = tape.querySelectorAll('.active');
-        oldItems.forEach(el => el.classList.remove('active'));
-        const div = document.createElement('div');
-        div.className = "log-item active";
-        div.innerHTML = `> ${msg}`;
-        if (action) {
-            div.onclick = () => { if (isTransitioning) return; div.style.color = "var(--gold)"; div.innerHTML = `> REVERT: ${msg}`; setTimeout(action, 200); };
-        } else { div.style.cursor = "default"; }
-        tape.prepend(div);
-    }
-
-    function renderDatasetSelect() { 
-        MODE = "DATASET_SELECT"; addToLog("SELECT DIFFICULTY", null);
-        renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); 
-    }
-    
-    function renderTopicSelect(ds) { 
-        MODE = "TOPIC_SELECT"; CUR_DATASET = ds; 
-        addToLog(`DIFFICULTY: ${ds.replace('_', ' ')}`, () => renderDatasetSelect());
-        renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); 
-    }
-    
-    function renderGenreSelect(tp) { 
-        MODE = "GENRE_SELECT"; CUR_TOPIC = tp; 
-        addToLog(`DOMAIN: ${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET));
-        renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); 
-    }
-
-    function renderMenuCard(q, up, lt, rt, dn) {
-        const s = document.getElementById('stack'); s.innerHTML = "";
-        const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
-        s.appendChild(c); bindPhysics(c);
-    }
-
-    function startQuiz(genre) {
-        CUR_GENRE = genre;
-        addToLog(`DEPTH: ${genre}`, () => renderGenreSelect(CUR_TOPIC));
-        addToLog(`SESSION ACTIVE`, null);
-
-        POOL = RAW_DATA.filter(q => {
-            const matchDS = q.ds === CUR_DATASET;
-            const t = (q.tp || "").toLowerCase();
-            let matchTP = false;
-            
-            if (CUR_TOPIC === "Physical") matchTP = ["physical", "quantum", "kinetics", "thermo", "stat", "surface", "solid", "group", "fluid"].some(k => t.includes(k));
-            else if (CUR_TOPIC === "Analytical") matchTP = ["analytical", "spectro", "chromat", "electro", "instru"].some(k => t.includes(k));
-            else if (CUR_TOPIC === "Organic") matchTP = ["organic", "polymer", "acid", "stereo"].some(k => t.includes(k));
-            else matchTP = t.includes(CUR_TOPIC.toLowerCase());
-
-            let matchTY = false;
-            const ty = (q.ty || "").toUpperCase();
-            if (CUR_GENRE === "CONCEPT") matchTY = ty.includes("CONCEPT");
-            else if (CUR_GENRE === "MATH") matchTY = ["MATH", "CALC"].some(k => ty.includes(k));
-            else if (CUR_GENRE === "STATISTICS") matchTY = ["STAT", "DATA"].some(k => ty.includes(k));
-            else if (CUR_GENRE === "APPLICATION") matchTY = ["APP", "TROUBLE"].some(k => ty.includes(k));
-            else matchTY = true; 
-            
-            return matchDS && matchTP && matchTY;
-        });
-
-        // Global Shuffle
-        for (let i = POOL.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [POOL[i], POOL[j]] = [POOL[j], POOL[i]]; }
-        
-        // Session Slicing (Max 50)
-        if (POOL.length > 50) POOL = POOL.slice(0, 50);
-
-        if(!POOL.length) { 
-            addToLog("NICHE EMPTY. BROADENING...", null);
-            POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET && (q.tp||"").toLowerCase().includes(CUR_TOPIC.toLowerCase()));
-            if(!POOL.length) { addToLog("NO DATA FOUND.", null); renderDatasetSelect(); return; }
-        }
-        SCORE = 0; MISTAKES = [];
-        renderNext();
-    }
-
-    function renderNext() {
-        const s = document.getElementById('stack'); s.innerHTML = "";
-        if(!POOL.length) { renderEnd(); return; }
-        
-        // Option Shuffle (V81.7)
-        const originalQ = POOL[0];
-        const q = { ...originalQ }; 
-        const slots = [{ label: q.u, isCorrect: q.c === "UP" }, { label: q.r, isCorrect: q.c === "RIGHT" }, { label: q.l, isCorrect: q.c === "LEFT" }];
-        for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [slots[i], slots[j]] = [slots[j], slots[i]]; }
-        q.u = slots[0].label; q.r = slots[1].label; q.l = slots[2].label;
-        if (slots[0].isCorrect) q.c = "UP"; else if (slots[1].isCorrect) q.c = "RIGHT"; else if (slots[2].isCorrect) q.c = "LEFT";
-
-        const c = document.createElement('div'); c.className = "card";
-        let displayHTML = `<div class="card-q">${formatChem(q.q)}</div>`;
-        if (MODE === "REVIEW") {
-            c.style.borderColor = "var(--blue)"; c.style.boxShadow = "0 0 15px rgba(52, 152, 219, 0.2)";
-            displayHTML = `<div class="card-q" style="font-size:1.3rem; color:#bbb"><span style="color:var(--blue); font-size:0.8rem; letter-spacing:2px">LOGIC FIRST</span><br>${formatChem(q.ex)}</div><div style="text-align:center; margin-top:20px; font-style:italic; color:#555; font-size:0.9rem">Recall: ${formatChem(q.q)}</div>`;
-        }
-
-        c.innerHTML = `${displayHTML}<div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${MODE === "REVIEW" ? "GOT IT" : formatChem(q.h)}</div><div class="overlay"><div class="overlay-label">${MODE === "REVIEW" ? "NEXT CARD" : "LOGIC ANALYSIS"}</div><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button></div>`;
-        s.appendChild(c); document.getElementById('rank-ui').innerText = MODE === "REVIEW" ? "REVIEW" : (q.id || "Q"); 
-        bindPhysics(c, q);
-    }
-
-    function renderEnd() {
-        MODE = "SESSION_END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; const revCount = MISTAKES.length;
-        addToLog(`COMPLETE: ${SCORE} XP`, null);
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold); font-size:1.5rem">${SCORE} XP</span></div><div style="margin: 15px 0; width: 100%; text-align:center;"><input type="text" id="userName" placeholder="CODENAME" style="background: #222; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; width: 60%; font-family: var(--font-code); text-align: center; text-transform: uppercase;"><div style="display:flex; gap:10px; justify-content:center; margin-top:10px;"><button onclick="submitSession()" style="background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: 900; flex:1;">UPLOAD</button><button onclick="downloadSummary()" style="background: #333; color: #fff; border: 1px solid #555; padding: 10px; border-radius: 6px; font-weight: 900; flex:1;">⬇ TO-DO</button></div></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-down" style="color:${revCount > 0 ? 'var(--blue)' : '#333'}">REVIEW (${revCount})</div><div class="swipe-label sl-left" style="color:var(--purple)">CHANGE TOPIC</div><div class="swipe-label sl-right" style="color:var(--green)">LEVEL UP</div>`;
-        s.appendChild(c); bindPhysics(c, {});
-    }
-
-    window.submitSession = function() {
-        const name = document.getElementById('userName').value.trim().toUpperCase(); if(!name) { alert("Identify yourself."); return; }
-        const payload = { target: "Telemetry", questionId: "SESSION_SUBMIT", result: name, vectorChoice: `Score: ${SCORE}`, latency: `Mistakes: ${MISTAKES.length}`, set: CUR_DATASET };
-        if (!navigator.onLine) { storeOffline(payload); return; }
-        const img = new Image(); img.src = `${ENDPOINT}?target=${payload.target}&questionId=${payload.questionId}&result=${payload.result}&vectorChoice=${payload.vectorChoice}&latency=${payload.latency}`;
-        img.onload = () => { addToLog("UPLOAD COMPLETE", null); alert("UPLOAD COMPLETE."); document.getElementById('userName').disabled = true; };
-        img.onerror = () => { storeOffline(payload); };
-    };
-
-    function storeOffline(payload) {
-        alert("OFFLINE. Data saved to device.");
-        addToLog("OFFLINE: SAVED", null);
-        try { const pending = JSON.parse(localStorage.getItem('pendingUploads') || "[]"); pending.push(payload); localStorage.setItem('pendingUploads', JSON.stringify(pending)); } catch(e) { alert("Storage Full"); }
-    }
-
-    window.downloadSummary = function() {
-        const user = document.getElementById('userName').value || "OPERATOR";
-        let content = `ALCHEMIST INTELLIGENCE REPORT (V82.0)\nOPERATOR: ${user}\nTIMESTAMP: ${new Date().toLocaleString()}\nSCORE: ${SCORE} XP\n\n`;
-        if (MISTAKES.length === 0) content += "STATUS: CLEAN RUN. PERFORMANCE OPTIMAL.\n";
-        else {
-            content += `STATUS: ${MISTAKES.length} KNOWLEDGE GAPS DETECTED.\n\n`;
-            MISTAKES.forEach((m, i) => {
-                const deepLogic = m.dg || m.ex.replace(/✅|❌/g, '').trim();
-                content += `[${i + 1}] TOPIC: ${(m.tp||"GENERAL").toUpperCase()}\n    Q: ${m.q}\n    --------------------------------------------------\n    >>> ENGINEERING ANALYSIS:\n    ${deepLogic}\n    --------------------------------------------------\n\n`;
-            });
-        }
-        const a = document.createElement('a'); a.href = window.URL.createObjectURL(new Blob([content], { type: 'text/plain' })); a.download = `REPORT_${user}_${Date.now()}.txt`; a.click();
-    };
-
-    function bindPhysics(el, data) {
-        let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
-        const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        const start = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; startTime = Date.now(); el.style.transition="none"; };
-        const move = e => {
-            if(!active) return; const p = e.touches ? e.touches[0] : e; const dx = p.clientX - sx, dy = p.clientY - sy, dist = Math.sqrt(dx*dx + dy*dy);
-            x = (dist > 35) ? dx * (35/dist) : dx; y = (dist > 35) ? dy * (35/dist) : dy;
-            let ang = Math.atan2(-y, x) * (180/Math.PI); if(ang<0) ang+=360;
-            Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
-            if(dist > 10) { let L = (ang>=45&&ang<135)?labels.up:(ang>=135&&ang<225)?labels.lt:(ang>=225&&ang<315)?labels.dn:labels.rt; if(L) { L.style.opacity = Math.min(dist/30, 1); L.style.transform = `scale(${0.9 + (dist/100)})`; } }
-            if((MODE==="QUIZ" || MODE==="REVIEW") && triggerDir==="DOWN") el.classList.add('study-active'); else el.classList.remove('study-active');
-            el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
-            triggerDir = (dist >= 35) ? ((ang>=45&&ang<135)?"UP":(ang>=135&&ang<225)?"LEFT":(ang>=225&&ang<315)?"DOWN":"RIGHT") : null;
-        };
-        const end = () => {
-            if(!active) return; active=false;
-            if(triggerDir) { if((MODE==="QUIZ" || MODE==="REVIEW") && triggerDir==="DOWN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="translate3d(0,0,0)"; } else handleAction(el, data, x, y, triggerDir); } else { el.style.transition="transform .4s"; el.style.transform="translate3d(0,0,0)"; el.classList.remove('study-active'); }
-        };
-        el.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', end); el.addEventListener('touchstart', start); el.addEventListener('touchmove', move); el.addEventListener('touchend', end);
-    }
-
-    function handleAction(el, data, x, y, dir) {
-        isTransitioning = true; el.style.transition = "transform 0.4s ease-in, opacity 0.3s"; el.style.transform = `translate3d(${x*12}px,${y*12}px,0)`; el.style.opacity = "0";
-        setTimeout(() => {
-            el.remove(); 
-            if (MODE === "DATASET_SELECT") { const map = { UP: "SET_A", LEFT: "SET_B", RIGHT: "SET_C", DOWN: "SET_D" }; renderTopicSelect(map[dir]); }
-            else if (MODE === "TOPIC_SELECT") { const map = { UP: "Physical", LEFT: "Organic", RIGHT: "Inorganic", DOWN: "Analytical" }; renderGenreSelect(map[dir]); }
-            else if (MODE === "GENRE_SELECT") { if (dir === "UP") startQuiz("CONCEPT"); else if (dir === "DOWN") startQuiz("APPLICATION"); else if (dir === "LEFT") startQuiz("MATH"); else if (dir === "RIGHT") startQuiz("STATISTICS"); else isTransitioning = false; }
-            else if (MODE === "QUIZ" || MODE === "REVIEW") {
-                const correct = dir === (data.c || data.correct); if(correct) SCORE += (MODE === "REVIEW" ? 5 : 10); else if(MODE === "QUIZ" && !MISTAKES.some(m => m.id === data.id)) MISTAKES.push(data);
-                new Image().src = `${ENDPOINT}?target=Telemetry&questionId=${data.id}&result=${correct}&vectorChoice=${dir}&latency=${Date.now()-startTime}`; POOL.shift(); renderNext(); 
-            }
-            else if (MODE === "SESSION_END") {
-                if (dir === "UP") location.reload(); else if (dir === "DOWN") { if(MISTAKES.length === 0) { location.reload(); return; } MODE = "REVIEW"; POOL = [...MISTAKES]; MISTAKES = []; renderNext(); } else if (dir === "LEFT") renderTopicSelect(CUR_DATASET); else if (dir === "RIGHT") { CUR_DATASET = NEXT_LEVEL[CUR_DATASET] || "SET_A"; startQuiz(CUR_GENRE); }
-            }
-            isTransitioning = false; updateUI();
-        }, 400); 
-    }
-
-    function updateUI() { document.getElementById('xp-ui').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(SCORE % 100)}%`; }
-    window.onload = init;
 
 
-    /* --- V82.0 DATA PARSER (Surgical Regex) --- */
+    /* --- V82.0 SURGICAL PARSER (Fixes Merged Columns) --- */
     const parseRawData = (text) => {
         if(!text) return [];
         const lines = text.trim().split('\n');
-        // Looks for anchors: ID ... TYPE ... Question ... Direction ... Weight
+        // Anchor Search: Finds ID, Type, Question, Correct Option, and Weight
         const regex = /(SET_[A-D]_\d{4})(SET_[A-D])([A-Za-z \/]+?)(CONCEPT|MATH|APPLICATION|TROUBLESHOOTING)(.+?\?)(.+?)(UP|RIGHT|LEFT|DOWN)(❌.+?)(\.?\d?\.\d+$)/;
 
         return lines.map(line => {
@@ -2301,9 +2123,10 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
             let r = splitOpts[1] || "B";
             let l = splitOpts[2] || "C";
 
-            // 2. Fix Explanation & Hint
+            // 2. Fix Explanation/Hint/Weight Merge
+            // "✅ ... maximum.Arrow of Time." -> Split at last period before capital
             let cleanExpl = expl_blob;
-            let hint = "Focus on the concepts.";
+            let hint = "Think carefully.";
             const hintMatch = expl_blob.match(/(.+?\.)([A-Z].+)$/);
             if (hintMatch) { cleanExpl = hintMatch[1]; hint = hintMatch[2]; }
 
@@ -2318,6 +2141,7 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
         }).filter(x => x !== null);
     };
 
+    // --- INITIALIZE DATA ---
     const RAW_DATA = parseRawData(RAW_PASTE_DATA);
 
     // --- APP LOGIC ---
