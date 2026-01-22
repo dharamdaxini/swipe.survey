@@ -1,13 +1,10 @@
-/* --- ALCHEMIST V84.1 LABEL-FIX ENGINE --- */
+/* --- ALCHEMIST V85.1 COUNTER HUD ENGINE --- */
 
-/* 1. CONFIGURATION */
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
 const NEXT_LEVEL = { "SET_A": "SET_B", "SET_B": "SET_C", "SET_C": "SET_D", "SET_D": "SET_A" };
 
-/* 2. DATA SOURCE (PASTE YOUR FULL DATASET HERE) */
+/* 1. DATA SOURCE */
 const RAW_PASTE_DATA = `
-
-
 id	set	topic	type	question	option_up	option_right	option_left	correct_option	explanation	hint	weight														
 SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
@@ -2007,51 +2004,53 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
 																									
 																									
 																									
-																									
-`; // <--- Paste 1400 lines between these backticks
+																									`; // <--- Paste all 1400 lines here.
 
-/* 3. PARSER (Surgical Column Recovery) */
-function parseSafe(text) {
+/* 2. PRECISION PARSER */
+function parsePrecision(text) {
     if(!text) return [];
     const lines = text.trim().split('\n');
     return lines.map(line => {
         try {
-            if (line.length < 30 || !line.includes('❌')) return null;
+            if (!line.includes('❌')) return null;
             const id = line.substring(0, 10);
-            const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
-            const type = typeMark ? typeMark[0] : "CONCEPT";
+            const typeMatch = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/);
+            const type = typeMatch ? typeMatch[0] : "CONCEPT";
             const explStart = line.indexOf('❌');
-            const weightMatch = line.match(/\d\.\d+$/);
-            const weight = weightMatch ? weightMatch[0] : "0.5";
-            
-            const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
-            const correct = middle.match(/UP|RIGHT|LEFT|DOWN$/)[0];
-            const qAndOpts = middle.substring(0, middle.length - correct.length);
-            
-            const qSplit = qAndOpts.split('?');
+            const weightMatch = line.match(/(\d\.\d+)$/);
+            const weight = weightMatch ? weightMatch[1] : "0.5";
+            const contentBlock = line.substring(line.indexOf(type) + type.length, explStart).trim();
+            const dirMatch = contentBlock.match(/(UP|RIGHT|LEFT|DOWN)$/);
+            const correct = dirMatch[0];
+            const qAndO = contentBlock.substring(0, contentBlock.length - correct.length).trim();
+            const qSplit = qAndO.split('?');
             const question = qSplit[0] + "?";
-            const optsRaw = qSplit[1] || "";
-            
-            // Fix merged options (e.g., "First LawSecond Law")
-            const opts = optsRaw.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|');
-            
+            const optionsStr = qSplit[1] || "";
+            const opts = optionsStr.replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(o => o.trim()).filter(o => o.length > 0);
             const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
-            let explanation = explFull, hint = "Use fundamental analysis.";
+            let explanation = explFull, hint = "Logic Focus.";
             const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
             if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
 
-            return { id, ds: id.substring(0,5), tp: "Chemistry", ty: type, q: question, u: opts[0]||"OptA", r: opts[1]||"OptB", l: opts[2]||"OptC", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
+            return { id, ds: id.substring(0,5), tp: "Module", ty: type, q: question, u: opts[0]||"Opt1", r: opts[1]||"Opt2", l: opts[2]||"Opt3", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
         } catch (e) { return null; }
     }).filter(x => x !== null);
 }
 
-/* 4. APP STATE */
-let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
-let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "";
+/* 3. APP STATE */
+let RAW_DATA = parsePrecision(RAW_PASTE_DATA);
+let POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
+let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
 
 const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
 
-/* 5. UI & LOG NAVIGATION */
+/* 4. NAVIGATION LAYERS */
+function init() { 
+    const loader = document.getElementById('loader');
+    if(loader) loader.remove();
+    renderDatasetSelect(); 
+}
+
 function addToLog(msg, action) {
     const tape = document.getElementById('history-tape');
     tape.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
@@ -2069,53 +2068,77 @@ function renderMenuCard(q, up, lt, rt, dn) {
     s.appendChild(c); bindPhysics(c);
 }
 
-function renderDatasetSelect() { MODE = "DATASET_SELECT"; addToLog("SELECT DIFFICULTY", null); renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); }
-function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(`SET: ${ds}`, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(`DOMAIN: ${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); }
+function renderDatasetSelect() { 
+    MODE = "DATASET_SELECT"; addToLog("SELECT DIFFICULTY", null); 
+    document.getElementById('rank-ui').innerText = "ALCHEMIST";
+    renderMenuCard("SELECT DIFFICULTY", "CORE FUNDAMENTALS", "INDUSTRIAL APPS", "ADVANCED THEORY", "EXPERT CHALLENGE"); 
+}
+function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(`${ds}`, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(`${tp.toUpperCase()}`, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT MASTERY", "CALCULATION", "DATA ANALYSIS", "APPLIED LOGIC"); }
+function renderRangeSelect(genre) { MODE = "RANGE_SELECT"; CUR_GENRE = genre; addToLog(`${genre}`, () => renderGenreSelect(CUR_TOPIC)); renderMenuCard("SESSION VOLUME", "10 CARDS", "20 CARDS", "30 CARDS", "50 CARDS"); }
 
-/* 6. SESSION LOGIC */
-function startQuiz(genre) {
-    CUR_GENRE = genre;
+/* 5. SESSION ENGINE */
+function startQuiz(limit) {
+    SESSION_LIMIT = limit;
+    CUR_INDEX = 1;
+    addToLog(`VOLUME: ${limit} Qs`, () => renderRangeSelect(CUR_GENRE));
+    
     POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET);
     for (let i = POOL.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [POOL[i], POOL[j]] = [POOL[j], POOL[i]]; }
-    POOL = POOL.slice(0, 30);
+    POOL = POOL.slice(0, SESSION_LIMIT);
+    
+    MODE = "QUIZ";
     renderNext();
+}
+
+function updateHUD() {
+    // Top Bar shows: Current Position / Total Length
+    document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`;
+    // Progress Bar reflects completion %
+    const progress = (CUR_INDEX / SESSION_LIMIT) * 100;
+    document.getElementById('progress-bar').style.width = progress + "%";
 }
 
 function renderNext() {
     const s = document.getElementById('stack'); s.innerHTML = "";
     if(!POOL.length) { renderEnd(); return; }
     
-    // CLONE AND SHUFFLE OPTIONS
+    updateHUD();
+
     const rawQ = POOL[0];
     const q = { ...rawQ };
-    const items = [
-        { text: rawQ.u, isCorrect: rawQ.c === "UP" },
-        { text: rawQ.r, isCorrect: rawQ.c === "RIGHT" },
-        { text: rawQ.l, isCorrect: rawQ.c === "LEFT" }
-    ];
-    // Fisher-Yates Shuffle
-    for (let i = 2; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+    const items = [{ t: rawQ.u, c: rawQ.c==="UP" }, { t: rawQ.r, c: rawQ.c==="RIGHT" }, { t: rawQ.l, c: rawQ.c==="LEFT" }];
+    items.sort(() => Math.random() - 0.5);
     
-    // REASSIGN TO SLOTS
-    q.u = items[0].text;
-    q.r = items[1].text;
-    q.l = items[2].text;
-    q.c = items[0].isCorrect ? "UP" : (items[1].isCorrect ? "RIGHT" : "LEFT");
+    q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
+    q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
 
     const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down sl-down-hint">${formatChem(q.h)}</div><div class="overlay"><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">CONTINUE</button></div>`;
-    s.appendChild(c); document.getElementById('rank-ui').innerText = q.id; bindPhysics(c, q);
+    c.innerHTML = `
+        <div class="card-q">${formatChem(q.q)}</div>
+        <div class="swipe-label sl-up">${q.u}</div>
+        <div class="swipe-label sl-left">${q.l}</div>
+        <div class="swipe-label sl-right">${q.r}</div>
+        <div class="swipe-label sl-down sl-down-hint">⬇ APPLY LOGIC</div>
+        <div class="overlay">
+            <div class="overlay-label">LOGIC ANALYSIS</div>
+            <div class="overlay-body" style="font-family:var(--font-chem); font-size:1.2rem; line-height:1.6;">${formatChem(q.ex)}</div>
+            <button class="btn" onclick="this.parentElement.classList.remove('active')">BACK TO CARD</button>
+        </div>`;
+    s.appendChild(c); 
+    bindPhysics(c, q);
 }
 
 function renderEnd() {
     const s = document.getElementById('stack'); s.innerHTML = "";
     const c = document.createElement('div'); c.className = "card";
+    document.getElementById('rank-ui').innerText = "FINISH";
+    document.getElementById('progress-bar').style.width = "100%";
     c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><button class="btn" onclick="location.reload()">RESTART</button>`;
     s.appendChild(c);
 }
 
-/* 7. PHYSICS & ACTIONS */
+/* 6. INTERACTION & PHYSICS */
 function bindPhysics(el, data) {
     let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
     const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
@@ -2139,19 +2162,18 @@ function bindPhysics(el, data) {
 }
 
 function handleAction(el, data, dir) {
-    if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
-    else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
-    else if(MODE === "GENRE_SELECT") startQuiz(dir);
-    else {
-        if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-        const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
-        if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
-        POOL.shift(); renderNext();
-    }
+    if(MODE === "DATASET_SELECT") { renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D"); return; }
+    if(MODE === "TOPIC_SELECT") { renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical"); return; }
+    if(MODE === "GENRE_SELECT") { renderRangeSelect(dir); return; }
+    if(MODE === "RANGE_SELECT") { const ranges = { UP: 10, LEFT: 20, RIGHT: 30, DOWN: 50 }; startQuiz(ranges[dir]); return; }
+
+    if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
+    const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
+    if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
+    
+    POOL.shift(); 
+    CUR_INDEX++; // Increment question counter
+    renderNext();
 }
 
-window.onload = () => { 
-    RAW_DATA = parseSafe(RAW_PASTE_DATA);
-    document.getElementById('loader').remove(); 
-    renderDatasetSelect(); 
-};
+window.onload = init;
