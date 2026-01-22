@@ -3,40 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V129.2 | FINAL NEXUS</title>
+    <title>ALCHEMIST V129.3 | UI REFRESH</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-        #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; }
+        body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; display: flex; flex-direction: column; }
+        
+        #portal { flex: 1; padding: 30px; overflow-y: auto; padding-bottom: 120px; }
         h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 15px 0; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; text-align: center; }
         .section-label { font-family: var(--font-code); font-size: 0.65rem; color: #555; margin: 15px 0 8px; letter-spacing: 2px; text-transform: uppercase; }
-        textarea { width: 100%; height: 120px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 12px; border-radius: 12px; font-size: 11px; outline: none; }
-        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .topic-tile { background: var(--card); border: 2px solid var(--border); padding: 15px; border-radius: 12px; transition: 0.2s; }
+        
+        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .topic-tile { background: var(--card); border: 2px solid var(--border); padding: 12px; border-radius: 12px; transition: 0.2s; }
         .topic-tile.selected { border-color: var(--blue) !important; background: #001529; }
-        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.8rem; display: block; margin-bottom: 3px; }
+        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.8rem; display: block; }
         .topic-meta { color: #555; font-size: 0.6rem; font-family: var(--font-code); }
+
+        textarea { width: 100%; height: 100px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 12px; border-radius: 12px; font-size: 11px; }
+
+        /* FIXED FOOTER CONTROLS (NEW) */
+        .footer-controls { position: fixed; bottom: 20px; left: 5%; width: 90%; z-index: 9500; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); padding: 10px; border-radius: 20px; border: 1px solid #222; }
+        
+        .btn { width: 100%; padding: 16px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 12px; }
+        .btn-gold { background: var(--gold); }
+        .btn-blue { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
+
+        /* HEADER & STACK (SESSION) */
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; font-weight: 900; }
         .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 8px; border-radius: 2px; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.3s; }
-        #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); transition: transform 0.4s ease; }
-        .card-q { font-family: var(--font-chem); font-size: clamp(16px, 4vmin, 20px); line-height: 1.45; font-weight: 600; color: #ffffff; }
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); color: #fff; font-weight: 900; font-size: 1rem; text-transform: uppercase; border-radius: 40px; z-index: 10; opacity: 0; pointer-events: none; border: 3px solid var(--gold); }
+        #stack { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .card-q { font-family: var(--font-chem); font-size: clamp(16px, 4vmin, 20px); line-height: 1.45; color: #fff; }
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); color: #fff; font-weight: 900; opacity: 0; pointer-events: none; border-radius: 40px; border: 3px solid var(--gold); }
+        
         #global-overlay { position: fixed; inset: 0; background: #080808; z-index: 10000; padding: 40px; display: none; flex-direction: column; }
         #global-overlay.active { display: flex; }
-        .overlay-body { font-size: 1rem; line-height: 1.5; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; scrollbar-width: none; }
-        .btn { width: 100%; padding: 18px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 8px; font-size: 13px; }
-        .btn-gold { background: var(--gold); }
-        .btn-blue { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
-        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 9px; color: #222; letter-spacing: 2px; pointer-events: none; }
+        .overlay-body { font-size: 1rem; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-<div class="v-tag">FINAL_NEXUS_V129.2</div>
 
 <div id="global-overlay">
     <div id="overlay-content" class="overlay-body"></div>
@@ -44,36 +52,37 @@
 </div>
 
 <div id="portal">
-    <h1>Alchemist_V129.2</h1>
-    
+    <h1>Alchemist_V129.3</h1>
     <div class="section-label">CURRICULUM_VAULTS</div>
     <div id="library"></div>
     
-    <div id="merge-controls" style="display:none; margin-bottom: 15px;">
-        <button id="execute-merge-btn" class="btn btn-blue" disabled onclick="executeMerge()">SELECT 2 TOPICS</button>
-        <button class="btn" style="background:#222; color:#777; border:none;" onclick="cancelMerge()">CANCEL</button>
+    <div id="import-section">
+        <div class="section-label">IMPORT_DATASET (TAB_SEPARATED)</div>
+        <textarea id="data-input" placeholder="Paste 12-column TSV data..."></textarea>
+        <button id="import-btn" class="btn btn-gold" onclick="importDataset()" style="margin-top:10px;">REGISTER TO VAULT</button>
+        <button class="btn" style="background:#111; color:#333; margin-top:5px;" onclick="clearLibrary()">WIPE REPOSITORY</button>
     </div>
-    <button id="merge-mode-btn" class="btn btn-blue" style="font-size:10px; padding:10px;" onclick="toggleMergeMode()">ENABLE VAULT MERGER</button>
+</div>
 
-    <div class="section-label">IMPORT_DATASET (TAB_SEPARATED)</div>
-    <textarea id="data-input" placeholder="Paste 12-column TSV data..."></textarea>
-    <button id="import-btn" class="btn btn-gold" onclick="importDataset()">REGISTER TO VAULT</button>
-    <button class="btn" style="background:#111; color:#333; border:none;" onclick="clearLibrary()">WIPE REPOSITORY</button>
+<div class="footer-controls">
+    <div id="merge-controls" style="display:none;">
+        <button id="execute-merge-btn" class="btn btn-blue" disabled onclick="executeMerge()">SELECT 2 TOPICS</button>
+        <button class="btn" style="background:transparent; color:#555; margin-top:5px; border:none;" onclick="cancelMerge()">CANCEL</button>
+    </div>
+    <button id="merge-mode-btn" class="btn btn-blue" onclick="toggleMergeMode()">ENABLE VAULT MERGER</button>
 </div>
 
 <div id="header">
     <div class="header-meta"><span id="p-text">---</span><span id="score-text">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
-
 <div id="stack"></div>
 
 <script>
     let db;
     const DB_NAME = "AlchemistDB", STORE_NAME = "Vaults";
     let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0, MODE = "INIT", INDEX = 1;
-    let SEL_PATH = "", SEL_CORE = "";
-    let mergeMode = false, selectedForMerge = [];
+    let SEL_PATH = "", SEL_CORE = "", mergeMode = false, selectedForMerge = [];
 
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = e => { db = e.target.result; db.createObjectStore(STORE_NAME); };
@@ -119,12 +128,14 @@
         mergeMode = true;
         document.getElementById('merge-controls').style.display = 'block';
         document.getElementById('merge-mode-btn').style.display = 'none';
+        document.getElementById('import-section').style.display = 'none';
     }
 
     function cancelMerge() {
         mergeMode = false;
         document.getElementById('merge-controls').style.display = 'none';
         document.getElementById('merge-mode-btn').style.display = 'block';
+        document.getElementById('import-section').style.display = 'block';
         refreshLibrary();
     }
 
@@ -145,20 +156,15 @@
         db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME).get(name).onsuccess = e => {
             VAULT = e.target.result;
             document.getElementById('portal').style.display = 'none';
+            document.querySelector('.footer-controls').style.display = 'none';
             ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
             renderS0();
         };
     }
 
-    /* --- SESSION ENGINE --- */
     function renderS0() { MODE = "S_PATH"; renderSlide("SELECT MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
     function renderS1() { MODE = "S_CORE"; renderSlide("MAINLINE CORE", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
-
-    function start() {
-        MODE = "ACTIVE"; INDEX = 1; SCORE = 0; MISTAKES = [];
-        POOL = VAULT.filter(v => v.dom === SEL_CORE || true).sort(() => 0.5 - Math.random()).slice(0, 20);
-        renderNext();
-    }
+    function start() { MODE = "ACTIVE"; INDEX = 1; SCORE = 0; MISTAKES = []; POOL = VAULT.sort(() => 0.5 - Math.random()).slice(0, 20); renderNext(); }
 
     function renderSlide(q, up, lt, rt, dn) {
         const s = document.getElementById('stack'); s.innerHTML = "";
@@ -175,7 +181,7 @@
         const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => 0.5 - Math.random());
         q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
         q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
-        let lbl = (SEL_PATH === "LEARN") ? "⬇ DEEP DIVE" : (SEL_PATH === "QUIZ" ? "⬇ SKIP" : "⬇ HINT");
+        let lbl = (SEL_PATH === "LEARN") ? "⬇ DEEP DIVE" : "⬇ HINT";
         c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${lbl}</div>`;
         s.appendChild(c); bindPhysics(c, q); updateHUD();
     }
@@ -186,7 +192,6 @@
         else if (MODE === "END") { location.reload(); }
         else {
             if (dir === "DN") {
-                if (SEL_PATH === "QUIZ") { MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); return; }
                 if (SEL_PATH === "TEST") { el.style.transform = "none"; return; }
                 openOverlay(data); el.style.transform = "none"; return;
             }
@@ -195,7 +200,6 @@
         }
     }
 
-    /* --- CORE UTILS --- */
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, dir=null;
         el.ontouchstart = e => { active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; el.style.transition="none"; };
@@ -233,7 +237,7 @@
         location.reload();
     }
 
-    function openOverlay(d) { document.getElementById('overlay-content').innerHTML = `<strong style='color:var(--blue)'>LOGIC</strong><br>${format(d.expl)}<br><br><strong style='color:var(--gold)'>CONTEXT</strong><br>${format(d.context)}`; document.getElementById('global-overlay').classList.add('active'); }
+    function openOverlay(d) { document.getElementById('overlay-content').innerHTML = `<strong>LOGIC</strong><br>${format(d.expl)}<br><br><strong>CONTEXT</strong><br>${format(d.context)}`; document.getElementById('global-overlay').classList.add('active'); }
     function closeOverlay() { document.getElementById('global-overlay').classList.remove('active'); }
     function clearLibrary() { if(confirm("Purge Library?")) { db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).clear(); refreshLibrary(); } }
     const format = (t) => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;') : "";
