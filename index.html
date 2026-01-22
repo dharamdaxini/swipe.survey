@@ -3,69 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V125.0 | REPOSITORY</title>
+    <title>ALCHEMIST V125.1 | REPOSITORY FIXED</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-        
-        /* PORTAL & LIBRARY UI */
         #portal { position: fixed; inset: 0; background: #000; z-index: 9000; display: flex; flex-direction: column; padding: 40px; overflow-y: auto; }
         h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 20px 0; font-size: 1.6rem; text-transform: uppercase; font-weight: 900; text-align: center; }
-        
-        .section-label { font-family: var(--font-code); font-size: 0.7rem; color: #555; margin: 20px 0 10px; letter-spacing: 2px; }
-        textarea { width: 100%; height: 150px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; font-size: 13px; outline: none; }
-        
-        /* Library Tiles */
-        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
-        .topic-tile { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 15px; text-align: left; transition: 0.2s; }
-        .topic-tile:active { transform: scale(0.95); border-color: var(--gold); }
-        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.9rem; display: block; margin-bottom: 5px; }
-        .topic-meta { color: #555; font-size: 0.7rem; font-family: var(--font-code); }
-
+        .section-label { font-family: var(--font-code); font-size: 0.7rem; color: #555; margin: 20px 0 10px; letter-spacing: 2px; text-transform: uppercase; }
+        textarea { width: 100%; height: 180px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; font-size: 12px; outline: none; line-height: 1.4; }
+        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .topic-tile { background: var(--card); border: 1px solid var(--border); padding: 18px; border-radius: 14px; text-align: left; }
+        .topic-tile:active { border-color: var(--gold); background: #1a1a1a; }
+        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.85rem; display: block; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; }
+        .topic-meta { color: #555; font-size: 0.65rem; font-family: var(--font-code); }
         #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
-        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.85rem; color: #777; letter-spacing: 2px; font-weight: 900; }
-        .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 12px; border-radius: 2px; overflow: hidden; }
+        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.8rem; color: #777; font-weight: 900; }
+        .progress-track { width: 100%; height: 4px; background: #1a1a1a; margin-top: 10px; border-radius: 2px; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
-
         #stack { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; }
-        .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.5vmin, 24px); line-height: 1.5; font-weight: 600; color: #ffffff; }
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); color: #fff; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; border-radius: 44px; z-index: 10; opacity: 0; pointer-events: none; transition: opacity 0.15s; border: 3px solid var(--gold); padding: 30px; }
-        
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 44px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.9); }
+        .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.2vmin, 22px); line-height: 1.45; font-weight: 600; color: #ffffff; }
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.94); backdrop-filter: blur(8px); color: #fff; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; border-radius: 44px; z-index: 10; opacity: 0; pointer-events: none; border: 3px solid var(--gold); }
         #global-overlay { position: fixed; inset: 0; background: #080808; z-index: 10000; padding: 40px; display: none; flex-direction: column; text-align: left; }
         #global-overlay.active { display: flex; }
-        .overlay-body { font-size: 1.1rem; line-height: 1.6; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 25px; scrollbar-width: none; }
-        
-        .btn { width: 100%; padding: 22px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); margin-top: 10px; }
+        .overlay-body { font-size: 1.05rem; line-height: 1.5; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 25px; scrollbar-width: none; }
+        .btn { width: 100%; padding: 20px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); margin-top: 10px; }
         .btn-gold { background: var(--gold); }
-        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #444; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
+        .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #333; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
     </style>
 </head>
 <body>
-<div class="v-tag">REPOSITORY_V125.0</div>
+<div class="v-tag">DIRECT_REGISTER_V125.1</div>
 
 <div id="global-overlay">
     <div id="overlay-content" class="overlay-body"></div>
-    <button class="btn btn-gold" onclick="closeOverlay()">RETURN TO CARD</button>
+    <button class="btn btn-gold" onclick="closeOverlay()">BACK TO SESSION</button>
 </div>
 
 <div id="portal">
-    <h1>Alchemist_V125</h1>
-    
-    <div class="section-label">ACTIVE_LIBRARY</div>
-    <div id="library">
-        </div>
+    <h1>Alchemist_V125.1</h1>
+    <div class="section-label">MY_CHEMISTRY_VAULT</div>
+    <div id="library"></div>
 
-    <div class="section-label">IMPORT_NEW_DATASET (TAB_SEPARATED)</div>
-    <textarea id="data-input" placeholder="Paste LLM output here..."></textarea>
+    <div class="section-label">PASTE_DATASET_HERE</div>
+    <textarea id="data-input" placeholder="SET_A_0001 [TAB] SET_A [TAB] Thermodynamics..."></textarea>
     <button class="btn btn-gold" onclick="importDataset()">CONVERT & REGISTER</button>
-    <button class="btn" style="background:#222; color:#888; font-size:12px;" onclick="clearLibrary()">PURGE ALL DATA</button>
+    <button class="btn" style="background:#111; color:#444; border:1px solid #222;" onclick="clearLibrary()">PURGE ALL VAULTS</button>
 </div>
 
 <div id="header">
-    <div class="header-meta"><span id="p-text">READY</span><span id="score-text">0 XP</span></div>
+    <div class="header-meta"><span id="p-text">---</span><span id="score-text">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
@@ -75,91 +64,72 @@
     let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0, MODE = "INIT", INDEX = 1;
     let SEL_PATH = "", SEL_CORE = "", SEL_DOMAIN = "", SEL_DEPTH = "", SEL_VOL = 20, SEL_DIFF = "";
 
-    window.onload = () => {
-        refreshLibrary();
-    };
+    window.onload = refreshLibrary;
 
     function refreshLibrary() {
-        const lib = JSON.parse(localStorage.getItem('alchemist_library') || '{}');
+        const lib = JSON.parse(localStorage.getItem('alch_lib_v125') || '{}');
         const container = document.getElementById('library');
         container.innerHTML = "";
-        
-        Object.keys(lib).forEach(topic => {
+        Object.keys(lib).forEach(name => {
             const div = document.createElement('div');
             div.className = "topic-tile";
-            div.onclick = () => loadDataset(topic);
-            div.innerHTML = `
-                <span class="topic-name">${topic}</span>
-                <span class="topic-meta">${lib[topic].length} ENTRIES</span>
-            `;
+            div.onclick = () => loadDataset(name);
+            div.innerHTML = `<span class="topic-name">${name}</span><span class="topic-meta">${lib[name].length} CARDS</span>`;
             container.appendChild(div);
         });
-
-        if (Object.keys(lib).length === 0) {
-            container.innerHTML = "<div style='color:#444; font-size:0.8rem; grid-column: span 2;'>LIBRARY EMPTY. IMPORT DATASET BELOW.</div>";
-        }
+        if (!Object.keys(lib).length) container.innerHTML = "<div style='color:#333; font-size:11px; grid-column:span 2;'>VAULT EMPTY. PASTE TSV DATA BELOW.</div>";
     }
 
     function importDataset() {
         const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return alert("INPUT REQUIRED");
+        if (!raw) return alert("INPUT EMPTY");
         
         const lines = raw.split(/\r?\n/);
         const parsed = lines.map(line => {
-            const c = line.split(/\t/);
-            return c.length >= 11 ? { id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9], hint: c[10], context: c[11] || "---" } : null;
+            // DYNAMIC DELIMITER: Handles Tabs or 4+ spaces from LLM outputs
+            let c = line.split(/\t/);
+            if (c.length < 5) c = line.split(/\s{3,}/); 
+            
+            if (c.length < 9) return null;
+            return { id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9]||"---", hint: c[10]||"---", context: c[11]||"---" };
         }).filter(x => x && x.id.toLowerCase() !== "id");
 
-        if (parsed.length === 0) return alert("INVALID FORMAT (TAB REQ)");
+        if (!parsed.length) return alert("PARSE ERROR: Ensure data is Tab-Separated.");
 
-        // Topic Name is derived from the first Item's ID (e.g., SET_A)
-        const topicName = parsed[0].set || "NEW_TOPIC";
-        const lib = JSON.parse(localStorage.getItem('alchemist_library') || '{}');
+        const topicName = parsed[0].set || `VAULT_${Date.now().toString().slice(-4)}`;
+        const lib = JSON.parse(localStorage.getItem('alch_lib_v125') || '{}');
         lib[topicName] = parsed;
-        localStorage.setItem('alchemist_library', JSON.stringify(lib));
+        localStorage.setItem('alch_lib_v125', JSON.stringify(lib));
         
         document.getElementById('data-input').value = "";
         refreshLibrary();
-        alert(`REGISTERED: ${topicName}`);
+        alert(`SUCCESS: ${topicName} Registered.`);
     }
 
     function loadDataset(name) {
-        const lib = JSON.parse(localStorage.getItem('alchemist_library'));
+        const lib = JSON.parse(localStorage.getItem('alch_lib_v125'));
         VAULT = lib[name];
         document.getElementById('portal').style.display = 'none';
         ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
-        renderS0_Mode();
+        renderS0();
     }
 
-    function clearLibrary() {
-        if(confirm("Confirm: Delete all saved chemistry data?")) {
-            localStorage.removeItem('alchemist_library');
-            refreshLibrary();
-        }
-    }
-
-    /* --- NAVIGATION LOGIC --- */
-    function renderS0_Mode() { MODE = "S_PATH"; renderSlide("STEP 1: MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
-    function renderS1_Core() { MODE = "S_CORE"; renderSlide("STEP 2: CORE", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
-    function renderS2_Domain() {
+    function renderS0() { MODE = "S_PATH"; renderSlide("SELECT MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
+    function renderS1() { MODE = "S_CORE"; renderSlide("CORE TOPIC", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
+    function renderS2() {
         MODE = "S_DOMAIN";
-        const options = {
-            MATTER: ["SOLID STATE", "PERIODICITY", "QUANTUM", "BONDING"],
-            ENERGY: ["STAT MECH", "ELECTROCHEM", "THERMO", "PHASE EQUIL"],
-            CHANGE: ["PHOTOCHEM", "SURFACE", "KINETICS", "CATALYSIS"],
-            ANALYSIS: ["MASS SPEC", "CHROMATOGRAPHY", "SPECTROSCOPY", "DATA"]
-        };
-        const ops = options[SEL_CORE];
+        const map = { MATTER: ["SOLID STATE", "PERIODICITY", "QUANTUM", "BONDING"], ENERGY: ["STAT MECH", "ELECTROCHEM", "THERMO", "PHASE EQUIL"], CHANGE: ["PHOTOCHEM", "SURFACE", "KINETICS", "CATALYSIS"], ANALYSIS: ["MASS SPEC", "CHROMATOGRAPHY", "SPECTROSCOPY", "DATA"] };
+        const ops = map[SEL_CORE] || ["---","---","---","---"];
         renderSlide(`DOMAIN: ${SEL_CORE}`, ops[0], ops[1], ops[2], ops[3]);
     }
-    function renderS3_Depth() { MODE = "S_DEPTH"; renderSlide("STEP 4: DEPTH", "LOGIC", "APPLICATION", "CONCEPT", "MATH"); }
-    function renderS4_Vol() { MODE = "S_VOL"; renderSlide("STEP 5: VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
-    function renderS5_Diff() { MODE = "S_DIFF"; renderSlide("STEP 6: DIFF", "SET A", "SET B", "SET C", "SET D"); }
+    function renderS3() { MODE = "S_DEPTH"; renderSlide("DEPTH", "LOGIC", "APPLICATION", "CONCEPT", "MATH"); }
+    function renderS4() { MODE = "S_VOL"; renderSlide("VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
+    function renderS5() { MODE = "S_DIFF"; renderSlide("DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
 
     function start() {
         MODE = "ACTIVE"; INDEX = 1; SCORE = 0; MISTAKES = [];
         let filtered = VAULT.filter(v => v.set === SEL_DIFF);
-        POOL = (filtered.length === 0 ? VAULT : filtered).sort(() => 0.5 - Math.random()).slice(0, SEL_VOL);
+        POOL = (filtered.length ? filtered : VAULT).sort(() => 0.5 - Math.random()).slice(0, SEL_VOL);
         renderNext();
     }
 
@@ -175,11 +145,11 @@
         if (!POOL.length) { renderEnd(); return; }
         const q = { ...POOL[0] };
         const c = document.createElement('div'); c.className = "card";
-        const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => Math.random() - 0.5);
+        const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => 0.5 - Math.random());
         q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t;
         q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT");
-        let dnLabel = (SEL_PATH === "LEARN") ? "⬇ DEEP DIVE" : (SEL_PATH === "QUIZ" ? "⬇ SKIP" : "⬇ HINT");
-        c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${dnLabel}</div>`;
+        let lbl = (SEL_PATH === "LEARN") ? "⬇ DEEP DIVE" : (SEL_PATH === "QUIZ" ? "⬇ SKIP" : "⬇ HINT");
+        c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${lbl}</div>`;
         s.appendChild(c); bindPhysics(c, q); updateHUD();
     }
 
@@ -190,7 +160,8 @@
         document.getElementById('global-overlay').classList.add('active');
     }
     function closeOverlay() { document.getElementById('global-overlay').classList.remove('active'); }
-    function renderEnd() { MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">MISSION COMPLETE</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div>`; s.appendChild(c); bindPhysics(c, {}); }
+    function renderEnd() { MODE = "END"; document.getElementById('stack').innerHTML = "<div class='card'><div class='card-q'>MISSION COMPLETE</div><div class='swipe-label sl-up'>RESTART</div><div class='swipe-label sl-left'>VAULT</div></div>"; bindPhysics(document.querySelector('.card'), {}); }
+    function clearLibrary() { if(confirm("Purge Library?")) { localStorage.removeItem('alch_lib_v125'); refreshLibrary(); } }
     const format = (t) => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;') : "";
     function updateHUD() { document.getElementById('p-text').innerText = `${INDEX}/${POOL.length + INDEX - 1}`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; }
 
@@ -200,24 +171,24 @@
         window.ontouchmove = e => { 
             if (!active) return; 
             let dx = e.touches[0].clientX-sx, dy = e.touches[0].clientY-sy; const dist = Math.sqrt(dx*dx+dy*dy);
-            x = (dist > 38) ? dx*(38/dist) : dx; y = (dist > 38) ? dy*(38/dist) : dy;
-            requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
+            x = (dist > 35) ? dx*(35/dist) : dx; y = (dist > 35) ? dy*(35/dist) : dy;
+            requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/15}deg)`; });
             el.querySelectorAll('.swipe-label').forEach(l => l.style.opacity=0);
-            if (dist > 20) {
+            if (dist > 15) {
                 const ang = Math.atan2(-dy, dx)*(180/Math.PI);
                 let d = (ang >= 45 && ang < 135) ? ".sl-up" : (ang >= 135 || ang < -135) ? ".sl-left" : (ang >= -135 && ang < -45) ? ".sl-down" : ".sl-right";
-                const targetLabel = el.querySelector(d); if (targetLabel) { targetLabel.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); }
+                const target = el.querySelector(d); if (target) { target.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); }
             }
         };
-        window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>30) route(el, data, dir); else { el.style.transition="0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform="none"; } };
+        window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>25) route(el, data, dir); else { el.style.transition="0.4s ease"; el.style.transform="none"; } };
     }
 
     function route(el, data, dir) {
-        if (MODE === "S_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); renderS1_Core(); }
-        else if (MODE === "S_CORE") { SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); renderS2_Domain(); }
-        else if (MODE === "S_DOMAIN") { SEL_DOMAIN = dir; renderS3_Depth(); }
-        else if (MODE === "S_DEPTH") { SEL_DEPTH = dir; renderS4_Vol(); }
-        else if (MODE === "S_VOL") { SEL_VOL = parseInt(dir) || 20; renderS5_Diff(); }
+        if (MODE === "S_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); renderS1(); }
+        else if (MODE === "S_CORE") { SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); renderS2(); }
+        else if (MODE === "S_DOMAIN") { SEL_DOMAIN = dir; renderS3(); }
+        else if (MODE === "S_DEPTH") { SEL_DEPTH = dir; renderS4(); }
+        else if (MODE === "S_VOL") { SEL_VOL = parseInt(dir) || 20; renderS5(); }
         else if (MODE === "S_DIFF") { SEL_DIFF = dir; start(); }
         else if (MODE === "END") { location.reload(); }
         else {
