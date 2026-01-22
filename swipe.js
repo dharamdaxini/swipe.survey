@@ -6,107 +6,74 @@ window.onload = () => {
     if (saved) document.getElementById('data-input').value = saved;
 };
 
-function saveAndInject() {
+function vaultAndInject() {
     const raw = document.getElementById('data-input').value.trim();
-    if (!raw) return alert("VAULT_EMPTY");
+    if (!raw) return;
     localStorage.setItem('alchemist_vault', raw);
-    processData(raw);
+    process(raw);
     document.getElementById('portal').style.display = 'none';
-    ['header', 'history-tape', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
+    ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex');
 }
 
-function processData(raw) {
-    const lines = raw.split('\n');
+function process(raw) {
+    const lines = raw.split(/\r?\n/);
     DATABASE = lines.map(line => {
-        try {
-            if (!line.includes('❌')) return null;
-            const parts = line.split(/\s{2,}/); // Split by 2+ spaces (common in spreadsheet pastes)
-            
-            // Step 1: Meta
-            const id = line.substring(0, 10);
-            const ds = id.substring(0, 5);
-            const type = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"].find(t => line.includes(t)) || "CONCEPT";
-            
-            // Step 2: Content
-            const explStart = line.indexOf('❌');
-            const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
-            const correct = ["UP", "RIGHT", "LEFT", "DOWN"].find(d => middle.endsWith(d)) || "RIGHT";
-            const rawContent = middle.substring(0, middle.length - correct.length).trim();
-            
-            // Step 3: Question vs Options (Splits by last '?')
-            const qBreak = rawContent.lastIndexOf('?');
-            let question = rawContent, optsPart = "";
-            if (qBreak !== -1) {
-                question = rawContent.substring(0, qBreak + 1);
-                optsPart = rawContent.substring(qBreak + 1).trim();
-            }
+        // UNIVERSAL CSV REGEX: Corrects Comma vs Quote issues seen in screenshots
+        const pattern = /(".*?"|[^",\t\s][^",\t]*|(?<=,|^)(?=$|,))/g;
+        const cols = (line.match(pattern) || []).map(c => c.replace(/^"|"$/g, '').trim());
 
-            // Step 4: Option Extraction (Splits by Tabs, Multiple Spaces, or CamelCase)
-            const opts = optsPart.split(/\t|\s{2,}|(?<=[a-z])(?=[A-Z])/)
-                        .map(s => s.trim()).filter(s => s.length > 0);
+        if (cols.length < 8) return null;
 
-            const cleanEx = line.substring(explStart).split(/\d\.\d+$/)[0].replace(/[❌✅]/g, '').trim();
-            return { id, ds, ty: type, q: question, u: opts[0]||"Opt A", r: opts[1]||"Opt B", l: opts[2]||"Opt C", c: correct, ex: cleanEx };
-        } catch (e) { return null; }
-    }).filter(x => x !== null);
+        return {
+            id: cols[0], ds: cols[1], tp: cols[2], ty: cols[3],
+            q: cols[4], u: cols[5], r: cols[6], l: cols[7],
+            c: cols[8] || "RIGHT", ex: cols[9] || ""
+        };
+    }).filter(x => x !== null && x.id !== "id");
     renderDiff();
 }
 
-/* PHYSICS & RENDERING (V81.1 PHYSICS) */
-const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br><br>') : "";
-function updateHUD() { document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`; document.getElementById('progress-bar').style.width = `${(CUR_INDEX / SESSION_LIMIT) * 100}%`; }
-function addToLog(msg, action) { const tape = document.getElementById('history-tape'); tape.querySelectorAll('.active').forEach(el => el.classList.remove('active')); const div = document.createElement('div'); div.className = "log-item active"; div.innerHTML = `> ${msg}`; if (action) div.onclick = action; tape.prepend(div); }
-function renderMenu(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; s.appendChild(c); bindPhysics(c, {}); }
-
-function renderDiff() { MODE = "MENU_DIFF"; addToLog("READY", null); renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
-function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds.replace(/\s/g, '_'); addToLog(ds, renderDiff); renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
-function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; addToLog(tp, () => renderTopic(CUR_DATASET)); renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
-function renderVolume(dp) { MODE = "MENU_VOLUME"; CUR_DEPTH = dp; addToLog(dp, () => renderDepth(CUR_TOPIC)); renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
-function startQuiz(limit) { SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; MISTAKES = []; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => Math.random() - 0.5).slice(0, SESSION_LIMIT); MODE = "QUIZ"; renderNext(); }
-
-function renderNext() {
-    const s = document.getElementById('stack'); s.innerHTML = "";
-    if (!POOL.length) { renderEnd(); return; }
-    updateHUD(); const q = { ...POOL[0] };
-    const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
-    q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
-    q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
-    const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ VIEW LOGIC</div><div class="overlay"><div class="overlay-body">${format(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
-    s.appendChild(c); bindPhysics(c, q);
-}
-
-function renderEnd() {
-    MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
-    c.innerHTML = `<div class="card-q">COMPLETE<br><span style="color:var(--gold); font-size:1.8rem">${SCORE} XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div><div class="swipe-label sl-right">NEXT SET</div><div class="swipe-label sl-down">REVIEW</div>`;
-    s.appendChild(c); bindPhysics(c, {});
-}
+const format = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/theta/g, '&theta;').replace(/lambda/g, '&lambda;') : "";
 
 function bindPhysics(el, data) {
     let x = 0, y = 0, sx = 0, sy = 0, active = false, td = null;
     const lbs = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
     const MAX_RADIUS = 38; 
-    el.onmousedown = el.ontouchstart = e => { active = true; const p = e.touches ? e.touches[0] : e; sx = p.clientX; sy = p.clientY; el.style.transition = "none"; };
-    window.onmousemove = window.ontouchmove = e => { 
+
+    el.ontouchstart = e => { active = true; sx = e.touches[0].clientX; sy = e.touches[0].clientY; el.style.transition = "none"; };
+    window.ontouchmove = e => { 
         if (!active) return; 
-        const p = e.touches ? e.touches[0] : e; 
-        let dx = p.clientX - sx; let dy = p.clientY - sy; 
-        const distance = Math.sqrt(dx*dx + dy*dy);
-        if (distance > MAX_RADIUS) { const ratio = MAX_RADIUS / distance; x = dx * ratio; y = dy * ratio; } else { x = dx; y = dy; }
+        let dx = e.touches[0].clientX - sx, dy = e.touches[0].clientY - sy; 
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > MAX_RADIUS) { x = dx * (MAX_RADIUS/dist); y = dy * (MAX_RADIUS/dist); } else { x = dx; y = dy; }
         requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/12}deg) scale(1.05)`; });
         const ang = Math.atan2(-dy, dx) * (180 / Math.PI);
         Object.values(lbs).forEach(l => { if (l) l.style.opacity = 0; });
-        if (distance > 20) {
+        if (dist > 20) {
             let d = (ang >= 45 && ang < 135) ? "up" : (ang >= 135 || ang < -135) ? "lt" : (ang >= -135 && ang < -45) ? "dn" : "rt";
             if (lbs[d]) lbs[d].style.opacity = 1; td = d.toUpperCase();
         }
     };
-    window.onmouseup = window.ontouchend = e => { 
-        if (!active) return; active = false; 
-        const finalDist = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-        if (finalDist > 30) handleAction(el, data, td); 
-        else { el.style.transition = "transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } 
-    };
+    window.ontouchend = () => { if (!active) return; active = false; if (Math.sqrt(x*x + y*y) > 30) handleAction(el, data, td); else { el.style.transition = "0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; } };
+}
+
+/* UI LOGIC FLOW */
+function renderMenu(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; s.appendChild(c); bindPhysics(c, {}); }
+function renderDiff() { MODE = "MENU_DIFF"; renderMenu("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+function renderTopic(ds) { MODE = "MENU_TOPIC"; CUR_DATASET = ds; renderMenu("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
+function renderDepth(tp) { MODE = "MENU_DEPTH"; CUR_TOPIC = tp; renderMenu("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
+function renderVolume(dp) { MODE = "MENU_VOLUME"; CUR_DEPTH = dp; renderMenu("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
+function startQuiz(limit) { SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; POOL = DATABASE.filter(q => q.ds === CUR_DATASET).sort(() => Math.random() - 0.5).slice(0, SESSION_LIMIT); MODE = "QUIZ"; renderNext(); }
+
+function renderNext() {
+    const s = document.getElementById('stack'); s.innerHTML = "";
+    if (!POOL.length) { renderEnd(); return; }
+    const q = { ...POOL[0] };
+    const items = [{ t: q.u, c: q.c === "UP" }, { t: q.r, c: q.c === "RIGHT" }, { t: q.l, c: q.c === "LEFT" }].sort(() => Math.random() - 0.5);
+    q.u = items[0].t; q.r = items[1].t; q.l = items[2].t; q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
+    const c = document.createElement('div'); c.className = "card";
+    c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ VIEW LOGIC</div>`;
+    s.appendChild(c); bindPhysics(c, q);
 }
 
 function handleAction(el, data, dir) {
@@ -114,14 +81,5 @@ function handleAction(el, data, dir) {
     else if (MODE === "MENU_TOPIC") renderDepth(dir === "UP" ? "Physical" : dir === "LT" ? "Organic" : dir === "RT" ? "Inorganic" : "Analytical");
     else if (MODE === "MENU_DEPTH") renderVolume(dir === "UP" ? "CONCEPT" : dir === "LT" ? "MATH" : dir === "RT" ? "DATA" : "LOGIC");
     else if (MODE === "MENU_VOLUME") startQuiz(dir === "UP" ? 10 : dir === "LT" ? 20 : dir === "RT" ? 30 : 50);
-    else if (MODE === "END") {
-        if (dir === "UP") startQuiz(SESSION_LIMIT); else if (dir === "LT") renderDiff();
-        else if (dir === "DN") { if (MISTAKES.length > 0) { POOL = [...MISTAKES]; MISTAKES = []; CUR_INDEX = 1; SESSION_LIMIT = POOL.length; MODE = "QUIZ"; renderNext(); } else renderDiff(); }
-    } else {
-        if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform = "none"; return; }
-        const ad = dir.replace('LT', 'LEFT').replace('RT', 'RIGHT');
-        if (ad === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
-        else { if(!MISTAKES.find(m => m.id === data.id)) MISTAKES.push(data); }
-        POOL.shift(); CUR_INDEX++; renderNext();
-    }
+    else { POOL.shift(); CUR_INDEX++; renderNext(); }
 }
