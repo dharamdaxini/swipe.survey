@@ -3,63 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Alchemist V85.3 | Infinite Loop</title>
-    
+    <title>Alchemist V89.0 | Titanium Build</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
-
     <style>
-        :root {
-            --bg: #000; --card: #111; --border: #222; 
-            --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6;
-            --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; -webkit-font-smoothing: antialiased; }
+        :root { --bg: #000; --card: #111; --border: #222; --gold: #ffd600; --blue: #3498db; --green: #2ecc71; --purple: #9b59b6; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
         sub, sup { font-size: 0.7em; line-height: 0; vertical-align: baseline; position: relative; }
         sup { top: -0.4em; } sub { bottom: -0.2em; }
-
-        /* HUD */
         #header { width: 90%; margin: 20px auto 5px; z-index: 100; flex-shrink: 0; }
         .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; letter-spacing: 2px; }
         .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 10px; border-radius: 2px; overflow: hidden; }
         #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s ease; }
-
-        /* TAPE LOG */
         #history-tape { width: 90%; margin: 0 auto; flex-grow: 1; max-height: 12vh; overflow-y: auto; display: flex; flex-direction: column-reverse; font-family: var(--font-code); font-size: 0.8rem; text-align: right; padding-right: 5px; border-right: 1px solid #333; mask-image: linear-gradient(to bottom, transparent 0%, black 20%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%); }
         .log-item { margin-bottom: 3px; color: #444; cursor: pointer; }
         .log-item.active { color: var(--green); font-weight: bold; }
-
-        /* STACK */
         #stack { position: relative; width: 92%; max-width: 400px; height: 65vh; margin: 0 auto 20px; perspective: 1200px; display: flex; align-items: center; justify-content: center; }
         .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 30px 90px rgba(0,0,0,0.9); will-change: transform, opacity; backface-visibility: hidden; align-items: center; text-align: center; }
-        
         .card-q { font-family: var(--font-chem); font-size: clamp(18px, 4.2vmin, 26px); line-height: 1.35; font-weight: 600; color: #f0f0f0; width: 100%; max-height: 70%; overflow-y: auto; scrollbar-width: none; }
         .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; color: #fff; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; border-radius: 40px; z-index: 999; opacity: 0; pointer-events: none; text-align: center; padding: 20px; transition: opacity 0.1s; }
-        
-        .overlay { position: absolute; inset: 0; background: #0a0a0a; z-index: 1100; padding: 40px; opacity: 0; pointer-events: none; border-radius: 40px; transition: opacity 0.3s ease; display: flex; flex-direction: column; justify-content: center; }
-        .overlay.active { opacity: 1; pointer-events: auto; }
-        .overlay-body { font-size: 1.2rem; line-height: 1.6; color: #ccc; margin-bottom: 30px; font-family: var(--font-chem); text-align: left; }
-        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-
-        #loader { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; font-family: var(--font-code); color: var(--gold); letter-spacing: 5px; }
+        .overlay { position: absolute; inset: 0; background: #0a0a0a; z-index: 1100; padding: 40px; opacity: 0; pointer-events: auto; border-radius: 40px; transition: opacity 0.3s ease; display: none; flex-direction: column; justify-content: center; }
+        .overlay.active { display: flex; opacity: 1; }
+        .overlay-body { font-size: 1.15rem; line-height: 1.6; color: #ccc; margin-bottom: 30px; font-family: var(--font-chem); text-align: left; }
+        .btn { width: 100%; padding: 18px; border-radius: 50px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-family: var(--font-ui); }
     </style>
 </head>
 <body>
-
-<div id="loader">ATOMIC LOAD...</div>
 <div id="header">
-    <div class="header-meta"><span id="rank-ui">READY</span><span id="xp-ui">0 XP</span></div>
+    <div class="header-meta"><span id="rank-ui">ALCHEMIST</span><span id="xp-ui">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 <div id="history-tape"></div>
 <div id="stack"></div>
 
 <script>
-    /* --- DATA INGESTION --- */
-    const RAW_PASTE_DATA = `
-					
-SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
+    /* ----------------------------------------------------
+       DATA INTEGRATION: PASTE YOUR 1400 ROWS BELOW
+    ---------------------------------------------------- */
+    const RAW_STRING = `SET_A_0001	SET_A	Thermodynamics	CONCEPT	Which law states that the entropy of the universe increases for any spontaneous process?	First Law	Second Law	Zeroth Law	RIGHT	❌ First Law is conservation of energy. || ❌ Zeroth Law defines temperature. || ✅ The Second Law dictates that in an isolated system (the universe), entropy (disorder) tends to a maximum.	Arrow of Time.	0.3														
 SET_A_0002	SET_A	Kinetics	MATH	What is the order of a reaction where the rate unit is M/s (Molar per second)?	Zero Order	First Order	Second Order	UP	❌ First order units are 1/s. || ❌ Second order units are 1/(M*s). || ✅ For Zero Order, Rate = k. Therefore, k has the same units as Rate (Concentration/Time).	Rate = k.	0.35														
 SET_A_0003	SET_A	Quantum	CONCEPT	Which quantum number defines the main energy shell and size of an orbital?	Principal (n)	Azimuthal (l)	Magnetic (m)	UP	❌ Azimuthal (l) determines shape. || ❌ Magnetic (m) determines orientation. || ✅ The Principal Quantum Number (n) corresponds to the radial distance from the nucleus and the primary energy level.	Shell number.	0.3														
 SET_A_0004	SET_A	Spectroscopy	CONCEPT	Beer's Law states that Absorbance is proportional to:	Wavelength	Concentration and Path Length	Frequency	RIGHT	❌ Wavelength determines *where* it absorbs, not how much. || ❌ Frequency is energy. || ✅ A = ebc. Absorbance scales linearly with how much stuff is there (c) and how far the light travels (b).	A = ebc.	0.3														
@@ -1458,651 +1439,44 @@ SET_D_0346	SET_D	Process Chem	APPLICATION	What is 'Dead Leg' in piping?	A stagna
 SET_D_0347	SET_D	Kinetics	MATH	The 'Salt Effect' on neutral molecules (z=0) is:	Negligible / Salting Out effect	Large	Infinite	UP	❌ Large requires charge. || ❌ Infinite impossible. || ✅ No Coulombic effect. High salt might change solubility (activity), affecting rate slightly (Salting In/Out).	Minor adjustment.	0.6														
 SET_D_0348	SET_D	Thermodynamics	CONCEPT	Why is the 'Triple Point' unique?	F = C - P + 2 = 0 (Invariant)	It is at 0C	It is at 1 atm	UP	❌ 0C/1atm is Melting. || ✅ Degrees of Freedom is zero. You cannot change T or P without losing a phase.	Fixed point.	0.55														
 SET_D_0349	SET_D	Quantum	CONCEPT	Why is 'Spin' half-integer for Fermions?	Relativistic Quantum Mechanics (Dirac Equation)	Experiment only	It is integer	UP	❌ Experiment matches theory. || ❌ Integer is Boson. || ✅ Dirac's derivation of the electron requires a 4-component spinor, leading naturally to s=1/2.	Dirac math.	0.8														
-SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is proportional to:	Heat Capacity Cv	Temperature	Pressure	UP	❌ Temp is driver. || ❌ Pressure is wrong. || ✅ Systems with high ability to store heat (Cv) also show large spontaneous energy fluctuations.	Energy noise.	0.75														
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-																									
-	`; 																								
-    const ENDPOINT = "https://script.google.com/macros/s/AKfycbwv_n-Q0J0hwRPIzy2D0mx54-fKNDmvKG0kPgZZwoN5xZGloJbAFP-upgMbGfJA-Lk/exec";
+SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is proportional to:	Heat Capacity Cv	Temperature	Pressure	UP	❌ Temp is driver. || ❌ Pressure is wrong. || ✅ Systems with high ability to store heat (Cv) also show large spontaneous energy fluctuations.	Energy noise.	0.75	`;
+    
     let RAW_DATA = [], POOL = [], MISTAKES = [], SCORE = 0, isTransitioning = false;
     let MODE = "DATASET_SELECT", CUR_DATASET = "", CUR_TOPIC = "", CUR_GENRE = "", SESSION_LIMIT = 20, CUR_INDEX = 0;
 
-    /* --- PARSER V85.3 (Fixed Option Text) --- */
-    function parseAtomic(text) {
-        if(!text) return [];
-        return text.trim().split('\n').map(line => {
+    function parseTitanium() {
+        return RAW_STRING.trim().split('\n').map(line => {
             try {
                 if (!line.includes('❌')) return null;
-                const typeMark = line.match(/CONCEPT|MATH|APPLICATION|TROUBLESHOOTING/)[0];
+                const id = line.substring(0, 10);
+                const types = ["CONCEPT", "MATH", "APPLICATION", "TROUBLESHOOTING"];
+                const type = types.find(t => line.includes(t)) || "CONCEPT";
                 const explStart = line.indexOf('❌');
-                const weight = line.match(/(\d\.\d+)$/)[1];
-                
-                const middle = line.substring(line.indexOf(typeMark) + typeMark.length, explStart).trim();
-                const correct = middle.match(/UP|RIGHT|LEFT|DOWN$/)[0];
-                const qAndO = middle.substring(0, middle.length - correct.length).trim();
-                
+                const weight = (line.match(/(\d\.\d+)$/) || [null, "0.5"])[1];
+                const topic = line.substring(10, line.indexOf(type)).replace(id.substring(0,5), "").trim();
+                const middle = line.substring(line.indexOf(type) + type.length, explStart).trim();
+                const dirs = ["UP", "RIGHT", "LEFT", "DOWN"];
+                const correct = dirs.find(d => middle.endsWith(d));
+                const qAndO = middle.substring(0, middle.length - (correct ? correct.length : 0)).trim();
                 const qSplit = qAndO.split('?');
                 const question = qSplit[0] + "?";
-                const optsRaw = qSplit[1] || "";
-                
-                // FIXED: Better splitting for merged options like "First LawSecond Law"
-                const opts = optsRaw.replace(/([a-z])([A-Z])/g, '$1|$2').split('|').map(s => s.trim()).filter(s => s.length > 0);
-
+                const opts = (qSplit[1] || "").replace(/([a-z0-9])([A-Z])/g, '$1|$2').split('|').map(s => s.trim());
                 const explFull = line.substring(explStart, line.lastIndexOf(weight)).trim();
                 let explanation = explFull, hint = "Logic Focus.";
                 const hintMatch = explFull.match(/(.+?\.)([A-Z].+)$/);
                 if (hintMatch) { explanation = hintMatch[1]; hint = hintMatch[2]; }
-
-                return { id: line.substring(0,10), ds: line.substring(0,5), tp: "Module", ty: typeMark, q: question, u: opts[0]||"A", r: opts[1]||"B", l: opts[2]||"C", c: correct, ex: explanation, h: hint, w: parseFloat(weight) };
+                return { id, ds: id.substring(0,5), tp: topic, ty: type, q: question, u: opts[0]||"Opt1", r: opts[1]||"Opt2", l: opts[2]||"Opt3", c: correct || "RIGHT", ex: explanation, h: hint, w: parseFloat(weight) };
             } catch (e) { return null; }
         }).filter(x => x !== null);
     }
 
-    /* --- CORE ENGINE --- */
     const formatChem = (t) => t ? t.toString().replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>').replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/->/g, '→').replace(/\|\|/g, '<br>') : "";
-
-    function init() { RAW_DATA = parseAtomic(RAW_PASTE_DATA); document.getElementById('loader').remove(); renderDatasetSelect(); }
-
+    
     function addToLog(msg, action) {
         const tape = document.getElementById('history-tape');
         tape.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
         const div = document.createElement('div');
-        div.className = "log-item active"; div.innerHTML = `> ${msg}`;
+        div.className = "log-item active"; div.innerHTML = "> " + msg;
         if (action) div.onclick = () => { if(!isTransitioning) action(); };
         tape.prepend(div);
     }
@@ -2110,18 +1484,25 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     function renderMenuCard(q, up, lt, rt, dn) {
         const s = document.getElementById('stack'); s.innerHTML = "";
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`;
-        s.appendChild(c); bindPhysics(c);
+        c.innerHTML = '<div class="card-q">' + q + '</div><div class="swipe-label sl-up">' + up + '</div><div class="swipe-label sl-left">' + lt + '</div><div class="swipe-label sl-right">' + rt + '</div><div class="swipe-label sl-down">' + dn + '</div>';
+        s.appendChild(c); bindPhysics(c, {});
     }
 
-    function renderDatasetSelect() { MODE = "DATASET_SELECT"; document.getElementById('rank-ui').innerText = "DIFFICULTY"; addToLog("START", null); renderMenuCard("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); }
+    function renderDatasetSelect() { 
+        MODE = "DATASET_SELECT"; CUR_INDEX = 0; SCORE = 0; MISTAKES = [];
+        document.getElementById('rank-ui').innerText = "ALCHEMIST"; 
+        document.getElementById('progress-bar').style.width = "0%";
+        addToLog("RESET: SELECT DIFFICULTY", null); 
+        renderMenuCard("SELECT DIFFICULTY", "SET A", "SET B", "SET C", "SET D"); 
+    }
+    
     function renderTopicSelect(ds) { MODE = "TOPIC_SELECT"; CUR_DATASET = ds; addToLog(ds, renderDatasetSelect); renderMenuCard("CHOOSE DOMAIN", "PHYSICAL", "ORGANIC", "INORGANIC", "ANALYTICAL"); }
     function renderGenreSelect(tp) { MODE = "GENRE_SELECT"; CUR_TOPIC = tp; addToLog(tp, () => renderTopicSelect(CUR_DATASET)); renderMenuCard("SELECT DEPTH", "CONCEPT", "MATH", "DATA", "LOGIC"); }
     function renderRangeSelect(genre) { MODE = "RANGE_SELECT"; CUR_GENRE = genre; addToLog(genre, () => renderGenreSelect(CUR_TOPIC)); renderMenuCard("SESSION VOLUME", "10 Qs", "20 Qs", "30 Qs", "50 Qs"); }
 
     function startQuiz(limit) {
-        SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1; SCORE = 0;
-        addToLog(`${limit}`, () => renderRangeSelect(CUR_GENRE));
+        SESSION_LIMIT = parseInt(limit); CUR_INDEX = 1;
+        addToLog(limit + " CARDS", () => renderRangeSelect(CUR_GENRE));
         POOL = RAW_DATA.filter(q => q.ds === CUR_DATASET);
         POOL.sort(() => Math.random() - 0.5);
         POOL = POOL.slice(0, SESSION_LIMIT);
@@ -2131,40 +1512,36 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     function renderNext() {
         const s = document.getElementById('stack'); s.innerHTML = "";
         if(!POOL.length) { renderEnd(); return; }
-        document.getElementById('rank-ui').innerText = `${CUR_INDEX} / ${SESSION_LIMIT}`;
-        document.getElementById('progress-bar').style.width = `${(CUR_INDEX/SESSION_LIMIT)*100}%`;
-        
-        const rawQ = POOL[0]; const q = { ...rawQ };
-        const items = [{ t: rawQ.u, c: rawQ.c==="UP" }, { t: rawQ.r, c: rawQ.c==="RIGHT" }, { t: rawQ.l, c: rawQ.c==="LEFT" }];
-        items.sort(() => Math.random() - 0.5);
+        document.getElementById('rank-ui').innerText = CUR_INDEX + " / " + SESSION_LIMIT;
+        document.getElementById('progress-bar').style.width = (CUR_INDEX/SESSION_LIMIT)*100 + "%";
+        const q = { ...POOL[0] };
+        const items = [{ t: q.u, c: q.c==="UP" }, { t: q.r, c: q.c==="RIGHT" }, { t: q.l, c: q.c==="LEFT" }].sort(() => Math.random() - 0.5);
         q.u = items[0].t; q.r = items[1].t; q.l = items[2].t;
         q.c = items[0].c ? "UP" : (items[1].c ? "RIGHT" : "LEFT");
-
         const c = document.createElement('div'); c.className = "card";
-        c.innerHTML = `<div class="card-q">${formatChem(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">${formatChem(q.ex)}</div><button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button></div>`;
+        c.innerHTML = '<div class="card-q">' + formatChem(q.q) + '</div><div class="swipe-label sl-up">' + q.u + '</div><div class="swipe-label sl-left">' + q.l + '</div><div class="swipe-label sl-right">' + q.r + '</div><div class="swipe-label sl-down">⬇ LOGIC</div><div class="overlay"><div class="overlay-body">' + formatChem(q.ex) + '</div><button class="btn" onclick="this.parentElement.classList.remove(\'active\')">BACK</button></div>';
         s.appendChild(c); bindPhysics(c, q);
     }
 
     function renderEnd() {
         MODE = "END"; const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card";
         document.getElementById('rank-ui').innerText = "COMPLETE";
-        c.innerHTML = `<div class="card-q">MISSION COMPLETE<br>${SCORE} XP</div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div>`;
+        c.innerHTML = '<div class="card-q">MISSION COMPLETE<br><span style="color:var(--gold)">' + SCORE + ' XP</span></div><div class="swipe-label sl-up">RESTART</div><div class="swipe-label sl-left">MENU</div>';
         s.appendChild(c); bindPhysics(c, {});
     }
 
     function bindPhysics(el, data) {
         let x=0, y=0, sx=0, sy=0, active=false, triggerDir=null;
         const labels = { up: el.querySelector('.sl-up'), dn: el.querySelector('.sl-down'), lt: el.querySelector('.sl-left'), rt: el.querySelector('.sl-right') };
-        el.onmousedown = el.ontouchstart = e => { active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
+        el.onmousedown = el.ontouchstart = e => { if(isTransitioning) return; active=true; const p = e.touches ? e.touches[0] : e; sx=p.clientX; sy=p.clientY; el.style.transition="none"; };
         window.onmousemove = window.ontouchmove = e => {
             if(!active) return; const p = e.touches ? e.touches[0] : e; x = p.clientX - sx; y = p.clientY - sy;
-            el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/20}deg)`;
+            el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0) rotate(' + x/20 + 'deg)';
             const ang = Math.atan2(-y, x) * (180/Math.PI);
-            Object.values(labels).forEach(l => l ? l.style.opacity = 0 : null);
+            Object.values(labels).forEach(l => { if(l) l.style.opacity = 0; });
             if (Math.abs(x) > 20 || Math.abs(y) > 20) {
                 let dir = (ang>=45&&ang<135)?"up":(ang>=135||ang<-135)?"lt":(ang>=-135&&ang<-45)?"dn":"rt";
-                if(labels[dir]) labels[dir].style.opacity = 1;
-                triggerDir = dir.toUpperCase();
+                if(labels[dir]) labels[dir].style.opacity = 1; triggerDir = dir.toUpperCase();
             }
         };
         window.onmouseup = window.ontouchend = () => {
@@ -2177,17 +1554,16 @@ SET_D_0350	SET_D	Stat Mech	MATH	The 'Fluctuation' in Energy <(E - <E>)^2> is pro
     function handleAction(el, data, dir) {
         if(MODE === "DATASET_SELECT") renderTopicSelect(dir === "UP"?"SET_A":dir === "LT"?"SET_B":dir === "RT"?"SET_C":"SET_D");
         else if(MODE === "TOPIC_SELECT") renderGenreSelect(dir === "UP"?"Physical":dir === "LT"?"Organic":dir === "RT"?"Inorganic":"Analytical");
-        else if(MODE === "GENRE_SELECT") renderRangeSelect(dir);
+        else if(MODE === "GENRE_SELECT") renderRangeSelect(dir === "UP"?"CONCEPT":dir === "LT"?"MATH":dir === "RT"?"DATA":"LOGIC");
         else if(MODE === "RANGE_SELECT") startQuiz(dir==="UP"?10:dir==="LT"?20:dir==="RT"?30:50);
         else if(MODE === "END") { if(dir==="UP") startQuiz(SESSION_LIMIT); else renderDatasetSelect(); }
         else {
             if (dir === "DN") { el.querySelector('.overlay').classList.add('active'); el.style.transform="none"; return; }
-            const actualDir = dir.replace('LT','LEFT').replace('RT','RIGHT');
-            if (actualDir === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = `${SCORE} XP`; }
+            if (dir.replace('LT','LEFT').replace('RT','RIGHT') === data.c) { SCORE += 10; document.getElementById('xp-ui').innerText = SCORE + " XP"; }
             POOL.shift(); CUR_INDEX++; renderNext();
         }
     }
-    window.onload = init;
+    window.onload = () => { RAW_DATA = parseTitanium(); renderDatasetSelect(); };
 </script>
 </body>
 </html>
