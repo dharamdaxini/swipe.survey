@@ -124,13 +124,41 @@ function renderEnd() {
 }
 
 /* --- CORE ROUTING LOGIC --- */
-function route(el, data, dir) {
-    // FUNNEL ROUTING
-    if (MODE === "SEL_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ" : "LEARN"); renderSlide_2_Vol(); }
-    else if (MODE === "SEL_VOL") { SEL_VOL = parseInt(dir); renderSlide_3_Depth(); }
-    else if (MODE === "SEL_DEPTH") { SEL_DEPTH = dir; renderSlide_4_Domain(); }
-    else if (MODE === "SEL_DOMAIN") { SEL_DOMAIN = dir; renderSlide_5_Diff(); }
-    else if (MODE === "SEL_DIFF") { SEL_DIFF = dir; startSession(); }
+function route(el, data, dir) { 
+    if (MODE === "S_PATH") { 
+        SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); 
+        renderS1(); 
+    } 
+    else if (MODE === "S_CORE") { 
+        SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); 
+        start(); 
+    } 
+    else if (MODE === "END") { 
+        location.reload(); 
+    } 
+    else { 
+        // --- CRITICAL FIX START ---
+        if (dir === "DN") { 
+            // 1. Open the modal
+            openOverlay(data); 
+            // 2. Reset card position so it doesn't fly away
+            el.style.transition = "0.4s ease";
+            el.style.transform = "none"; 
+            // 3. STOP execution here (don't shift the pool)
+            return; 
+        } 
+        // --- CRITICAL FIX END ---
+
+        // Only advance if the direction was UP, LEFT, or RIGHT
+        if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; 
+        else MISTAKES.push(data); 
+        
+        POOL.shift(); 
+        INDEX++; 
+        renderNext(); 
+    } 
+}
+
     
     // END SLIDE ROUTING
     else if (MODE === "END") { 
