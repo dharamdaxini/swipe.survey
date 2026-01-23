@@ -250,9 +250,24 @@ function updateHUD() {
     document.getElementById('progress-bar').style.width = `${(INDEX/(POOL.length+INDEX-1))*100}%`; 
 }
 
-const format = (t) => t ? t.toString()
-    .replace(/(\d)\s*x\s*10\^(-?\d+)/g, '$1×10<sup>$2</sup>')
-    .replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>')
-    .replace(/\^(\d+)/g, '<sup>$1</sup>')
-    .replace(/theta/g,'&theta;')
-    .replace(/lambda/g,'&lambda;') : "";
+const format = (t) => {
+    if (!t) return "";
+    return t.toString()
+        // 1. Greek Symbols & Units
+        .replace(/Delta/g, '&Delta;')
+        .replace(/lambda/g, '&lambda;')
+        .replace(/nu/g, '&nu;')
+        .replace(/sigma/g, '&sigma;')
+        .replace(/epsilon/g, '&epsilon;')
+        .replace(/phi/g, '&phi;')
+        // 2. High-Rigor Exponents (‡, degrees, charges)
+        .replace(/\^‡/g, '<sup>&Dagger;</sup>') 
+        .replace(/\^o/g, '<sup>&deg;</sup>') 
+        .replace(/\^(\+|-|\d+)/g, '<sup>$1</sup>')
+        // 3. Complex Subscripts (Stoichiometry & States)
+        .replace(/_(\d+)/g, '<sub>$1</sub>') 
+        .replace(/_([a-z]+)/g, '<sub>$1</sub>') // e.g., k_et, E_a
+        // 4. Mathematical Operators
+        .replace(/->/g, '&rarr;')
+        .replace(/<=>/g, '&rightleftharpoons;');
+};
