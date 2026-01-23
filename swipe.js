@@ -124,17 +124,49 @@ function renderEnd() {
 }
 
 /* --- CORE ROUTING LOGIC --- */
-function route(el, data, dir) { 
-    if (MODE === "S_PATH") { 
-        SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); 
-        renderS1(); 
-    } 
-    else if (MODE === "S_CORE") { 
-        SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); 
-        start(); 
-    } 
-    else if (MODE === "END") { 
-        location.reload(); 
+    function route(el, data, dir) {
+        if (MODE === "S_PATH") { 
+            SEL_PATH = dir; 
+            renderS1(); 
+        }
+        else if (MODE === "S_CORE") { 
+            SEL_CORE = dir; 
+            start(); 
+        }
+        else {
+            if (dir === "DOWN") {
+                // --- PEDAGOGICAL GUARDRAIL ---
+                // If in TEST mode, ignore the downward swipe entirely
+                if (SEL_PATH === "UP") { 
+                    el.style.transition = "0.3s ease"; 
+                    el.style.transform = "none"; 
+                    return; 
+                }
+                
+                // Otherwise, open the specific content for the current path
+                openOverlay(data); 
+                el.style.transition = "0.3s ease"; 
+                el.style.transform = "none"; 
+                return; 
+            }
+            POOL.shift(); INDEX++; renderNext();
+        }
+    }
+
+    function openOverlay(d) {
+        let content = "";
+        
+        // Context-Sensitive Content Mapping
+        if (SEL_PATH === "LT") { // LEARN (BRIDGE) mode
+            content = `<strong>LOGIC</strong><br>${format(d.expl)}<br><br><strong>CONTEXT</strong><br>${format(d.context)}`;
+        } else { // QUIZ or QUIZ + LEARN
+            content = `<strong>HINT</strong><br>${format(d.hint)}`;
+        }
+
+        document.getElementById('overlay-content').innerHTML = content;
+        document.getElementById('global-overlay').classList.add('active');
+    }
+
     } 
     else { 
         // --- CRITICAL FIX START ---
