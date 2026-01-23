@@ -253,21 +253,21 @@ function updateHUD() {
 const format = (t) => {
     if (!t) return "";
     return t.toString()
-        // 1. Greek Symbols & Units
-        .replace(/Delta/g, '&Delta;')
-        .replace(/lambda/g, '&lambda;')
-        .replace(/nu/g, '&nu;')
-        .replace(/sigma/g, '&sigma;')
-        .replace(/epsilon/g, '&epsilon;')
-        .replace(/phi/g, '&phi;')
-        // 2. High-Rigor Exponents (‡, degrees, charges)
-        .replace(/\^‡/g, '<sup>&Dagger;</sup>') 
-        .replace(/\^o/g, '<sup>&deg;</sup>') 
-        .replace(/\^(\+|-|\d+)/g, '<sup>$1</sup>')
-        // 3. Complex Subscripts (Stoichiometry & States)
-        .replace(/_(\d+)/g, '<sub>$1</sub>') 
-        .replace(/_([a-z]+)/g, '<sub>$1</sub>') // e.g., k_et, E_a
-        // 4. Mathematical Operators
-        .replace(/->/g, '&rarr;')
-        .replace(/<=>/g, '&rightleftharpoons;');
+        // 1. Core Symbols (Order matters: process Delta first)
+        .replace(/&Delta;/g, 'Δ') // Handles pre-escaped Delta
+        .replace(/Delta/g, 'Δ')   // Handles raw Delta
+        
+        // 2. High-Rigor Exponents
+        .replace(/\^o/g, '°')     // Standard state circle
+        .replace(/\^‡/g, '‡')     // Transition state double-dagger
+        .replace(/\^([-+]?\d+)/g, '<sup>$1</sup>') // Ions like 3+ or -1
+        
+        // 3. Chemical Subscripts
+        .replace(/_(\d+)/g, '<sub>$1</sub>')    // Molecular stoichiometry like NH3
+        .replace(/_([a-z]+)/g, '<sub>$1</sub>') // Variable indices like k_et
+        
+        // 4. Reactions & Arrows
+        .replace(/<=>/g, '⇌')
+        .replace(/->/g, '→')
+        .replace(/\n/g, '<br>');
 };
