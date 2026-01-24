@@ -3,83 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V130.2 | STATE SYNC</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <title>VIA | STACK</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        :root { 
+            --bg: #000000; 
+            --card-glass: rgba(30, 30, 30, 0.7); 
+            --card-border: rgba(255, 255, 255, 0.12);
+            --gold: #FFD700; 
+            --green: #00E676; 
+            --red: #FF1744; 
+            --font-ui: 'Inter', sans-serif; 
+            --font-code: 'JetBrains Mono', monospace; 
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; display: flex; flex-direction: column; }
         
-        #portal { flex: 1; padding: 30px; overflow-y: auto; padding-bottom: 150px; }
-        h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 15px 0; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; text-align: center; }
-        .section-label { font-family: var(--font-code); font-size: 0.65rem; color: #555; margin: 15px 0 8px; letter-spacing: 2px; text-transform: uppercase; }
+        body::before {
+            content: ''; position: absolute; top: -40%; left: -40%; width: 180%; height: 180%;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.04) 0%, transparent 60%);
+            z-index: 0; pointer-events: none;
+        }
+
+        #portal { flex: 1; padding: 25px; overflow-y: auto; padding-bottom: 120px; z-index: 1; }
+        h1 { color: var(--gold); letter-spacing: -1px; margin: 10px 0 20px 0; font-size: 2rem; font-weight: 900; text-align: left; }
+        .sub-header { color: #555; font-size: 0.8rem; margin-top: -15px; margin-bottom: 30px; font-family: var(--font-code); display: flex; align-items: center; gap: 8px; }
+        .sub-header::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; display: block; box-shadow: 0 0 8px var(--green); }
+        .section-label { font-family: var(--font-code); font-size: 0.65rem; color: #444; margin: 30px 0 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; }
         
-        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        /* CRITICAL CSS FIX: Use !important to force blue border override */
-        .topic-tile { background: var(--card); border: 2px solid var(--border); padding: 12px; border-radius: 12px; transition: 0.1s; }
-        .topic-tile.selected { border-color: var(--blue) !important; background: #001529 !important; }
-        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.8rem; display: block; }
-        .topic-meta { color: #555; font-size: 0.6rem; font-family: var(--font-code); }
+        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .topic-tile { background: var(--card-glass); border: 1px solid var(--card-border); padding: 18px; border-radius: 20px; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
+        .topic-tile:active { transform: scale(0.96); border-color: var(--gold); }
 
-        textarea { width: 100%; height: 80px; background: #111; border: 1px solid #333; color: var(--green); font-family: var(--font-code); padding: 12px; border-radius: 12px; font-size: 11px; }
-
-        .footer-controls { position: fixed; bottom: 20px; left: 5%; width: 90%; z-index: 9500; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 20px; border: 1px solid #333; }
+        #header { width: 88%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
+        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #666; font-weight: 700; margin-bottom: 10px; }
+        .progress-track { width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); border-radius: 10px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
         
-        .btn { width: 100%; padding: 14px; border-radius: 100px; border: none; background: #fff; color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; }
-        .btn-gold { background: var(--gold); }
-        .btn-blue { background: transparent; border: 1px solid var(--blue); color: var(--blue); }
-        .backup-row { display: flex; gap: 10px; margin-top: 10px; }
+        #stack { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 400px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
+        
+        .card { 
+            position: absolute; width: 100%; height: 100%; background: rgba(18, 18, 18, 0.95); border-radius: 36px; border: 1px solid var(--card-border); 
+            padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; 
+            box-shadow: 0 30px 60px -10px rgba(0,0,0,0.9); backface-visibility: hidden; will-change: transform; 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); touch-action: none; transform-origin: 50% 120%; 
+        }
+        .card-q { font-family: 'Inter', sans-serif; font-size: clamp(20px, 4vmin, 28px); font-weight: 800; line-height: 1.4; color: #fff; letter-spacing: -0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); pointer-events: none; }
+        
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); backdrop-filter: blur(5px); font-weight: 900; opacity: 0; pointer-events: none; border-radius: 36px; font-size: 1.5rem; letter-spacing: 2px; transition: opacity 0.05s linear; }
+        .sl-left { border: 4px solid var(--red); color: var(--red); }
+        .sl-right { border: 4px solid var(--green); color: var(--green); }
+        .sl-up, .sl-down { border: 4px solid var(--gold); color: var(--gold); }
 
-        #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
-        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; font-weight: 900; }
-        .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 8px; border-radius: 2px; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.3s; }
-        #stack { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; perspective: 1500px; display: none; align-items: center; justify-content: center; z-index: 500; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .card-q { font-family: var(--font-chem); font-size: clamp(16px, 4vmin, 20px); line-height: 1.45; color: #fff; }
-        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); color: #fff; font-weight: 900; opacity: 0; pointer-events: none; border-radius: 40px; border: 3px solid var(--gold); }
-        #global-overlay { position: fixed; inset: 0; background: #080808; z-index: 10000; padding: 40px; display: none; flex-direction: column; }
+        .footer-controls { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 900; padding: 20px 25px 40px; background: linear-gradient(to top, #000 40%, transparent); display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+        .footer-controls button { pointer-events: auto; }
+        .btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 800; text-transform: uppercase; cursor: pointer; font-size: 11px; transition: 0.2s; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-code); }
+        .btn-gold { background: var(--gold); color: #000; }
+        
+        #global-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px); z-index: 10000; padding: 40px; display: none; flex-direction: column; }
         #global-overlay.active { display: flex; }
-        .overlay-body { font-size: 1rem; color: #ddd; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; }
+        .overlay-body { font-size: 1.1rem; color: #ddd; font-family: var(--font-ui); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; line-height: 1.6; }
     </style>
 </head>
 <body>
 
 <div id="global-overlay">
     <div id="overlay-content" class="overlay-body"></div>
-    <button class="btn btn-gold" onclick="closeOverlay()">BACK TO SESSION</button>
+    <button class="btn btn-gold" onclick="closeOverlay()">RESUME</button>
 </div>
 
 <div id="portal">
-    <h1>Alchemist_V130.2</h1>
-    <div class="section-label">CURRICULUM_VAULTS</div>
+    <h1>Via.Stack</h1>
+    <div class="sub-header">ZERO TOUCH KNOWLEDGE ENGINE</div>
+    <div class="section-label">MY LIBRARY</div>
     <div id="library"></div>
-    
-    <div id="import-section">
-        <div class="section-label">ADD_DATA (TAB_SEPARATED)</div>
-        <textarea id="data-input" placeholder="Paste 12-column TSV data..."></textarea>
-        <button id="import-btn" class="btn btn-gold" onclick="importDataset()" style="margin-top:10px;">REGISTER TO VAULT</button>
-        <button class="btn" style="background:#111; color:#333; margin-top:5px;" onclick="clearLibrary()">WIPE REPOSITORY</button>
-        
-        <div class="section-label">VAULT_BACKUP</div>
-        <div class="backup-row">
-            <button class="btn btn-blue" onclick="exportBackup()">DOWNLOAD JSON</button>
-            <button class="btn btn-blue" onclick="document.getElementById('restore-file').click()">RESTORE JSON</button>
-            <input type="file" id="restore-file" style="display:none" onchange="restoreBackup(this)">
-        </div>
-    </div>
 </div>
 
 <div class="footer-controls">
-    <div id="merge-controls" style="display:none;">
-        <button id="execute-merge-btn" class="btn btn-blue" disabled onclick="executeMerge()">SELECT 2 TOPICS</button>
-        <button class="btn" style="background:transparent; color:#555; margin-top:5px; border:none;" onclick="cancelMerge()">CANCEL</button>
-    </div>
-    <button id="merge-mode-btn" class="btn btn-blue" onclick="toggleMergeMode()">ENABLE VAULT MERGER</button>
+    <button class="btn btn-gold" onclick="document.getElementById('restore-file').click()">📂 IMPORT DATA</button>
+    <input type="file" id="restore-file" style="display:none" onchange="restoreBackup(this)">
 </div>
 
 <div id="header">
-    <div class="header-meta"><span id="p-text">---</span><span id="score-text">0 XP</span></div>
+    <div class="header-meta"><span id="p-text">1/20</span><span id="score-text">0 XP</span></div>
     <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 <div id="stack"></div>
@@ -87,125 +99,104 @@
 <script>
     let db;
     const DB_NAME = "AlchemistDB", STORE_NAME = "Vaults";
-    let VAULT = [], POOL = [], MISTAKES = [], SCORE = 0, MODE = "INIT", INDEX = 1;
-    let SEL_PATH = "", SEL_CORE = "", mergeMode = false, selectedForMerge = [];
+    let VAULT = [], POOL = [], SCORE = 0, MODE = "INIT", INDEX = 1, SEL_PATH = "";
 
     const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = e => { db = e.target.result; db.createObjectStore(STORE_NAME); };
     request.onsuccess = e => { db = e.target.result; refreshLibrary(); };
 
     function refreshLibrary() {
-        const store = db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME);
-        const container = document.getElementById('library');
-        container.innerHTML = "";
-        
-        // RESET STATE
-        selectedForMerge = []; 
-        document.getElementById('execute-merge-btn').innerText = "SELECT 2 TOPICS";
-        document.getElementById('execute-merge-btn').disabled = true;
-
-        store.openCursor().onsuccess = e => {
-            const cursor = e.target.result;
-            if (cursor) {
-                const div = document.createElement('div');
-                div.className = "topic-tile";
-                // Robust ID generation removing spaces
-                const cleanID = cursor.key.replace(/[^a-zA-Z0-9]/g, '_');
-                div.id = `tile-${cleanID}`;
-                
-                div.onclick = () => handleTileClick(cursor.key, cleanID);
-                div.innerHTML = `<span class="topic-name">${cursor.key}</span><span class="topic-meta">${cursor.value.length} CARDS</span>`;
-                container.appendChild(div);
-                cursor.continue();
+        const container = document.getElementById('library'); container.innerHTML = "";
+        db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME).openCursor().onsuccess = e => {
+            const cursor = e.target.result; if (cursor) {
+                const div = document.createElement('div'); div.className = "topic-tile";
+                div.onclick = () => loadDataset(cursor.key); div.innerHTML = `<strong>${cursor.key}</strong>`;
+                container.appendChild(div); cursor.continue();
             }
         };
     }
 
-    function handleTileClick(name, cleanID) {
-        const el = document.getElementById(`tile-${cleanID}`);
-        
-        if (mergeMode) {
-            if (selectedForMerge.includes(name)) {
-                // Deselect logic
-                selectedForMerge = selectedForMerge.filter(n => n !== name);
-                el.classList.remove('selected');
-            } else {
-                // Select logic
-                if (selectedForMerge.length < 2) {
-                    selectedForMerge.push(name);
-                    el.classList.add('selected');
-                }
-            }
-            
-            // UI Button Update
-            const mBtn = document.getElementById('execute-merge-btn');
-            if (selectedForMerge.length === 2) {
-                mBtn.disabled = false;
-                mBtn.innerText = "EXECUTE MERGE";
-                mBtn.style.background = "var(--blue)";
-                mBtn.style.color = "#000";
-            } else {
-                mBtn.disabled = true;
-                mBtn.innerText = `SELECT ${2 - selectedForMerge.length} MORE`;
-                mBtn.style.background = "transparent";
-                mBtn.style.color = "var(--blue)";
-            }
-        } else {
-            loadDataset(name);
-        }
+    function loadDataset(name) { db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME).get(name).onsuccess = e => { VAULT = e.target.result; startByBypass(); }; }
+
+    function startByBypass() {
+        document.getElementById('portal').style.display = 'none'; document.querySelector('.footer-controls').style.display = 'none'; 
+        document.getElementById('header').style.display = 'flex'; document.getElementById('stack').style.display = 'flex';
+        renderS0();
     }
 
-    function executeMerge() {
-        if (selectedForMerge.length !== 2) return;
-        const newName = prompt("Merged Vault Name:", `${selectedForMerge[0]}_${selectedForMerge[1]}`);
-        if (!newName) return;
+    function renderS0() { MODE = "S_PATH"; renderSlide("SELECT MODE", "TEST", "LEARN", "QUIZ + LEARN", "QUIZ"); }
+    function renderS1() { start(); }
+    function start() { MODE = "ACTIVE"; INDEX = 1; SCORE = 0; POOL = VAULT.sort(()=>0.5-Math.random()).slice(0,20); renderNext(); }
 
-        const btn = document.getElementById('execute-merge-btn');
-        btn.innerText = "MERGING...";
-        
-        const transaction = db.transaction([STORE_NAME], "readwrite");
-        const store = transaction.objectStore(STORE_NAME);
-        let mergedData = [];
-        let completedReads = 0;
-
-        selectedForMerge.forEach(key => {
-            store.get(key).onsuccess = e => {
-                mergedData = mergedData.concat(e.target.result);
-                completedReads++;
-                if (completedReads === 2) {
-                    store.put(mergedData, newName).onsuccess = () => {
-                        alert(`CREATED: ${newName}`);
-                        cancelMerge(); // This triggers refreshLibrary()
-                    };
-                }
-            };
-        });
+    function route(el, data, dir) { 
+        if (MODE === "S_PATH") { SEL_PATH = (dir === "RIGHT" ? "QUIZ_LEARN" : (dir === "LEFT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); renderS1(); } 
+        else if (MODE === "END") { location.reload(); } 
+        else { 
+            if (dir === "DOWN") { openOverlay(data); el.style.transform = "none"; return; } 
+            const correctAns = (data.ans || "UP").toUpperCase().replace("LT", "LEFT").replace("RT", "RIGHT").replace("DN", "DOWN");
+            if (dir === correctAns) SCORE += 10; POOL.shift(); INDEX++; renderNext(); 
+        } 
     }
 
-    function toggleMergeMode() { mergeMode = true; document.getElementById('merge-controls').style.display = 'block'; document.getElementById('merge-mode-btn').style.display = 'none'; document.getElementById('import-section').style.display = 'none'; }
-    function cancelMerge() { mergeMode = false; document.getElementById('merge-controls').style.display = 'none'; document.getElementById('merge-mode-btn').style.display = 'block'; document.getElementById('import-section').style.display = 'block'; refreshLibrary(); }
-
-    function loadDataset(name) { db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME).get(name).onsuccess = e => { VAULT = e.target.result; document.getElementById('portal').style.display = 'none'; document.querySelector('.footer-controls').style.display = 'none'; ['header', 'stack'].forEach(id => document.getElementById(id).style.display = 'flex'); renderS0(); }; }
-
-    // --- UTILS & ENGINE ---
-    function exportBackup() { const store = db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME); const exportData = {}; store.openCursor().onsuccess = e => { const cursor = e.target.result; if (cursor) { exportData[cursor.key] = cursor.value; cursor.continue(); } else { const blob = new Blob([JSON.stringify(exportData)], {type: "application/json"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Alchemist_Backup.json`; a.click(); } }; }
-    function restoreBackup(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = e => { try { const data = JSON.parse(e.target.result); const tx = db.transaction([STORE_NAME], "readwrite"); Object.keys(data).forEach(key => tx.objectStore(STORE_NAME).put(data[key], key)); tx.oncomplete = () => { alert("RESTORED"); refreshLibrary(); }; } catch (err) { alert("INVALID FILE"); } }; reader.readAsText(file); }
+    function renderSlide(q, up, lt, rt, dn) { 
+        const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; 
+        c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; 
+        s.appendChild(c); bindPhysics(c, {}); 
+    }
     
-    function renderS0() { MODE = "S_PATH"; renderSlide("SELECT MODE", "TEST (STRICT)", "LEARN (BRIDGE)", "QUIZ + LEARN", "QUIZ (DRILL)"); }
-    function renderS1() { MODE = "S_CORE"; renderSlide("MAINLINE CORE", "CHANGE", "ENERGY", "MATTER", "ANALYSIS"); }
-    function start() { MODE = "ACTIVE"; INDEX = 1; SCORE = 0; MISTAKES = []; POOL = VAULT.filter(v => v.dom === SEL_CORE || true).sort(() => 0.5 - Math.random()).slice(0, 20); renderNext(); }
-    function renderSlide(q, up, lt, rt, dn) { const s = document.getElementById('stack'); s.innerHTML = ""; const c = document.createElement('div'); c.className = "card"; c.innerHTML = `<div class="card-q">${q}</div><div class="swipe-label sl-up">${up}</div><div class="swipe-label sl-left">${lt}</div><div class="swipe-label sl-right">${rt}</div><div class="swipe-label sl-down">${dn}</div>`; s.appendChild(c); bindPhysics(c, {}); }
-    function renderNext() { const s = document.getElementById('stack'); s.innerHTML = ""; if (!POOL.length) { renderEnd(); return; } const q = { ...POOL[0] }; const c = document.createElement('div'); c.className = "card"; const opts = [{ t: q.u, c: q.ans === "UP" }, { t: q.r, c: q.ans === "RIGHT" }, { t: q.l, c: q.ans === "LEFT" }].sort(() => 0.5 - Math.random()); q.u = opts[0].t; q.r = opts[1].t; q.l = opts[2].t; q.ans = opts[0].c ? "UP" : (opts[1].c ? "RIGHT" : "LEFT"); let lbl = (SEL_PATH === "LEARN") ? "⬇ DEEP DIVE" : "⬇ HINT"; c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">${q.u}</div><div class="swipe-label sl-left">${q.l}</div><div class="swipe-label sl-right">${q.r}</div><div class="swipe-label sl-down">${lbl}</div>`; s.appendChild(c); bindPhysics(c, q); updateHUD(); }
-    function route(el, data, dir) { if (MODE === "S_PATH") { SEL_PATH = (dir === "RT" ? "QUIZ_LEARN" : (dir === "LT" ? "LEARN" : (dir === "UP" ? "TEST" : "QUIZ"))); renderS1(); } else if (MODE === "S_CORE") { SEL_CORE = (dir === "RT" ? "ENERGY" : (dir === "LT" ? "MATTER" : (dir === "UP" ? "CHANGE" : "ANALYSIS"))); start(); } else if (MODE === "END") { location.reload(); } else { if (dir === "DN") { if (SEL_PATH === "TEST") { el.style.transform = "none"; return; } openOverlay(data); el.style.transform = "none"; return; } if (dir === data.ans.replace('LEFT','LT').replace('RIGHT','RT')) SCORE += 10; else MISTAKES.push(data); POOL.shift(); INDEX++; renderNext(); } }
-    function bindPhysics(el, data) { let x=0, y=0, sx=0, sy=0, active=false, dir=null; el.ontouchstart = e => { active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; el.style.transition="none"; }; window.ontouchmove = e => { if (!active) return; let dx = e.touches[0].clientX-sx, dy = e.touches[0].clientY-sy; const dist = Math.sqrt(dx*dx+dy*dy); x = (dist > 35) ? dx*(35/dist) : dx; y = (dist > 35) ? dy*(35/dist) : dy; requestAnimationFrame(() => { if (active) el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${dx/15}deg)`; }); el.querySelectorAll('.swipe-label').forEach(l => l.style.opacity=0); if (dist > 15) { const ang = Math.atan2(-dy, dx)*(180/Math.PI); let d = (ang >= 45 && ang < 135) ? ".sl-up" : (ang >= 135 || ang < -135) ? ".sl-left" : (ang >= -135 && ang < -45) ? ".sl-down" : ".sl-right"; const t = el.querySelector(d); if (t) { t.style.opacity = 1; dir = d.replace('.sl-','').toUpperCase(); } } }; window.ontouchend = () => { if(!active) return; active=false; if(Math.sqrt(x*x+y*y)>25) route(el, data, dir); else { el.style.transition="0.4s ease"; el.style.transform="none"; } }; }
+    function renderNext() { 
+        const s = document.getElementById('stack'); s.innerHTML = ""; if (!POOL.length) { renderEnd(); return; } 
+        const q = { ...POOL[0] }; const c = document.createElement('div'); c.className = "card"; 
+        let lbl = (SEL_PATH === "LEARN" || SEL_PATH === "QUIZ_LEARN") ? "DEEP DIVE" : "HINT"; 
+        c.innerHTML = `<div class="card-q">${format(q.q)}</div><div class="swipe-label sl-up">I KNOW</div><div class="swipe-label sl-left">REVIEW</div><div class="swipe-label sl-right">I KNOW</div><div class="swipe-label sl-down">${lbl}</div>`; 
+        document.getElementById('stack').appendChild(c); bindPhysics(c, q); updateHUD(); 
+    }
+
+    function bindPhysics(el, data) { 
+        let sx=0, sy=0, cx=0, cy=0, active=false;
+        const THRESHOLD = 80, RESISTANCE = 0.3; 
+        const start = (x, y) => { active = true; sx = x; sy = y; el.style.transition = "none"; };
+        el.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), {passive: false});
+        el.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+        const move = (e) => {
+            if (!active) return; if(e.cancelable) e.preventDefault();
+            let x = (e.touches ? e.touches[0].clientX : e.clientX), y = (e.touches ? e.touches[0].clientY : e.clientY);
+            let dx = x - sx, dy = y - sy; cx = dx * RESISTANCE; cy = dy * RESISTANCE;
+            let dist = Math.sqrt(dx*dx + dy*dy); let rot = (dx > 0 ? 1 : -1) * Math.min(dist/THRESHOLD, 1) * 15;
+            requestAnimationFrame(() => { el.style.transform = `translate3d(${cx}px, ${cy}px, 0) rotate(${rot}deg)`; });
+            el.querySelectorAll('.swipe-label').forEach(l => l.style.opacity = 0);
+            if (dist > 30) {
+                const ang = Math.atan2(-dy, dx) * (180/Math.PI);
+                let sel = (ang >= 45 && ang < 135) ? ".sl-up" : (ang >= 135 || ang < -135) ? ".sl-left" : (ang >= -135 && ang < -45) ? ".sl-down" : ".sl-right";
+                el.querySelector(sel).style.opacity = Math.min(dist / 50, 1); 
+            }
+        };
+        window.ontouchmove = move; window.onmousemove = move;
+        const end = () => {
+            if (!active) return; active = false;
+            const dist = Math.sqrt(cx*cx + cy*cy) / RESISTANCE;
+            const ang = Math.atan2(-cy, cx) * (180/Math.PI);
+            let dir = (ang >= 45 && ang < 135) ? "UP" : (ang >= 135 || ang < -135) ? "LEFT" : (ang >= -135 && ang < -45) ? "DOWN" : "RIGHT";
+            if (dist > THRESHOLD) {
+                el.style.transition = "0.4s ease-out"; el.style.transform = `translate3d(${cx * 5}px, ${cy * 5}px, 0) rotate(${cx * 0.1}deg)`;
+                setTimeout(() => route(el, data, dir), 200);
+            } else { el.style.transition = "0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"; el.style.transform = "none"; }
+        };
+        window.ontouchend = end; window.onmouseup = end;
+    }
     
-    async function importDataset() { const raw = document.getElementById('data-input').value.trim(); const btn = document.getElementById('import-btn'); if (!raw) return; btn.disabled = true; btn.innerText = "CHUNKING..."; const lines = raw.split(/\r?\n/); let parsed = []; for (let i = 0; i < lines.length; i++) { let c = lines[i].split(/\t/); if (c.length < 5) c = lines[i].split(/\s{3,}/); if (c.length >= 9 && c[0].toLowerCase() !== "id") { parsed.push({ id: c[0], set: c[1], dom: c[2], dep: c[3], q: c[4], u: c[5], r: c[6], l: c[7], ans: c[8], expl: c[9]||"---", hint: c[10]||"---", context: c[11]||"---" }); } if (i % 500 === 0) await new Promise(r => setTimeout(r, 0)); } const topicName = parsed[0].set || `VAULT_${Date.now().toString().slice(-4)}`; db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).put(parsed, topicName); location.reload(); }
-    function openOverlay(d) { document.getElementById('overlay-content').innerHTML = `<strong>LOGIC</strong><br>${format(d.expl)}<br><br><strong>CONTEXT</strong><br>${format(d.context)}`; document.getElementById('global-overlay').classList.add('active'); }
+    function openOverlay(d) { 
+        const isLearn = (SEL_PATH === "LEARN" || SEL_PATH === "QUIZ_LEARN");
+        const title = isLearn ? "DEEP DIVE" : "HINT";
+        const body = `<strong>LOGIC:</strong><br>${format(d.expl || "...")}<br><br><strong>CONTEXT:</strong><br>${format(d.context || "...")}`;
+        document.getElementById('overlay-content').innerHTML = `<h3>${title}</h3><p>${body}</p>`; 
+        document.getElementById('global-overlay').classList.add('active'); 
+    }
+
     function closeOverlay() { document.getElementById('global-overlay').classList.remove('active'); }
-    function clearLibrary() { if(confirm("Purge Library?")) { db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).clear(); refreshLibrary(); } }
     const format = (t) => t ? t.toString().replace(/([A-Z][a-z]?)(\d+)/g, '$1<sub>$2</sub>').replace(/Delta/g,'&Delta;') : "";
     function updateHUD() { document.getElementById('p-text').innerText = `${INDEX}/20`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/20)*100}%`; }
-    function renderEnd() { document.getElementById('stack').innerHTML = `<div class='card'><div class='card-q'>MISSION COMPLETE</div><div class='swipe-label sl-up'>RESTART</div><div class='swipe-label sl-left'>VAULT</div></div>`; bindPhysics(document.querySelector('.card'), {}); MODE="END"; }
+    function renderEnd() { document.getElementById('stack').innerHTML = `<div class='card'><div class='card-q'>SESSION COMPLETE</div><div class='swipe-label sl-up'>RESTART</div></div>`; bindPhysics(document.querySelector('.card'), {}); MODE="END"; }
+    function restoreBackup(input) { const reader = new FileReader(); reader.onload = e => { const data = JSON.parse(e.target.result); const tx = db.transaction([STORE_NAME], "readwrite"); Object.keys(data).forEach(k => tx.objectStore(STORE_NAME).put(data[k], k)); tx.oncomplete = () => location.reload(); }; reader.readAsText(input.files[0]); }
 </script>
 </body>
 </html>
