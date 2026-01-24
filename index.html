@@ -3,130 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V130.88 | DIAGNOSTIC EXPORT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <title>ALCHEMIST V130.94 | ACADEMIC PDF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #2979FF; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; display: flex; flex-direction: column; }
+
+        /* HOST PORTAL (v130.31 UX) */
+        #portal { flex: 1; padding: 40px 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: flex-start; }
+        .brand-logo { color: var(--gold); font-weight: 900; font-size: 2.2rem; letter-spacing: -1px; margin-bottom: 5px; }
+        .brand-sub { font-family: var(--font-code); font-size: 0.65rem; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
         
+        .initiate-btn { width: 100%; border: 2px solid var(--gold); border-radius: 40px; padding: 25px; text-align: center; margin-bottom: 40px; cursor: pointer; }
+        .init-text { color: var(--gold); font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; display: block; }
+
+        .lib-section { width: 100%; margin-bottom: 30px; }
+        .lib-label { font-family: var(--font-code); font-size: 0.65rem; color: var(--green); margin-bottom: 15px; display: block; text-transform: uppercase; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+        .tile { background: #0c0c0c; border: 1px solid #1a1a1a; border-radius: 20px; padding: 22px; cursor: pointer; }
+        
+        /* R1 WORKSPACE */
+        #workspace { width: 100%; margin-top: 40px; border-top: 1px solid #111; padding-top: 30px; padding-bottom: 60px; }
+        textarea { width: 100%; height: 150px; background: #050505; border: 1px solid var(--border); border-radius: 12px; color: #00FF41; font-family: var(--font-code); font-size: 0.7rem; padding: 15px; resize: none; margin-bottom: 15px; }
+        
+        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        .btn-main { grid-column: span 2; padding: 18px; background: var(--blue); color: #fff; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 0.85rem; }
+        .btn-export { padding: 14px; background: #111; border: 1px solid var(--border); color: #666; border-radius: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 0.65rem; }
+        .btn-export:active { color: var(--gold); border-color: var(--gold); }
+
+        /* SESSION HUD (LOCKED top 42px) */
         #header { width: 92%; margin: 25px auto 10px; flex-shrink: 0; z-index: 9000; display: none; position: relative; }
-        .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 10px; border-radius: 10px; overflow: hidden; }
-        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.8s; }
         #session-log { position: absolute; top: 42px; left: 0; font-family: var(--font-code); font-size: 0.85rem; color: #444; z-index: 9500; pointer-events: auto; }
+        #stack { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 94%; height: 55vh; display: none; z-index: 500; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; transform-origin: calc(50% + 13.2px) calc(50% + 13.2px); }
 
-        #portal { flex: 1; padding: 30px; overflow-y: auto; padding-bottom: 150px; }
-        h1 { color: var(--gold); letter-spacing: 5px; font-size: 1.4rem; text-transform: uppercase; text-align: center; }
-        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .topic-tile { background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 15px; text-align: center; aspect-ratio: 1.6/1; display: flex; align-items: center; justify-content: center; }
-        
-        #import-section { margin-top: 30px; border-top: 1px solid #111; padding-top: 20px; }
-        textarea { width: 100%; height: 160px; background: #050505; border: 1px solid var(--border); border-radius: 12px; color: #00FF41; font-family: var(--font-code); font-size: 0.7rem; padding: 15px; resize: none; margin-bottom: 12px; }
-
-        .btn-stack { display: flex; flex-direction: column; gap: 10px; }
-        .btn-inject { width: 100%; padding: 16px; background: var(--blue); color: #fff; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 0.85rem; }
-        .btn-tsv { width: 100%; padding: 12px; background: #111; border: 1px solid var(--blue); color: var(--blue); border-radius: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 0.7rem; display: none; }
-
-        #stack { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 94%; height: 55vh; perspective: 1500px; display: none; transform-origin: calc(50% + 13.2px) calc(50% + 13.2px); }
+        /* PRINT STYLES FOR PDF */
+        @media print {
+            body { background: #fff; color: #000; overflow: visible; height: auto; }
+            #portal, #header, .btn-export, .btn-main, textarea { display: none !important; }
+            #print-area { display: block !important; padding: 40px; }
+            .entry { border-bottom: 1px solid #eee; padding: 20px 0; page-break-inside: avoid; }
+            .p-id { font-family: var(--font-code); font-size: 10pt; color: #888; }
+            .p-q { font-family: var(--font-chem); font-size: 14pt; font-weight: 600; margin: 10px 0; }
+            .p-opt { font-family: var(--font-ui); font-size: 11pt; margin-left: 20px; color: #444; }
+            .p-ans { font-family: var(--font-ui); font-weight: 900; color: #000; margin-top: 10px; text-transform: uppercase; font-size: 10pt; }
+            .p-expl { font-family: var(--font-chem); font-style: italic; font-size: 11pt; color: #222; margin-top: 5px; }
+        }
+        #print-area { display: none; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="progress-track"><div id="progress-bar"></div></div>
     <div id="session-log"><span onclick="location.reload()">> READY</span></div>
 </div>
 
 <div id="portal">
-    <h1>Alchemist.v130</h1>
-    <div id="library"></div>
-    
-    <div id="import-section">
-        <div style="font-family:var(--font-code);font-size:0.6rem;color:#444;margin-bottom:8px;">R1 UPSERT & DIAGNOSTIC EXPORT</div>
-        <textarea id="data-input" placeholder="Paste datasets... Merged by ID automatically."></textarea>
-        <div class="btn-stack">
-            <button id="inject-btn" class="btn-inject" onclick="executeUpsert()">Execute R1 Injection</button>
-            <button id="download-btn" class="btn-tsv" onclick="downloadTSV()">Download as TSV (Check)</button>
+    <div class="brand-logo">Via.Stack</div>
+    <div class="brand-sub">Synthesis Engine v31.1.24</div>
+
+    <div class="initiate-btn" onclick="document.getElementById('workspace').scrollIntoView({behavior:'smooth'})">
+        <span class="init-text">Initiate Session</span>
+    </div>
+
+    <div class="lib-section">
+        <span class="lib-label">Master Library</span>
+        <div class="grid" id="master-grid"></div>
+    </div>
+
+    <div class="lib-section">
+        <span class="lib-label" style="color:var(--blue)">User Vault</span>
+        <div class="grid" id="user-grid"></div>
+    </div>
+
+    <div id="workspace">
+        <span class="lib-label" style="color:#444">Researcher Workspace (R1 Upsert)</span>
+        <textarea id="data-input" placeholder="Paste Heavy R1 Segments... Superior ID Overwrite active."></textarea>
+        <div class="control-grid">
+            <button class="btn-main" onclick="executeSuperiorUpsert()">Confirm R1 Injection</button>
+            <button class="btn-export" onclick="downloadTSV()">Download TSV</button>
+            <button class="btn-export" onclick="generatePDF()">Download PDF</button>
         </div>
     </div>
 </div>
 
 <div id="stack"></div>
+<div id="print-area"></div>
 
 <script>
-    let db, currentBuffer = [];
+    let db;
     const R1_SCHEMA = ["ID", "SET", "DOM", "DEP", "QUESTION", "UP", "RIGHT", "LEFT", "ANS", "EXPL", "HINT", "CONTEXT"];
 
-    async function executeUpsert() {
+    function parseBuffer() {
         const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return;
+        if (!raw) return [];
+        let lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
+        let hIdx = lines.findIndex(l => l.toLowerCase().includes("id") || l.toLowerCase().includes("question"));
+        if (hIdx === -1) return [];
+        const headers = lines[hIdx].toLowerCase().split(/\t|,|\|/).map(h => h.trim());
+        const rows = lines.slice(hIdx + 1);
+        const mapIdx = {}; R1_SCHEMA.forEach(h => { mapIdx[h] = headers.findIndex(uh => uh.includes(h.toLowerCase()) || h.toLowerCase().includes(uh)); });
+        const bufMap = new Map();
+        rows.forEach(row => {
+            const cells = row.split(/\t|,|\|/).map(c => c.trim().replace(/^"|"$/g, ''));
+            if (cells.length < 2) return;
+            let entry = {}; R1_SCHEMA.forEach(h => { entry[h.toLowerCase()] = (mapIdx[h] !== -1 && cells[mapIdx[h]]) ? cells[mapIdx[h]] : "---"; });
+            bufMap.set(entry.id, entry);
+        });
+        return Array.from(bufMap.values());
+    }
 
-        try {
-            let lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
-            let headerIdx = lines.findIndex(l => l.toLowerCase().includes("id") || l.toLowerCase().includes("question"));
-            if (headerIdx === -1) throw new Error("Header Recognition Failure");
-
-            const headers = lines[headerIdx].toLowerCase().split(/\t|,|\|/).map(h => h.trim());
-            const rows = lines.slice(headerIdx + 1);
-            const mapIdx = {}; R1_SCHEMA.forEach(h => { mapIdx[h] = headers.findIndex(uh => uh.includes(h.toLowerCase()) || h.toLowerCase().includes(uh)); });
-
-            const currentPasteMap = new Map();
-            rows.forEach(row => {
-                const cells = row.split(/\t|,|\|/).map(c => c.trim().replace(/^"|"$/g, ''));
-                if (cells.length < 2) return;
-                let entry = {}; R1_SCHEMA.forEach(h => { entry[h.toLowerCase()] = (mapIdx[h] !== -1 && cells[mapIdx[h]]) ? cells[mapIdx[h]] : "---"; });
-                currentPasteMap.set(entry.id, entry); 
-            });
-
-            currentBuffer = Array.from(currentPasteMap.values());
-            document.getElementById('download-btn').style.display = 'block';
-
-            const vaultName = prompt("Successful! Assign Research Name:", "SET_F_SOVEREIGN");
-            if (!vaultName) return;
-
-            const tx = db.transaction(["Vaults"], "readwrite");
-            const store = tx.objectStore("Vaults");
-            const existing = await new Promise(r => { store.get(vaultName).onsuccess = e => r(e.target.result || []); });
-            
-            const dbMap = new Map(existing.map(obj => [obj.id, obj]));
-            currentPasteMap.forEach((val, key) => dbMap.set(key, val));
-
-            await new Promise((resolve, reject) => {
-                const req = store.put(Array.from(dbMap.values()), vaultName);
-                req.onsuccess = resolve; req.onerror = reject;
-            });
-
-            document.getElementById('inject-btn').innerText = "UPSERT SUCCESSFUL";
-            setTimeout(() => location.reload(), 1200);
-        } catch (e) { alert(e.message); }
+    function generatePDF() {
+        const data = parseBuffer();
+        if (!data.length) return alert("No valid R1 data to export.");
+        
+        const area = document.getElementById('print-area');
+        area.innerHTML = `<h1>ALCHEMIST RESEARCH EXPORT</h1><p>Date: ${new Date().toLocaleDateString()}</p><hr>`;
+        
+        data.forEach(item => {
+            area.innerHTML += `
+                <div class="entry">
+                    <div class="p-id">${item.id} | ${item.set} | ${item.dom} > ${item.dep}</div>
+                    <div class="p-q">${item.question}</div>
+                    <div class="p-opt">• UP: ${item.up}</div>
+                    <div class="p-opt">• RIGHT: ${item.right}</div>
+                    <div class="p-opt">• LEFT: ${item.left}</div>
+                    <div class="p-ans">Correct Key: ${item.ans}</div>
+                    <div class="p-expl"><strong>Logic:</strong> ${item.expl}</div>
+                    <div class="p-opt"><em>Hint: ${item.hint}</em></div>
+                </div>`;
+        });
+        window.print();
     }
 
     function downloadTSV() {
-        if (!currentBuffer.length) return;
-        let tsvContent = R1_SCHEMA.join("\t") + "\n";
-        currentBuffer.forEach(row => {
-            tsvContent += R1_SCHEMA.map(h => row[h.toLowerCase()]).join("\t") + "\n";
-        });
-        const blob = new Blob([tsvContent], { type: 'text/tab-separated-values' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `ALCHEMIST_EXPORT_${new Date().getTime()}.tsv`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        const data = parseBuffer();
+        if (!data.length) return alert("No valid R1 data.");
+        let tsv = R1_SCHEMA.join("\t") + "\n";
+        data.forEach(row => { tsv += R1_SCHEMA.map(h => row[h.toLowerCase()]).join("\t") + "\n"; });
+        const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ALCHEMIST_R1_${new Date().getTime()}.tsv`; a.click();
+    }
+
+    async function executeSuperiorUpsert() {
+        const buffer = parseBuffer();
+        if (!buffer.length) return;
+        const vaultName = prompt(`Successfully Parsed ${buffer.length} Unique IDs. Name this Vault:`, "SUPERIOR_SET");
+        if (!vaultName) return;
+        const tx = db.transaction(["Vaults"], "readwrite");
+        const store = tx.objectStore("Vaults");
+        const existing = await new Promise(r => { store.get(vaultName).onsuccess = e => r(e.target.result || []); });
+        const finalMap = new Map(existing.map(obj => [obj.id, obj]));
+        buffer.forEach(val => finalMap.set(val.id, val));
+        await new Promise((res, rej) => { const req = store.put(Array.from(finalMap.values()), vaultName); req.onsuccess = res; req.onerror = rej; });
+        location.reload();
     }
 
     const request = indexedDB.open("AlchemistDB", 1);
     request.onupgradeneeded = e => { e.target.result.createObjectStore("Vaults"); };
-    request.onsuccess = e => { db = e.target.result; renderLibrary(); };
+    request.onsuccess = e => { db = e.target.result; renderPortal(); };
 
-    function renderLibrary() {
-        const container = document.getElementById('library');
+    function renderPortal() {
+        const mGrid = document.getElementById('master-grid');
+        const uGrid = document.getElementById('user-grid');
         const store = db.transaction(["Vaults"], "readonly").objectStore("Vaults");
         store.openCursor().onsuccess = e => {
             const cursor = e.target.result;
             if (cursor) {
-                const div = document.createElement('div'); div.className = "topic-tile";
-                div.innerHTML = `<span style="color:var(--gold);font-weight:900;font-size:0.8rem;">${cursor.key}</span>`;
-                container.appendChild(div);
+                const div = document.createElement('div'); div.className = "tile";
+                div.innerHTML = `<span style="font-weight:900;color:#fff">${cursor.key}</span>`;
+                if (cursor.key.match(/^SET_[A-F]$/)) mGrid.appendChild(div); else uGrid.appendChild(div);
                 cursor.continue();
             }
         };
