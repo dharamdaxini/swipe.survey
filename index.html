@@ -3,181 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ALCHEMIST V130.94 | ACADEMIC PDF</title>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <title>ALCHEMIST V130.2 | ADMIN HUB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #2979FF; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+        :root { --bg: #000; --card: #111; --border: #262626; --gold: #ffd600; --green: #2ecc71; --blue: #3498db; --font-chem: 'Crimson Text', serif; --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; height: 100vh; background: var(--bg); color: #fff; font-family: var(--font-ui); overflow: hidden; display: flex; flex-direction: column; }
-
-        /* HOST PORTAL (v130.31 UX) */
-        #portal { flex: 1; padding: 40px 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: flex-start; }
-        .brand-logo { color: var(--gold); font-weight: 900; font-size: 2.2rem; letter-spacing: -1px; margin-bottom: 5px; }
-        .brand-sub { font-family: var(--font-code); font-size: 0.65rem; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
         
-        .initiate-btn { width: 100%; border: 2px solid var(--gold); border-radius: 40px; padding: 25px; text-align: center; margin-bottom: 40px; cursor: pointer; }
-        .init-text { color: var(--gold); font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; display: block; }
-
-        .lib-section { width: 100%; margin-bottom: 30px; }
-        .lib-label { font-family: var(--font-code); font-size: 0.65rem; color: var(--green); margin-bottom: 15px; display: block; text-transform: uppercase; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
-        .tile { background: #0c0c0c; border: 1px solid #1a1a1a; border-radius: 20px; padding: 22px; cursor: pointer; }
+        /* ADMIN HUB UI (v130.2) */
+        #portal { flex: 1; padding: 30px; overflow-y: auto; padding-bottom: 150px; display: block; }
+        h1 { color: var(--gold); letter-spacing: 5px; margin: 0 0 15px 0; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; text-align: center; }
+        .section-label { font-family: var(--font-code); font-size: 0.65rem; color: #555; margin: 15px 0 8px; letter-spacing: 2px; text-transform: uppercase; }
         
-        /* R1 WORKSPACE */
-        #workspace { width: 100%; margin-top: 40px; border-top: 1px solid #111; padding-top: 30px; padding-bottom: 60px; }
-        textarea { width: 100%; height: 150px; background: #050505; border: 1px solid var(--border); border-radius: 12px; color: #00FF41; font-family: var(--font-code); font-size: 0.7rem; padding: 15px; resize: none; margin-bottom: 15px; }
+        #library { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .topic-tile { background: var(--card); border: 2px solid var(--border); padding: 12px; border-radius: 12px; transition: 0.1s; cursor: pointer; }
+        .topic-name { color: var(--gold); font-weight: 900; font-size: 0.8rem; display: block; }
+        .topic-meta { color: #555; font-size: 0.6rem; font-family: var(--font-code); }
+
+        textarea { width: 100%; height: 120px; background: #000; border: 1px solid #222; color: var(--green); font-family: var(--font-code); padding: 15px; border-radius: 12px; font-size: 11px; resize: none; border-style: dashed; }
+
+        /* KINETIC HUD (v130.73) */
+        #header { width: 92%; margin: 20px auto 10px; flex-shrink: 0; z-index: 1000; display: none; }
+        .header-meta { display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.75rem; color: #777; font-weight: 900; }
+        .progress-track { width: 100%; height: 3px; background: #1a1a1a; margin-top: 8px; border-radius: 2px; }
+        #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: 0.3s; }
         
-        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
-        .btn-main { grid-column: span 2; padding: 18px; background: var(--blue); color: #fff; border: none; border-radius: 12px; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 0.85rem; }
-        .btn-export { padding: 14px; background: #111; border: 1px solid var(--border); color: #666; border-radius: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; font-size: 0.65rem; }
-        .btn-export:active { color: var(--gold); border-color: var(--gold); }
+        /* SESSION STACK */
+        #stack { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 94%; max-width: 420px; height: 60vh; display: none; align-items: center; justify-content: center; z-index: 500; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .card-q { font-family: var(--font-chem); font-size: 1.45rem; line-height: 1.45; color: #fff; }
+        .swipe-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.98); color: var(--gold); font-weight: 900; opacity: 0; pointer-events: none; border-radius: 40px; font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; }
 
-        /* SESSION HUD (LOCKED top 42px) */
-        #header { width: 92%; margin: 25px auto 10px; flex-shrink: 0; z-index: 9000; display: none; position: relative; }
-        #session-log { position: absolute; top: 42px; left: 0; font-family: var(--font-code); font-size: 0.85rem; color: #444; z-index: 9500; pointer-events: auto; }
-        #stack { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 94%; height: 55vh; display: none; z-index: 500; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--card); border-radius: 40px; border: 1px solid var(--border); padding: 35px; display: flex; flex-direction: column; justify-content: center; transform-origin: calc(50% + 13.2px) calc(50% + 13.2px); }
+        .footer-controls { position: fixed; bottom: 20px; left: 5%; width: 90%; z-index: 9500; background: rgba(0,0,0,0.9); padding: 15px; border-radius: 20px; border: 1px solid #333; }
+        .btn { width: 100%; padding: 14px; border-radius: 100px; border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-blue { background: transparent; border: 1px solid var(--blue); color: var(--blue); margin-top: 10px; }
 
-        /* PRINT STYLES FOR PDF */
-        @media print {
-            body { background: #fff; color: #000; overflow: visible; height: auto; }
-            #portal, #header, .btn-export, .btn-main, textarea { display: none !important; }
-            #print-area { display: block !important; padding: 40px; }
-            .entry { border-bottom: 1px solid #eee; padding: 20px 0; page-break-inside: avoid; }
-            .p-id { font-family: var(--font-code); font-size: 10pt; color: #888; }
-            .p-q { font-family: var(--font-chem); font-size: 14pt; font-weight: 600; margin: 10px 0; }
-            .p-opt { font-family: var(--font-ui); font-size: 11pt; margin-left: 20px; color: #444; }
-            .p-ans { font-family: var(--font-ui); font-weight: 900; color: #000; margin-top: 10px; text-transform: uppercase; font-size: 10pt; }
-            .p-expl { font-family: var(--font-chem); font-style: italic; font-size: 11pt; color: #222; margin-top: 5px; }
-        }
-        #print-area { display: none; }
+        #global-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; padding: 40px; display: none; flex-direction: column; }
+        .overlay-body { font-size: 1.1rem; color: #eee; font-family: var(--font-chem); overflow-y: auto; flex-grow: 1; margin-bottom: 20px; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div id="session-log"><span onclick="location.reload()">> READY</span></div>
+<div id="global-overlay">
+    <div id="overlay-content" class="overlay-body"></div>
+    <button class="btn btn-gold" onclick="closeOverlay()">BACK TO SESSION</button>
 </div>
 
 <div id="portal">
-    <div class="brand-logo">Via.Stack</div>
-    <div class="brand-sub">Synthesis Engine v31.1.24</div>
-
-    <div class="initiate-btn" onclick="document.getElementById('workspace').scrollIntoView({behavior:'smooth'})">
-        <span class="init-text">Initiate Session</span>
-    </div>
-
-    <div class="lib-section">
-        <span class="lib-label">Master Library</span>
-        <div class="grid" id="master-grid"></div>
-    </div>
-
-    <div class="lib-section">
-        <span class="lib-label" style="color:var(--blue)">User Vault</span>
-        <div class="grid" id="user-grid"></div>
-    </div>
-
-    <div id="workspace">
-        <span class="lib-label" style="color:#444">Researcher Workspace (R1 Upsert)</span>
-        <textarea id="data-input" placeholder="Paste Heavy R1 Segments... Superior ID Overwrite active."></textarea>
-        <div class="control-grid">
-            <button class="btn-main" onclick="executeSuperiorUpsert()">Confirm R1 Injection</button>
-            <button class="btn-export" onclick="downloadTSV()">Download TSV</button>
-            <button class="btn-export" onclick="generatePDF()">Download PDF</button>
-        </div>
+    <h1>ALCHEMIST_V130.2</h1>
+    <div class="section-label">CURRICULUM_VAULTS</div>
+    <div id="library"></div>
+    
+    <div id="import-section">
+        <div class="section-label">QUICK DATA (R1-24 MASTER SCHEME)</div>
+        <textarea id="data-input" placeholder="Paste Sovereign TSV or Search Library..."></textarea>
+        <button id="import-btn" class="btn btn-gold" style="margin-top:15px;" onclick="sovereignEngine()">REGISTER TO VAULT</button>
+        <button class="btn btn" style="background:#080808; color:#333; margin-top:10px; border:1px solid #111;" onclick="clearLibrary()">WIPE REPOSITORY</button>
     </div>
 </div>
 
+<div class="footer-controls">
+    <button id="merge-mode-btn" class="btn btn-blue" onclick="toggleMergeMode()">ENABLE VAULT MERGER</button>
+</div>
+
+<div id="header">
+    <div class="header-meta"><span id="p-text">---</span><span id="score-text">0 XP</span></div>
+    <div class="progress-track"><div id="progress-bar"></div></div>
+</div>
 <div id="stack"></div>
-<div id="print-area"></div>
 
 <script>
-    let db;
-    const R1_SCHEMA = ["ID", "SET", "DOM", "DEP", "QUESTION", "UP", "RIGHT", "LEFT", "ANS", "EXPL", "HINT", "CONTEXT"];
-
-    function parseBuffer() {
-        const raw = document.getElementById('data-input').value.trim();
-        if (!raw) return [];
-        let lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");
-        let hIdx = lines.findIndex(l => l.toLowerCase().includes("id") || l.toLowerCase().includes("question"));
-        if (hIdx === -1) return [];
-        const headers = lines[hIdx].toLowerCase().split(/\t|,|\|/).map(h => h.trim());
-        const rows = lines.slice(hIdx + 1);
-        const mapIdx = {}; R1_SCHEMA.forEach(h => { mapIdx[h] = headers.findIndex(uh => uh.includes(h.toLowerCase()) || h.toLowerCase().includes(uh)); });
-        const bufMap = new Map();
-        rows.forEach(row => {
-            const cells = row.split(/\t|,|\|/).map(c => c.trim().replace(/^"|"$/g, ''));
-            if (cells.length < 2) return;
-            let entry = {}; R1_SCHEMA.forEach(h => { entry[h.toLowerCase()] = (mapIdx[h] !== -1 && cells[mapIdx[h]]) ? cells[mapIdx[h]] : "---"; });
-            bufMap.set(entry.id, entry);
-        });
-        return Array.from(bufMap.values());
-    }
-
-    function generatePDF() {
-        const data = parseBuffer();
-        if (!data.length) return alert("No valid R1 data to export.");
-        
-        const area = document.getElementById('print-area');
-        area.innerHTML = `<h1>ALCHEMIST RESEARCH EXPORT</h1><p>Date: ${new Date().toLocaleDateString()}</p><hr>`;
-        
-        data.forEach(item => {
-            area.innerHTML += `
-                <div class="entry">
-                    <div class="p-id">${item.id} | ${item.set} | ${item.dom} > ${item.dep}</div>
-                    <div class="p-q">${item.question}</div>
-                    <div class="p-opt">• UP: ${item.up}</div>
-                    <div class="p-opt">• RIGHT: ${item.right}</div>
-                    <div class="p-opt">• LEFT: ${item.left}</div>
-                    <div class="p-ans">Correct Key: ${item.ans}</div>
-                    <div class="p-expl"><strong>Logic:</strong> ${item.expl}</div>
-                    <div class="p-opt"><em>Hint: ${item.hint}</em></div>
-                </div>`;
-        });
-        window.print();
-    }
-
-    function downloadTSV() {
-        const data = parseBuffer();
-        if (!data.length) return alert("No valid R1 data.");
-        let tsv = R1_SCHEMA.join("\t") + "\n";
-        data.forEach(row => { tsv += R1_SCHEMA.map(h => row[h.toLowerCase()]).join("\t") + "\n"; });
-        const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ALCHEMIST_R1_${new Date().getTime()}.tsv`; a.click();
-    }
-
-    async function executeSuperiorUpsert() {
-        const buffer = parseBuffer();
-        if (!buffer.length) return;
-        const vaultName = prompt(`Successfully Parsed ${buffer.length} Unique IDs. Name this Vault:`, "SUPERIOR_SET");
-        if (!vaultName) return;
-        const tx = db.transaction(["Vaults"], "readwrite");
-        const store = tx.objectStore("Vaults");
-        const existing = await new Promise(r => { store.get(vaultName).onsuccess = e => r(e.target.result || []); });
-        const finalMap = new Map(existing.map(obj => [obj.id, obj]));
-        buffer.forEach(val => finalMap.set(val.id, val));
-        await new Promise((res, rej) => { const req = store.put(Array.from(finalMap.values()), vaultName); req.onsuccess = res; req.onerror = rej; });
-        location.reload();
-    }
+    let db, VAULT = [], POOL = [], SCORE = 0, INDEX = 1;
+    const STORE_NAME = "Vaults";
+    const R1_SCHEMA = ["ID", "SET", "DOM", "DEP", "LEVEL", "QUESTION", "UP", "RIGHT", "LEFT", "ANS", "EXPL", "HINT", "CONTEXT", "REF", "TAGS", "IMAGE", "LINK", "NOTE", "DATE", "REV", "W_UP", "W_SIDE", "STEP_1", "STEP_2"];
 
     const request = indexedDB.open("AlchemistDB", 1);
-    request.onupgradeneeded = e => { e.target.result.createObjectStore("Vaults"); };
-    request.onsuccess = e => { db = e.target.result; renderPortal(); };
+    request.onupgradeneeded = e => { db = e.target.result; if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME); };
+    request.onsuccess = e => { db = e.target.result; refreshLibrary(); };
 
-    function renderPortal() {
-        const mGrid = document.getElementById('master-grid');
-        const uGrid = document.getElementById('user-grid');
-        const store = db.transaction(["Vaults"], "readonly").objectStore("Vaults");
-        store.openCursor().onsuccess = e => {
+    async function sovereignEngine() {
+        const raw = document.getElementById('data-input').value.trim();
+        const btn = document.getElementById('import-btn');
+        if (!raw) return;
+
+        btn.innerText = "PROCESSING...";
+        let lines = raw.split(/\r?\n/).filter(l => l.trim() !== "");
+        let hIdx = lines.findIndex(l => l.toLowerCase().includes("id") && l.toLowerCase().includes("question"));
+        if (hIdx === -1) lines.unshift(R1_SCHEMA.join('\t')); else lines = lines.slice(hIdx);
+
+        const headers = lines[0].toLowerCase().split('\t').map(h => h.trim());
+        const map = {}; R1_SCHEMA.forEach(key => map[key.toLowerCase()] = headers.indexOf(key.toLowerCase()));
+
+        let newData = [];
+        let vaultName = "SET_A";
+
+        lines.slice(1).forEach(line => {
+            let c = line.split('\t'); if (c.length < 2) return;
+            let entry = {};
+            R1_SCHEMA.forEach(key => entry[key.toLowerCase()] = map[key.toLowerCase()] > -1 ? c[map[key.toLowerCase()]] : "---");
+            newData.push(entry);
+            if (entry.set !== "---") vaultName = entry.set;
+        });
+
+        const tx = db.transaction([STORE_NAME], "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        store.get(vaultName).onsuccess = e => {
+            let existing = e.target.result || [];
+            let masterMap = new Map(existing.map(obj => [obj.id, obj]));
+            newData.forEach(item => masterMap.set(item.id, item));
+            store.put(Array.from(masterMap.values()), vaultName).onsuccess = () => location.reload();
+        };
+    }
+
+    function refreshLibrary() {
+        const container = document.getElementById('library'); container.innerHTML = "";
+        db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME).openCursor().onsuccess = e => {
             const cursor = e.target.result;
             if (cursor) {
-                const div = document.createElement('div'); div.className = "tile";
-                div.innerHTML = `<span style="font-weight:900;color:#fff">${cursor.key}</span>`;
-                if (cursor.key.match(/^SET_[A-F]$/)) mGrid.appendChild(div); else uGrid.appendChild(div);
-                cursor.continue();
+                const div = document.createElement('div'); div.className = "topic-tile";
+                div.innerHTML = `<span class="topic-name">${cursor.key}</span><span class="topic-meta">${cursor.value.length} CARDS</span>`;
+                div.onclick = () => loadDataset(cursor.key);
+                container.appendChild(div); cursor.continue();
             }
         };
     }
+
+    function loadDataset(name) {
+        db.transaction([STORE_NAME], "readonly").objectStore(STORE_NAME).get(name).onsuccess = e => {
+            VAULT = e.target.result;
+            document.getElementById('portal').style.display = 'none';
+            document.querySelector('.footer-controls').style.display = 'none';
+            document.getElementById('header').style.display = 'flex';
+            document.getElementById('stack').style.display = 'flex';
+            POOL = VAULT.sort(() => 0.5 - Math.random()).slice(0, 20);
+            INDEX = 1; SCORE = 0; renderNext();
+        };
+    }
+
+    function renderNext() {
+        const s = document.getElementById('stack'); s.innerHTML = "";
+        if (!POOL.length) { s.innerHTML = "<div class='card'><div class='card-q'>MISSION COMPLETE</div></div>"; return; }
+        const q = POOL[0];
+        const c = document.createElement('div'); c.className = "card";
+        c.innerHTML = `<div class="card-q">${q.question}</div>
+            <div class="swipe-label sl-up">${q.up}</div>
+            <div class="swipe-label sl-right">${q.right}</div>
+            <div class="swipe-label sl-left">${q.left}</div>
+            <div class="swipe-label sl-down">DEEP DIVE</div>`;
+        s.appendChild(c); bindPhysics(c, q);
+        updateHUD();
+    }
+
+    function bindPhysics(el, data) {
+        let x=0, y=0, sx=0, sy=0, active=false;
+        const RADIUS = 13.2; // Master Lock Pivot
+        el.ontouchstart = e => { active=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; el.style.transition="none"; };
+        const move = (cx, cy) => {
+            if (!active) return;
+            let dx = cx-sx, dy = cy-sy;
+            x = (Math.abs(dx) > RADIUS) ? (dx > 0 ? RADIUS : -RADIUS) : dx;
+            y = (Math.abs(dy) > RADIUS) ? (dy > 0 ? RADIUS : -RADIUS) : dy;
+            el.style.transform = `translate3d(${x}px,${y}px,0) rotate(${x/5}deg)`;
+            el.querySelectorAll('.swipe-label').forEach(l => l.style.opacity = 0);
+            if (Math.abs(dy) > Math.abs(dx)) {
+                if (dy < -5) el.querySelector('.sl-up').style.opacity = 1;
+                if (dy > 5) el.querySelector('.sl-down').style.opacity = 1;
+            } else {
+                if (dx > 5) el.querySelector('.sl-right').style.opacity = 1;
+                if (dx < -5) el.querySelector('.sl-left').style.opacity = 1;
+            }
+        };
+        window.ontouchmove = e => move(e.touches[0].clientX, e.touches[0].clientY);
+        window.ontouchend = () => {
+            if (!active) return; active = false;
+            if (Math.abs(x) > 10 || Math.abs(y) > 10) {
+                let dir = Math.abs(y) > Math.abs(x) ? (y < 0 ? "UP" : "DOWN") : (x > 0 ? "RIGHT" : "LEFT");
+                if (dir === "DOWN") openOverlay(data);
+                else {
+                    if (dir === data.ans.toUpperCase()) SCORE += 10;
+                    POOL.shift(); INDEX++; renderNext();
+                }
+            } else { el.style.transition = "0.3s ease"; el.style.transform = "none"; }
+        };
+    }
+
+    function openOverlay(d) {
+        document.getElementById('overlay-content').innerHTML = `<strong>THEORETICAL LOGIC</strong><br>${d.expl}<br><br><strong>STEP 1</strong><br>${d.step_1}<br><br><strong>STEP 2</strong><br>${d.step_2}`;
+        document.getElementById('global-overlay').style.display = "flex";
+    }
+    function closeOverlay() { document.getElementById('global-overlay').style.display = "none"; }
+    function clearLibrary() { if(confirm("Purge?")) { db.transaction([STORE_NAME], "readwrite").objectStore(STORE_NAME).clear(); location.reload(); } }
+    function updateHUD() { document.getElementById('p-text').innerText = `${INDEX}/20`; document.getElementById('score-text').innerText = `${SCORE} XP`; document.getElementById('progress-bar').style.width = `${(INDEX/20)*100}%`; }
 </script>
 </body>
 </html>
