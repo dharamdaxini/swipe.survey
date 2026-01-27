@@ -2,109 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
 <title>Alchemist | Neural Backend</title>
 
-<!-- GOOGLE FONTS -->
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Crimson+Text:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-<!-- KATEX -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-
-<!-- PDF EXPORT -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-<!-- MAIN CSS -->
+<!-- CSS -->
 <link rel="stylesheet" href="style.css">
 
 </head>
 <body>
 
-<!-- ===== DATA PORTAL ===== -->
+<!-- ================= PORTAL ================= -->
 <div id="portal">
     <h1>ALCHEMIST DATA PORTAL</h1>
 
-    <textarea id="data-input" placeholder="Paste TSV here or upload file..."></textarea>
+    <textarea id="data-input" placeholder="Paste TSV dataset here..."></textarea>
 
-    <input type="file" id="file-upload" accept=".tsv,.csv,.json" style="display:none">
+    <button class="btn btn-gold" onclick="importDataset()">IMPORT DATASET</button>
 
-    <button class="btn btn-gold" onclick="document.getElementById('file-upload').click()">IMPORT DATASET</button>
+    <!-- START SESSION BUTTON -->
+    <button id="start-btn"
+            class="btn"
+            style="margin-top:16px; display:none;"
+            onclick="startSession()">
+        START SESSION
+    </button>
+
+    <div class="v-tag">ALCHEMIST v130.2</div>
 </div>
 
-<!-- ===== HUD ===== -->
+<!-- ================= HUD ================= -->
 <div id="header">
     <div class="header-meta">
-        <span id="p-text">BOOT</span>
+        <div id="p-text">0/20 UNITS</div>
         <div>
-            <button class="cmd-btn" onclick="document.getElementById('file-upload').click()">LOAD</button>
-            <button class="cmd-btn" onclick="exportAcademicPDF()">EXPORT PDF</button>
+            <span id="score-text">0 XP</span>
         </div>
-        <span id="score-text">0 XP</span>
     </div>
     <div class="progress-track">
         <div id="progress-bar"></div>
     </div>
 </div>
 
-<!-- ===== STACK ===== -->
+<!-- ================= CARD STACK ================= -->
 <div id="stack"></div>
 
-<!-- ===== OVERLAY ===== -->
-<div id="global-overlay" class="overlay">
-    <div class="overlay-body" id="overlay-content"></div>
-    <button class="btn btn-gold" onclick="closeOverlay()">RESUME</button>
+<!-- ================= OVERLAY ================= -->
+<div id="global-overlay" class="overlay" onclick="closeOverlay()">
+    <div id="overlay-content" class="overlay-body"></div>
 </div>
 
-<!-- ===== DEPLOY TAG ===== -->
-<div class="v-tag">ALCHEMIST v130.2</div>
-
-<!-- ===== MAIN SCRIPT ===== -->
+<!-- JS -->
 <script src="script.js"></script>
-
-<!-- ===== KATEX RENDER HOOK (NON-DESTRUCTIVE) ===== -->
-<script>
-function renderMath() {
-    if (window.renderMathInElement) {
-        renderMathInElement(document.body, {
-            delimiters: [
-                {left: "$$", right: "$$", display: true},
-                {left: "$", right: "$", display: false},
-                {left: "\\(", right: "\\)", display: false},
-                {left: "\\[", right: "\\]", display: true}
-            ],
-            throwOnError: false
-        });
-    }
-}
-
-/* Call AFTER every render */
-const _renderNext = window.renderNext;
-window.renderNext = function () {
-    _renderNext();
-    requestAnimationFrame(renderMath);
-};
-
-const _renderSlide = window.renderSlide;
-window.renderSlide = function (...args) {
-    _renderSlide(...args);
-    requestAnimationFrame(renderMath);
-};
-
-/* File Upload Bridge */
-document.getElementById('file-upload').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-        document.getElementById('data-input').value = ev.target.result;
-        importDataset();
-    };
-    reader.readAsText(file);
-});
-</script>
 
 </body>
 </html>
