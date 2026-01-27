@@ -2,47 +2,280 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alchemist v130.2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Alchemist | Neural Backend</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Crimson+Text:wght@600&family=JetBrains+Mono&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#000;--card:#111;--border:#222;
+  --gold:#ffd600;--blue:#3498db;
+  --green:#2ecc71;--red:#e74c3c;
+  --font-chem:'Crimson Text',serif;
+  --font-ui:'Inter',sans-serif;
+  --font-code:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;height:100vh;background:var(--bg);
+  color:#fff;font-family:var(--font-ui);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+sub{font-size:.7em}sup{font-size:.7em}
+
+#header{width:90%;margin:25px auto 0;z-index:100}
+.header-meta{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--font-code);font-size:.7rem;color:#555;letter-spacing:2px
+}
+.progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
+#progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
+
+#stack{
+  position:relative;width:92%;max-width:400px;height:70vh;
+  margin:auto;perspective:1200px;
+  display:flex;align-items:center;justify-content:center
+}
+.card{
+  position:absolute;width:100%;height:95%;
+  background:var(--card);border-radius:40px;border:1px solid var(--border);
+  padding:40px;display:flex;flex-direction:column;justify-content:center;
+  box-shadow:0 30px 90px rgba(0,0,0,.9);
+  will-change:transform
+}
+.card.study-active{
+  filter:blur(20px) brightness(.2);opacity:.5;
+  transform:scale(.85) translateY(40px)!important;
+  pointer-events:none
+}
+.card-q{
+  font-family:var(--font-chem);
+  font-size:1.7rem;line-height:1.4;
+  font-style:italic;font-weight:600;
+  text-align:center
+}
+
+.swipe-label{
+  position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;
+  background:#000;font-weight:900;
+  font-size:1.8rem;text-transform:uppercase;
+  border-radius:40px;opacity:0;pointer-events:none;
+  text-align:center;padding:20px
+}
+.sl-up{color:var(--green)}
+.sl-left,.sl-right{color:var(--red)}
+.sl-down{color:var(--blue)}
+
+.overlay{
+  position:absolute;inset:0;background:#0d0d0d;
+  border-radius:40px;padding:40px;
+  opacity:0;pointer-events:none;
+  transition:.3s;display:flex;
+  flex-direction:column;justify-content:center
+}
+.overlay.active{opacity:1;pointer-events:auto}
+.overlay-body{
+  font-family:var(--font-chem);
+  font-size:1.1rem;line-height:1.6;
+  color:#bbb;margin-bottom:30px
+}
+
+.btn{
+  width:100%;padding:18px;border-radius:50px;
+  border:none;background:#fff;color:#000;
+  font-weight:900;text-transform:uppercase;
+  cursor:pointer;font-size:12px;letter-spacing:1px
+}
+</style>
 </head>
 
 <body>
 
-<!-- PORTAL -->
-<div id="portal">
-    <h1>ALCHEMIST DATA PORTAL</h1>
-
-    <textarea id="data-input" placeholder="Paste TSV dataset here..."></textarea>
-
-    <button class="btn btn-gold" onclick="importDataset()">IMPORT DATASET</button>
-    <button class="btn" style="margin-top:12px" onclick="startFromPortal()">START SLIDES</button>
-
-    <div class="v-tag">ALCHEMIST v130.2</div>
-</div>
-
-<!-- HEADER -->
 <div id="header">
-    <div class="header-meta">
-        <span id="p-text">0/20 UNITS</span>
-        <span id="score-text">0 XP</span>
-    </div>
-    <div class="progress-track">
-        <div id="progress-bar"></div>
-    </div>
+  <div class="header-meta">
+    <span id="id-ui">ID: BOOT</span>
+    <span id="xp-ui">0 XP</span>
+  </div>
+  <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
-<!-- STACK -->
 <div id="stack"></div>
 
-<!-- OVERLAY -->
-<div id="global-overlay" class="overlay" onclick="closeOverlay()">
-    <div id="overlay-content" class="overlay-body"></div>
-    <button class="btn btn-gold">CLOSE</button>
-</div>
+<script>
+/* ---------------- DATA ---------------- */
+const RAW_DATA = [
+  {id:"A_0001",set:"SET_A",dom:"MASTER",q:"Calculate the standard cell potential for Mg | Mg2+ || Cu2+ | Cu",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"E°cell = 0.34 − (−2.37) = 2.71 V"},
+  {id:"B_0001",set:"SET_B",dom:"MASTER",q:"Which reagent converts alcohol to aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"PCC oxidizes primary alcohols to aldehydes."},
+  {id:"U_0001",set:"MY_SET_1",dom:"USER",q:"Sample user dataset question?",u:"Yes",l:"No",r:"Maybe",correct:"Yes",logic:"User demo"}
+];
 
-<script src="script.js"></script>
+/* ---------------- STATE ---------------- */
+const UI={
+  stack:document.getElementById("stack"),
+  xp:document.getElementById("xp-ui"),
+  bar:document.getElementById("progress-bar"),
+  id:document.getElementById("id-ui")
+};
+
+let MODE="FRONT"; // FRONT | MANAGE | QUIZ
+let FILTER="MASTER"; // MASTER | USER
+let CURSOR=0;
+let STATE={pool:[],score:0};
+
+/* ---------------- HELPERS ---------------- */
+const F=t=>t?t.replace(/([A-Z][a-z]?)(\d+)/g,"$1<sub>$2</sub>").replace(/\^(\d+)/g,"<sup>$1</sup>"):"";
+
+function getSets(){
+  return [...new Set(RAW_DATA.filter(d=>FILTER==="MASTER"?d.dom==="MASTER":d.dom==="USER").map(d=>d.set))];
+}
+
+/* ---------------- PHYSICS ---------------- */
+class PhysicsController{
+  constructor(el,cbs){
+    this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+    this.labels={
+      UP:el.querySelector(".sl-up"),
+      LEFT:el.querySelector(".sl-left"),
+      RIGHT:el.querySelector(".sl-right"),
+      DOWN:el.querySelector(".sl-down")
+    };
+    this.bind();
+  }
+  bind(){
+    const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+    const m=e=>this.move(e.touches?e.touches[0]:e);
+    const e=()=>this.end();
+    this.el.addEventListener("mousedown",s);
+    window.addEventListener("mousemove",m);
+    window.addEventListener("mouseup",e);
+    this.el.addEventListener("touchstart",s,{passive:false});
+    this.el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+    this.el.addEventListener("touchend",e);
+  }
+  startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+  move(p){
+    if(!this.active)return;
+    const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+    const d=Math.hypot(dx,dy);
+    this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
+    Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+    if(d>20){
+      const dir=this.dir(dx,dy);
+      this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+    }
+  }
+  end(){
+    if(!this.active)return;this.active=false;
+    const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+    const dx=m.m41,dy=m.m42;
+    if(Math.hypot(dx,dy)>100){
+      this.cbs.onCommit(this.dir(dx,dy));
+    }else{
+      this.el.style.transition=".4s";
+      this.el.style.transform="translate(0,0)";
+    }
+  }
+  dir(dx,dy){
+    const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+    if(a>45&&a<135)return"UP";
+    if(a>135&&a<225)return"LEFT";
+    if(a>225&&a<315)return"DOWN";
+    return"RIGHT";
+  }
+}
+
+/* ---------------- FRONT SLIDE ---------------- */
+function renderFront(){
+  MODE="FRONT";
+  const sets=getSets();
+  const left=sets[CURSOR%sets.length]||"—";
+  const right=sets[(CURSOR+1)%sets.length]||"—";
+
+  UI.stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">SELECT SET</div>
+    <div class="swipe-label sl-up">MANAGE</div>
+    <div class="swipe-label sl-left">${left}</div>
+    <div class="swipe-label sl-right">${right}</div>
+    <div class="swipe-label sl-down">REFRESH</div>`;
+  UI.stack.appendChild(el);
+
+  new PhysicsController(el,{
+    onCommit:dir=>{
+      if(dir==="DOWN"){CURSOR+=2;renderFront();return;}
+      if(dir==="UP"){renderManage();return;}
+      if(dir==="LEFT"){startQuiz(left);return;}
+      if(dir==="RIGHT"){startQuiz(right);return;}
+    }
+  });
+}
+
+/* ---------------- MANAGE VAULT ---------------- */
+function renderManage(){
+  MODE="MANAGE";
+  UI.stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">MANAGE VAULT</div>
+    <div class="swipe-label sl-up">MASTER</div>
+    <div class="swipe-label sl-down">MY SETS</div>`;
+  UI.stack.appendChild(el);
+
+  new PhysicsController(el,{
+    onCommit:dir=>{
+      if(dir==="UP"){FILTER="MASTER";renderFront();}
+      if(dir==="DOWN"){FILTER="USER";renderFront();}
+    }
+  });
+}
+
+/* ---------------- QUIZ ---------------- */
+function startQuiz(set){
+  STATE.pool=RAW_DATA.filter(d=>d.set===set).sort(()=>Math.random()-.5);
+  STATE.score=0;UI.bar.style.width="0%";UI.xp.textContent="0 XP";
+  next();
+}
+
+function next(){
+  if(!STATE.pool.length){renderFront();return;}
+  const d=STATE.pool.shift();
+  UI.id.textContent=d.id;
+
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">${F(d.q)}</div>
+    <div class="swipe-label sl-up">${F(d.u)}</div>
+    <div class="swipe-label sl-left">${F(d.l)}</div>
+    <div class="swipe-label sl-right">${F(d.r)}</div>
+    <div class="swipe-label sl-down">HINT</div>
+    <div class="overlay">
+      <div class="overlay-body">${F(d.logic)}</div>
+      <button class="btn" onclick="this.parentElement.classList.remove('active')">RESUME</button>
+    </div>`;
+  UI.stack.innerHTML="";UI.stack.appendChild(el);
+
+  new PhysicsController(el,{
+    onCommit:dir=>{
+      if(dir==="DOWN"){el.querySelector(".overlay").classList.add("active");return;}
+      if((dir==="UP"&&d.u===d.correct)||(dir==="LEFT"&&d.l===d.correct)||(dir==="RIGHT"&&d.r===d.correct)){
+        STATE.score+=10;UI.xp.textContent=`${STATE.score} XP`;
+        UI.bar.style.width=(STATE.score%100)+"%";
+      }
+      el.style.transition=".4s";el.style.opacity=0;
+      setTimeout(next,300);
+    }
+  });
+}
+
+/* ---------------- INIT ---------------- */
+renderFront();
+</script>
+
 </body>
 </html>
