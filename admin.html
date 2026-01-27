@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>VIA.STACK</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+ --bg:#000;--gold:#ffd600;--blue:#2979ff;--green:#00e676;
+ --red:#ff4757;--border:#222
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+ margin:0;height:100vh;background:#000;color:#fff;
+ font-family:Inter,sans-serif;overflow:hidden
+}
+
+/* ================= FRONT ================= */
+#front{
+ position:fixed;inset:0;z-index:10;
+ display:flex;flex-direction:column;
+ align-items:center;justify-content:center
+}
+.front-btn{
+ width:260px;padding:18px 0;margin:10px 0;
+ border-radius:60px;font-weight:900;
+ border:2px solid var(--gold);
+ background:rgba(0,0,0,.6);color:var(--gold)
+}
+.front-btn.ghost{border-color:#333;color:#555}
+
+/* STATUS */
+.status{
+ margin-top:32px;width:260px;
+ font-family:'JetBrains Mono',monospace;font-size:.75rem
+}
+.status h4{margin:0 0 10px;color:var(--green)}
+.status h4.user{color:var(--blue)}
+.user-row{display:flex;gap:10px}
+.pill{
+ flex:1;padding:16px;border-radius:18px;
+ text-align:center;font-weight:800;
+ border:1px solid var(--blue);color:var(--blue)
+}
+.plus{
+ width:42px;height:42px;border-radius:50%;
+ display:flex;align-items:center;justify-content:center;
+ font-weight:900;font-size:1.4rem;
+ border:1px solid var(--blue);color:var(--blue)
+}
+
+/* ================= ADMIN ================= */
+#admin{
+ position:fixed;inset:0;background:#050505;
+ display:none;flex-direction:column;color:#ccc
+}
+header{
+ position:sticky;top:0;z-index:50;
+ background:#050505;border-bottom:1px solid var(--border);
+ padding:15px 25px;display:flex;
+ justify-content:space-between;align-items:center
+}
+.brand{font-weight:900;color:#fff}
+.brand span{color:var(--gold)}
+.back{
+ font-family:'JetBrains Mono',monospace;
+ font-size:.65rem;border:1px solid #333;
+ padding:6px 14px;border-radius:20px;
+ background:#000;color:#aaa
+}
+#scroll{flex:1;overflow-y:auto;padding-bottom:80px}
+.zone{padding:30px;border-bottom:1px dashed #222}
+.zone-title{
+ font-size:.7rem;font-weight:900;color:#666;margin-bottom:15px
+}
+
+/* UPLOAD */
+.upload-box{
+ border:2px dashed #333;border-radius:20px;
+ padding:40px 20px;text-align:center;
+ color:#aaa;font-family:'JetBrains Mono',monospace
+}
+.upload-box strong{color:#fff;font-size:.9rem}
+.upload-box span{display:block;margin-top:8px;font-size:.7rem;color:#666}
+
+.btn{
+ margin-top:20px;padding:16px 28px;
+ border-radius:50px;font-weight:900;
+ border:none;background:var(--gold);color:#000;width:100%
+}
+.terminal{
+ margin-top:15px;background:#000;border:1px solid #222;
+ border-radius:8px;padding:15px;
+ font-family:'JetBrains Mono',monospace;
+ font-size:.7rem;color:#666
+}
+</style>
+</head>
+
+<body>
+
+<!-- FRONT -->
+<div id="front">
+  <div class="front-btn">INITIATE SESSION</div>
+  <div class="front-btn ghost" onclick="openAdmin()">MANAGE VAULTS</div>
+
+  <div class="status">
+    <h4>✓ MASTER LIBRARY</h4>
+    <h4 class="user">✓ USER VAULT</h4>
+    <div class="user-row">
+      <div class="pill">Custom Sets</div>
+      <div class="plus" onclick="openAdmin()">+</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin">
+<header>
+  <div class="brand">VIA.<span>STACK</span></div>
+  <div class="back" onclick="closeAdmin()">EXIT</div>
+</header>
+
+<div id="scroll">
+
+  <div class="zone">
+    <div class="zone-title">01 // INGESTION ENGINE</div>
+
+    <div class="upload-box" onclick="triggerUpload()">
+      <strong>TAP TO UPLOAD FILE</strong>
+      <span>TSV or JSON (Android Safe)</span>
+    </div>
+
+    <!-- ANDROID-SAFE INPUT -->
+    <input
+      id="fileInput"
+      type="file"
+      style="display:none"
+    >
+
+    <button class="btn" onclick="processFile()">INITIATE ALIGNMENT</button>
+    <div class="terminal" id="log">> SYSTEM STANDBY…</div>
+  </div>
+
+  <div class="zone">
+    <div class="zone-title">02 // DEPLOYMENT DOCK</div>
+    <button class="btn" onclick="pushToIndex()">PUSH TO OPERATOR INDEX</button>
+  </div>
+
+  <div class="zone">
+    <div class="zone-title" style="color:var(--red)">03 // DANGER ZONE</div>
+    <button class="btn" style="background:var(--red);color:#fff"
+      onclick="localStorage.clear();location.reload()">
+      PURGE SYSTEM MEMORY
+    </button>
+  </div>
+
+</div>
+</div>
+
+<script>
+const DB_KEY="ALCHEMIST_MASTER_DB";
+let STAGED=[];
+
+/* ANDROID SAFE TRIGGER */
+function triggerUpload(){
+ const input=document.getElementById("fileInput");
+ input.value=null;
+ input.click();
+}
+
+function processFile(){
+ const f=document.getElementById("fileInput").files[0];
+ if(!f) return log("NO FILE SELECTED");
+
+ const reader=new FileReader();
+ reader.onload=e=>{
+  try{
+   if(f.name.toLowerCase().endsWith(".json")){
+     STAGED=JSON.parse(e.target.result);
+     log("JSON INGESTED: "+STAGED.length+" ROWS");
+   }else{
+     const rows=e.target.result.trim().split(/\r?\n/);
+     STAGED=rows.slice(1).map(r=>{
+       const c=r.split("\t");
+       return{
+         id:c[0],set:c[1],dom:c[2],topic:c[3],
+         q:c[5],u:c[6],r:c[7],l:c[8],
+         correct:c[9],logic:c[10],hint:c[11]
+       };
+     });
+     log("TSV INGESTED: "+STAGED.length+" ROWS");
+   }
+  }catch(err){
+   log("PARSE ERROR");
+  }
+ };
+ reader.readAsText(f);
+}
+
+function pushToIndex(){
+ if(!STAGED.length) return log("NO DATA STAGED");
+ localStorage.setItem(DB_KEY,JSON.stringify(STAGED));
+ log("DATA PUSHED TO OPERATOR INDEX");
+}
+
+function log(m){
+ document.getElementById("log").innerText="> "+m;
+}
+
+function openAdmin(){
+ document.getElementById("front").style.display="none";
+ document.getElementById("admin").style.display="flex";
+}
+function closeAdmin(){
+ document.getElementById("admin").style.display="none";
+ document.getElementById("front").style.display="flex";
+}
+</script>
+
+</body>
+</html>
