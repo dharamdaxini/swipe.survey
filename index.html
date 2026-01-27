@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Neural Backend v136.09</title>
+<title>Alchemist | Neural Backend v136.10</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -30,11 +30,11 @@ body{
   font-size:.7rem;color:#555;letter-spacing:2px
 }
 
-/* DYNAMIC HEADER FOR LOGIC TEXT */
+/* FIXED REVIEW HEADER PLACEMENT */
 #review-text{
-  margin-top:15px;
+  margin-top:20px;
   font-family:var(--font-chem);
-  font-size:1.1rem;
+  font-size:1.2rem;
   line-height:1.4;
   font-style:italic;
   text-align:center;
@@ -48,7 +48,7 @@ body{
 #progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
 
 #stack{
-  position:relative;width:92%;max-width:400px;height:70vh;
+  position:relative;width:92%;max-width:400px;height:65vh;
   margin:auto;perspective:1200px;
   display:flex;align-items:center;justify-content:center
 }
@@ -139,7 +139,7 @@ let SET_CURSOR=0, ACTIVE_SET=null;
 let POOL=[], WRONG=[], REVIEW_INDEX=0;
 let SESSION_ALL=[], XP=0;
 let VOLUME_LIMIT=null;
-let ATTEMPTED = new Set(); // Tracks unique questions seen for scoring
+let ATTEMPTED = new Set(); 
 
 /* ================= PHYSICS ENGINE (UNCHANGED) ================= */
 class PhysicsController{
@@ -250,18 +250,14 @@ function startQuiz(){
 function nextQ(){
  UI.review.textContent=""; 
  if(!POOL.length){
-    // === CLOSED LOOP GATEKEEPER ===
-    // If WRONG array has items, loop them until empty.
-    if(WRONG.length){ review(); return; }
-    // Only proceed to Report if WRONG is empty.
+    if(WRONG.length){ review(); return; } 
     report(); return;
  }
- 
  const d=POOL.shift();
  UI.id.textContent=d.id;
  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
 
- // SHUFFLE ENGINE: Randomize options A/B/C to UP/LEFT/RIGHT
+ // SHUFFLE ENGINE
  const opts = [d.u, d.l, d.r].sort(() => Math.random() - 0.5);
  const map = { up: opts[0], left: opts[1], right: opts[2] };
 
@@ -271,26 +267,23 @@ function nextQ(){
   if(dir==="LEFT") picked = map.left;
   if(dir==="RIGHT") picked = map.right;
 
-  // SAFETY: Resolve "Correct" pointer if data uses directional keys
-  let correctVal = d.correct;
-  if(correctVal === "UP") correctVal = d.u;
-  else if(correctVal === "LEFT") correctVal = d.l;
-  else if(correctVal === "RIGHT" || correctVal === "R") correctVal = d.r;
+  // === ROBUST ANSWER RESOLVER v136.10 ===
+  let c = d.correct;
+  // 1. Resolve Directional Pointers
+  if(c==="UP"||c==="A") c=d.u;
+  else if(c==="LEFT"||c==="B") c=d.l;
+  else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
 
-  // CHECK ANSWER
-  if(picked !== correctVal){
-    WRONG.push(d); // Add to closed loop pile
+  // 2. Fuzzy Compare (Trim + Lowercase)
+  const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
+
+  if(!isCorrect){
+    WRONG.push(d); 
   } else {
-    // FIRST ATTEMPT SCORING: Only award point if ID not in ATTEMPTED
-    if(!ATTEMPTED.has(d.id)){
-        XP+=1; 
-    }
+    if(!ATTEMPTED.has(d.id)){ XP+=1; }
   }
   
-  // Track that we've seen this question
   ATTEMPTED.add(d.id);
-  
-  // Update HUD
   UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
   UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
   
@@ -310,18 +303,12 @@ function review(){
   {up:"RETRY", down:"SKIP"},
   dir=>{
     if(dir==="UP"){
-        // === ACTION: RE-INSERT TO ACTIVE DECK ===
-        WRONG.splice(REVIEW_INDEX,1); // Remove from 'Wrong' pile
-        POOL.unshift(d); // Add to front of 'Active' pile
-        
-        // Reset index to prevent out-of-bounds
+        WRONG.splice(REVIEW_INDEX,1); // Remove from Wrong
+        POOL.unshift(d); // Push back to Active
         if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX=0;
-        
-        // Go back to Quiz Mode (this will re-shuffle options)
-        nextQ();
+        nextQ(); // Trigger Quiz Mode
     }
     if(dir==="DOWN"){
-        // Cycle to next wrong card
         REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
         review();
     }
@@ -329,7 +316,7 @@ function review(){
  );
 }
 
-/* ================= 4-WAY REPORT CARD ================= */
+/* ================= 4-WAY REPORT ================= */
 function report(){
  UI.review.textContent=""; 
  card(
@@ -340,12 +327,11 @@ function report(){
     if(dir==="UP") startQuiz(); 
     if(dir==="LEFT") begin();
     if(dir==="RIGHT"){
-        // FIND NEXT SET
         const sets=[...new Set(RAW_DATA.map(d=>d.set))];
         const curr = sets.indexOf(ACTIVE_SET);
         if(curr > -1 && curr < sets.length - 1){
             ACTIVE_SET = sets[curr+1];
-            volumePick(); // Enter volume selection for next set
+            volumePick();
         } else {
             alert("All Sets Completed!");
             begin();
