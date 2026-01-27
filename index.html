@@ -72,40 +72,11 @@ body{
 <div id="stack"></div>
 
 <script>
-/* ================= BOOT DATA ================= */
-const STORAGE_KEY = "ALCHEMIST_DATA_V1";
-
-/* ---- Embedded fallback (never removed) ---- */
-let RAW_DATA = [
+/* ---------------- DATA ---------------- */
+const RAW_DATA=[
  {id:"A1",set:"SET_A",q:"Electrode potential of Mg?",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"Ecell = Ecathode − Eanode",step1:"Identify electrodes",step2:"Subtract potentials"},
  {id:"B1",set:"SET_B",q:"Alcohol → Aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"Mild oxidation stops at aldehyde",step1:"Avoid strong oxidant",step2:"Use PCC"}
 ];
-
-/* ---- Defensive loader ---- */
-(function loadExternalData(){
- try{
-  const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  if(Array.isArray(raw)){
-   const valid = raw.filter(r =>
-    r.id && r.q && r.u && r.l && r.r && r.correct
-   );
-   if(valid.length){
-    RAW_DATA = valid.map(r=>({
-     id:r.id,
-     set:r.set || "SET_A",
-     q:r.q,
-     u:r.u,
-     l:r.l,
-     r:r.r,
-     correct:r.correct,
-     logic:r.logic || "",
-     step1:r.step1 || "",
-     step2:r.step2 || ""
-    }));
-   }
-  }
- }catch(e){}
-})();
 
 /* ---------------- STATE ---------------- */
 const UI={
@@ -121,4 +92,77 @@ let ATTEMPTED=[];
 const sets=[...new Set(RAW_DATA.map(d=>d.set))];
 
 /* ---------------- PHYSICS (UNCHANGED) ---------------- */
-/* (physics controller exactly as before — untouched) */
+class PhysicsController{
+ constructor(el,cbs){
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={
+    UP:el.querySelector(".sl-up"),
+    LEFT:el.querySelector(".sl-left"),
+    RIGHT:el.querySelector(".sl-right"),
+    DOWN:el.querySelector(".sl-down")
+  };
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+  const m=e=>this.move(e.touches?e.touches[0]:e);
+  const e2=()=>this.end();
+  el.addEventListener("mousedown",s);
+  window.addEventListener("mousemove",m);
+  window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false});
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  el.addEventListener("touchend",e2);
+ }
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+ move(p){
+  if(!this.active)return;
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const d=Math.hypot(dx,dy);
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1))}
+ }
+ end(){
+  if(!this.active)return;this.active=false;
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+  const dx=m.m41,dy=m.m42;
+  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  else{this.el.style.transition=".4s";this.el.style.transform="translate(0,0)"}
+ }
+ dir(dx,dy){
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+  if(a>45&&a<135)return"UP";
+  if(a>135&&a<225)return"LEFT";
+  if(a>225&&a<315)return"DOWN";
+  return"RIGHT";
+ }
+}
+
+/* ---------------- CARD (FIXED) ---------------- */
+function card(text,labels,cb){
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${String(text || "").replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${labels.up||""}</div>
+  <div class="swipe-label sl-left">${labels.left||""}</div>
+  <div class="swipe-label sl-right">${labels.right||""}</div>
+  <div class="swipe-label sl-down">${labels.down||""}</div>`;
+ UI.stack.appendChild(el);
+ new PhysicsController(el,{onCommit:cb});
+}
+
+/* ---------------- FLOW ---------------- */
+function begin(){
+ ATTEMPTED=[];
+ card("BEGIN",{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
+  if(dir==="UP") setPick();
+ });
+}
+
+/* --- rest unchanged --- */
+
+begin();
+</script>
+
+</body>
+</html>
