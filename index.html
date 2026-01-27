@@ -31,7 +31,6 @@ body{
   font-family:var(--font-code);
   font-size:.7rem;color:#555;letter-spacing:2px
 }
-
 .progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
 #progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
 
@@ -55,7 +54,6 @@ body{
   transform-style:preserve-3d
 }
 
-/* 🔒 TEXTBOOK CHEMISTRY TYPOGRAPHY */
 .card-q{
   font-family:var(--font-chem);
   font-size:1.7rem;
@@ -64,22 +62,10 @@ body{
   font-weight:600;
   text-align:center;
   pointer-events:none;
-  font-variant-numeric:lining-nums;
 }
+.card-q sub{font-size:.7em;vertical-align:-.3em}
+.card-q sup{font-size:.7em;vertical-align:.45em}
 
-/* Optical math corrections */
-.card-q sub{
-  font-size:0.7em;
-  vertical-align:-0.3em;
-  line-height:0;
-}
-.card-q sup{
-  font-size:0.7em;
-  vertical-align:0.45em;
-  line-height:0;
-}
-
-/* Swipe labels untouched */
 .swipe-label{
   position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;
@@ -122,9 +108,189 @@ function chemText(t){
     .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
 }
 
-/* ================= (REST UNCHANGED) ================= */
-/* Physics engine, flow, swipe labels, PDF, state —
-   EXACTLY as your base code */
+/* ================= BRIDGE CONFIG ================= */
+const MASTER_URL =
+ "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
+const USER_KEY = "ALCHEMIST_DATA_V1";
+
+/* ================= DATA ================= */
+let RAW_DATA=[], MASTER_DATA=[], USER_DATA=[];
+
+/* ================= STATE ================= */
+const UI={
+  stack:document.getElementById("stack"),
+  id:document.getElementById("id-ui"),
+  xp:document.getElementById("xp-ui"),
+  bar:document.getElementById("progress-bar")
+};
+
+let SET_CURSOR=0, ACTIVE_SET=null;
+let POOL=[], WRONG=[], REVIEW_INDEX=0;
+let SESSION_ALL=[], XP=0;
+let VOLUME_LIMIT=null;
+
+/* ================= PHYSICS (UNCHANGED) ================= */
+class PhysicsController{
+ constructor(el,cbs){
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={
+    UP:el.querySelector(".sl-up"),
+    LEFT:el.querySelector(".sl-left"),
+    RIGHT:el.querySelector(".sl-right"),
+    DOWN:el.querySelector(".sl-down")
+  };
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+  const m=e=>this.move(e.touches?e.touches[0]:e);
+  const e2=()=>this.end();
+  el.addEventListener("mousedown",s);
+  window.addEventListener("mousemove",m);
+  window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false});
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  el.addEventListener("touchend",e2);
+ }
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+ move(p){
+  if(!this.active)return;
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const d=Math.hypot(dx,dy);
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d>20){
+    const dir=this.dir(dx,dy);
+    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+  }
+ }
+ end(){
+  if(!this.active)return;this.active=false;
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+  const dx=m.m41,dy=m.m42;
+  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  else{this.el.style.transition=".4s";this.el.style.transform="translate(0,0)"}
+ }
+ dir(dx,dy){
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+  if(a>45&&a<135)return"UP";
+  if(a>135&&a<225)return"LEFT";
+  if(a>225&&a<315)return"DOWN";
+  return"RIGHT";
+ }
+}
+
+/* ================= CARD RENDER ================= */
+function card(text,labels,cb){
+ const safeText=chemText(text);
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
+  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
+  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
+  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
+ UI.stack.appendChild(el);
+ new PhysicsController(el,{onCommit:cb});
+}
+
+/* ================= FLOW ================= */
+function begin(){
+ card("BEGIN",{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
+  if(dir==="UP") setPick();
+  if(dir==="DOWN") exportSessionPDF();
+ });
+}
+
+function setPick(){
+ const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
+  if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length;setPick();}
+  if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
+  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
+  if(dir==="DOWN") begin();
+ });
+}
+
+/* ===== NEW SLIDE: QUESTION VOLUME SELECTOR ===== */
+function volumePick(){
+ card(
+  `QUESTION VOLUME`,
+  {up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},
+  dir=>{
+    if(dir==="UP") VOLUME_LIMIT=10;
+    if(dir==="LEFT") VOLUME_LIMIT=25;
+    if(dir==="RIGHT") VOLUME_LIMIT=50;
+    if(dir==="DOWN") VOLUME_LIMIT=null;
+    startQuiz();
+  }
+ );
+}
+
+function startQuiz(){
+ let base=RAW_DATA.filter(d=>d.set===ACTIVE_SET).sort(()=>Math.random()-.5);
+ if(VOLUME_LIMIT) base=base.slice(0,VOLUME_LIMIT);
+ POOL=base;
+ WRONG=[]; SESSION_ALL=[]; REVIEW_INDEX=0; XP=0;
+ nextQ();
+}
+
+function nextQ(){
+ if(!POOL.length){review();return;}
+ const d=POOL.shift();
+ UI.id.textContent=d.id;
+ SESSION_ALL.push(d);
+ card(d.q,{up:d.u,left:d.l,right:d.r},dir=>{
+  const picked=dir==="UP"?d.u:dir==="LEFT"?d.l:d.r;
+  if(picked!==d.correct) WRONG.push(d);
+  else{XP+=10;UI.xp.textContent=`${XP} XP`;UI.bar.style.width=Math.min(100,XP)+"%";}
+  nextQ();
+ });
+}
+
+function review(){
+ if(!WRONG.length){report();return;}
+ const d=WRONG[REVIEW_INDEX];
+ card(`REVIEW\n\n${d.logic}\n\nSTEP 1\n${d.step1}\n\nSTEP 2\n${d.step2}`,
+ {up:"RETRY",down:"NEXT"},dir=>{
+  if(dir==="UP"){POOL=[d];WRONG.splice(REVIEW_INDEX,1);nextQ();}
+  if(dir==="DOWN"){REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;review();}
+ });
+}
+
+function report(){
+ card(`SESSION COMPLETE\n\nPDF READY (${SESSION_ALL.length})`,
+ {down:"EXPORT PDF",left:"HOME"},dir=>{
+  if(dir==="DOWN") exportSessionPDF();
+  if(dir==="LEFT") begin();
+ });
+}
+
+/* ================= PDF ================= */
+function exportSessionPDF(){
+ if(!SESSION_ALL.length){alert("No session data");return;}
+ const {jsPDF}=window.jspdf;const doc=new jsPDF();let y=20;
+ SESSION_ALL.forEach((d,i)=>{
+  if(y>260){doc.addPage();y=20;}
+  doc.setFont("courier","bold");doc.text(`Q${i+1} | ${d.id}`,15,y);y+=8;
+  doc.setFont("times","normal");
+  doc.text(doc.splitTextToSize(d.q,180),15,y);y+=12;
+  doc.text(`A) ${d.u}`,15,y);y+=5;
+  doc.text(`B) ${d.l}`,15,y);y+=5;
+  doc.text(`C) ${d.r}`,15,y);y+=5;
+  doc.text(`ANSWER: ${d.correct}`,15,y);y+=10;
+ });
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
+ setTimeout(begin,500);
+}
+
+/* ================= BOOT ================= */
+async function init(){
+ try{USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]");}catch{USER_DATA=[];}
+ try{const r=await fetch(MASTER_URL);MASTER_DATA=await r.json();}catch{MASTER_DATA=[];}
+ RAW_DATA=[...MASTER_DATA,...USER_DATA];
+ begin();
+}
+init();
 </script>
 
 </body>
