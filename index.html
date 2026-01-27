@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Academy Edition v136.14</title>
+<title>Alchemist | Academy Edition v136.15</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -42,7 +42,7 @@ body{
   font-family:var(--font-serif);
   font-size:1.3rem; line-height:1.5;
   font-style:italic; text-align:center;
-  color:#gold; /* Highlighted color for Hint */
+  color:var(--gold); /* Highlighted color for Hint */
   min-height:4em;
   display:flex; align-items:flex-end; justify-content:center;
   text-shadow: 0 4px 12px rgba(0,0,0,0.9);
@@ -420,18 +420,23 @@ function exportSessionPDF(){
   const optC = `(C) ${cleanPDF(d.r)}`;
   
   let c = d.correct;
-  if(c==="UP"||c==="A") c=d.u;
-  if(c==="LEFT"||c==="B") c=d.l;
-  if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+  if(c==="UP") c=d.u; if(c==="LEFT") c=d.l; if(c==="RIGHT") c=d.r;
   
-  if(d.u===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
-  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  // -- COLOR LOGIC (UNIFORM GREY + GREEN HIGHLIGHT) --
+  // A
+  if(d.u===c) doc.setTextColor(0,150,0); else doc.setTextColor(80,80,80);
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); 
+  y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
   
-  if(d.l===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
-  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  // B
+  if(d.l===c) doc.setTextColor(0,150,0); else doc.setTextColor(80,80,80);
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); 
+  y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
   
-  if(d.r===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
-  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  // C
+  if(d.r===c) doc.setTextColor(0,150,0); else doc.setTextColor(80,80,80);
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); 
+  y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
   
   let maxH = y; y=startY;
 
@@ -471,7 +476,7 @@ function exportSessionPDF(){
   y+=5;
  });
 
- doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
 
