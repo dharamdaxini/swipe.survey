@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Academy Layout v132.21</title>
+<title>Alchemist | Neural Backend v136.12</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -122,7 +122,8 @@ function chemText(t){
 
 function cleanPDF(t){
   if(!t) return "";
-  return String(t).replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
+  // Strip HTML tags for PDF rendering
+  return String(t).replace(/<[^>]*>/g, "");
 }
 
 function shuffle(array) {
@@ -369,8 +370,9 @@ function exportSessionPDF(){
  const COL_LOG_X=ML+COL_OPT_W+5;
  const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
 
+ // TITLE
  doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text("ACADEMY LAYOUT PREVIEW",105,y,{align:"center"});
+ doc.text("ACADEMY SESSION REPORT",105,y,{align:"center"});
  doc.line(ML,y+2,195,y+2); doc.line(ML,y+3,195,y+3);
  y+=15;
 
@@ -379,7 +381,7 @@ function exportSessionPDF(){
 
   // 1. HEADER (ID)
   doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
-  doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||"CONCEPTS"}`,ML,y); y+=5;
+  doc.text(`${d.id} // ${d.set||"GENERAL"}`,ML,y); y+=5;
 
   // 2. QUESTION
   doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
@@ -402,11 +404,9 @@ function exportSessionPDF(){
   const optB = `(B) ${cleanPDF(d.l)}`;
   const optC = `(C) ${cleanPDF(d.r)}`;
   
-  // Correctness Check
+  // Green Highlight Logic
   let c = d.correct;
-  if(c==="UP"||c==="A") c=d.u;
-  if(c==="LEFT"||c==="B") c=d.l;
-  if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+  if(c==="UP") c=d.u; if(c==="LEFT") c=d.l; if(c==="RIGHT") c=d.r;
   
   if(d.u===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
   doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
@@ -455,7 +455,7 @@ function exportSessionPDF(){
   y+=5;
  });
 
- doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
 
