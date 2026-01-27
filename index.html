@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Neural Backend v135.05</title>
+<title>Alchemist | Neural Backend v136.00</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* --- CORE VARIABLES --- */
 :root{
   --bg:#000;--card:#111;--border:#222;
   --gold:#ffd600;--blue:#3498db;
@@ -18,41 +17,30 @@
   --font-ui:'Inter',sans-serif;
   --font-code:'JetBrains Mono',monospace;
 }
-
-/* --- BASE SETUP --- */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   margin:0;height:100vh;background:var(--bg);
   color:#fff;font-family:var(--font-ui);
   overflow:hidden;display:flex;flex-direction:column;
 }
-
-/* --- HEADER --- */
 #header{width:90%;margin:25px auto 0;z-index:100}
 .header-meta{
   display:flex;justify-content:space-between;
   font-family:var(--font-code);font-size:.7rem;color:#555;letter-spacing:2px
 }
-.sat-status{color:var(--gold);font-weight:bold}
-.sat-offline{color:var(--red)}
-
 .progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
 #progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
-
-/* --- STACK CONTAINER --- */
 #stack{
   position:relative;width:92%;max-width:400px;height:70vh;
   margin:auto;perspective:1200px;
   display:flex;align-items:center;justify-content:center
 }
-
-/* --- CARD STYLING --- */
 .card{
   position:absolute;width:100%;height:95%;
   background:var(--card);border-radius:40px;border:1px solid var(--border);
   padding:40px;display:flex;flex-direction:column;justify-content:center;
   box-shadow:0 30px 90px rgba(0,0,0,.9);will-change:transform;
-  transform-style: preserve-3d; 
+  transform-style: preserve-3d;
 }
 .card-q{
   font-family:var(--font-chem);
@@ -60,25 +48,14 @@ body{
   font-style:italic;font-weight:600;text-align:center;
   pointer-events: none;
 }
-
-/* --- SWIPE LABELS --- */
 .swipe-label{
   position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;
-  background:#000;
-  font-weight:900;
-  font-size:1.4rem;
-  text-transform:uppercase;
-  border-radius:40px;
-  opacity:0;
-  pointer-events:none;
-  padding:30px;
-  text-align: center;
-  z-index: 10;
-  transition: opacity 0.1s;
+  background:#000;font-weight:900;font-size:1.4rem;
+  text-transform:uppercase;border-radius:40px;
+  opacity:0;pointer-events:none;padding:30px;
+  text-align:center; z-index:10; transition: opacity 0.1s;
 }
-
-/* Direction Colors */
 .sl-up{color:var(--green)}
 .sl-left,.sl-right{color:var(--red)}
 .sl-down{color:var(--blue)}
@@ -89,82 +66,36 @@ body{
 
 <div id="header">
   <div class="header-meta">
-    <span id="sat-indicator">SAT: INIT...</span>
+    <span id="id-ui">ID: BOOT</span>
     <span id="xp-ui">0 XP</span>
   </div>
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
-<div id="stack">
-  <div class="card" style="align-items:center; text-align:center;">
-    <div style="font-family:var(--font-code); font-size:10px; color:#555;">
-      VIA.STACK v135.05<br>CONNECTING TO MASTER VAULT...
-    </div>
-  </div>
-</div>
+<div id="stack"></div>
 
 <script>
-/* ---------------- 1. DATA LAYER (GITHUB INTEGRATED) ---------------- */
-// CONVERTED TO RAW URL AUTOMATICALLY FOR YOU
-const MASTER_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
-const USER_KEY = "ALCHEMIST_DATA_V1"; 
+/* ---------------- DATA ---------------- */
+const RAW_DATA=[
+ {id:"A1",set:"SET_A",q:"Electrode potential of Mg?",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"Ecell = Ecathode − Eanode",step1:"Identify electrodes",step2:"Subtract potentials"},
+ {id:"B1",set:"SET_B",q:"Alcohol → Aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"Mild oxidation stops at aldehyde",step1:"Avoid strong oxidant",step2:"Use PCC"}
+];
 
-let RAW_DATA = []; 
-let MASTER_DATA = [];
-let USER_DATA = [];
-
-/* ---------------- 2. STATE MANAGEMENT ---------------- */
-const UI = {
- stack: document.getElementById("stack"),
- sat: document.getElementById("sat-indicator"),
- bar: document.getElementById("progress-bar"),
- xp: document.getElementById("xp-ui")
+/* ---------------- STATE ---------------- */
+const UI={
+  stack:document.getElementById("stack"),
+  id:document.getElementById("id-ui"),
+  xp:document.getElementById("xp-ui"),
+  bar:document.getElementById("progress-bar")
 };
 
-let FILTER = "MASTER";
-let CURSOR = 0;
-let POOL = [], WRONG = [];
-let SESSION_ALL = []; 
-let REVIEW_INDEX = 0;
-let XP = 0;
-let STATE = {pool:[], score:0};
+let SET_CURSOR=0, ACTIVE_SET=null;
+let POOL=[], WRONG=[], REVIEW_INDEX=0;
+let SESSION_ALL=[]; // BRIDGE: Tracks all questions for PDF
+const sets=[...new Set(RAW_DATA.map(d=>d.set))];
 
-/* ---------------- 3. SYSTEM BOOT ---------------- */
-async function initSystem() {
-  // Load Local User Data
-  try { USER_DATA = JSON.parse(localStorage.getItem(USER_KEY) || "[]"); } 
-  catch(e) { USER_DATA = []; }
-
-  // Fetch GitHub Data
-  try {
-    const response = await fetch(MASTER_URL);
-    if(!response.ok) throw new Error("HTTP_ERR");
-    MASTER_DATA = await response.json();
-    
-    UI.sat.innerText = "SAT: ONLINE";
-    UI.sat.className = "sat-status";
-    
-  } catch(err) {
-    console.warn("SATELLITE DOWN:", err);
-    UI.sat.innerText = "SAT: OFFLINE";
-    UI.sat.className = "sat-offline";
-    
-    // Fallback Demo Data if Offline
-    if(MASTER_DATA.length === 0) {
-      MASTER_DATA = [{id:"OFFLINE",set:"DEMO",q:"Server Unreachable. Load Local?",u:"YES",l:"NO",r:"MAYBE",correct:"YES",logic:"Check internet connection."}];
-    }
-  }
-
-  RAW_DATA = [...MASTER_DATA, ...USER_DATA];
-  renderFront();
-}
-
-/* ---------------- 4. HELPERS ---------------- */
-const F=t=>t?t.replace(/([A-Z][a-z]?)(\d+)/g,"$1<sub>$2</sub>").replace(/\^(\d+)/g,"<sup>$1</sup>"):"";
-const getSets=()=>[...new Set(RAW_DATA.filter(d=>FILTER==="MASTER"?d.dom==="MASTER":d.dom!=="MASTER").map(d=>d.set))];
-
-/* ---------------- 5. PHYSICS ENGINE (UNCHANGED) ---------------- */
-class PhysicsController {
+/* ---------------- PHYSICS (UNCHANGED) ---------------- */
+class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
   this.labels={
@@ -190,10 +121,7 @@ class PhysicsController {
   const d=Math.hypot(dx,dy);
   this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
   Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
-  if(d>20){
-      const dir=this.dir(dx,dy);
-      this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
-  }
+  if(d>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1))}
  }
  end(){
   if(!this.active)return;this.active=false;
@@ -211,13 +139,18 @@ class PhysicsController {
  }
 }
 
-/* ---------------- 6. RENDER LOGIC ---------------- */
-function card(text, labels, cb){
+/* ---------------- CARD RENDER (DRF-001 UPGRADE) ---------------- */
+function card(text,labels,cb){
+ // --- DRF-001: DEFENSIVE RENDERING FIX ---
+ // Always coerce input to string to prevent .replace() crashes
+ const safeText = String(text || "");
+ // ----------------------------------------
+
  UI.stack.innerHTML="";
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${text}</div>
+  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
   <div class="swipe-label sl-up">${labels.up||""}</div>
   <div class="swipe-label sl-left">${labels.left||""}</div>
   <div class="swipe-label sl-right">${labels.right||""}</div>
@@ -226,123 +159,115 @@ function card(text, labels, cb){
  new PhysicsController(el,{onCommit:cb});
 }
 
-/* ---------------- 7. MENU & NAVIGATION ---------------- */
-function renderFront(){
-  const sets=getSets();
-  if(sets.length === 0 && FILTER === "USER") sets.push("NO_DATA");
-  
-  const left=sets[CURSOR%sets.length]||"—";
-  const right=sets[(CURSOR+1)%sets.length]||"—";
-
-  UI.stack.innerHTML="";
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">SELECT SET</div>
-    <div style="font-family:var(--font-code);font-size:10px;color:#666;margin-top:10px">MODE: ${FILTER}</div>
-    <div class="swipe-label sl-up">MANAGE</div>
-    <div class="swipe-label sl-left">${left}</div>
-    <div class="swipe-label sl-right">${right}</div>
-    <div class="swipe-label sl-down">REFRESH</div>`;
-  UI.stack.appendChild(el);
-
-  new PhysicsController(el,{
-    onCommit:dir=>{
-      if(dir==="DOWN"){CURSOR+=2;renderFront();return;}
-      if(dir==="UP"){renderManage();return;}
-      if(dir==="LEFT"||dir==="RIGHT"){
-         const selectedSet = dir==="LEFT" ? left : right;
-         if(selectedSet !== "NO_DATA" && selectedSet !== "—") startQuiz(selectedSet);
-         else renderFront();
-         return;
-      }
-    }
-  });
+/* ---------------- FLOW ---------------- */
+function begin(){
+ card(
+  "BEGIN",
+  {up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},
+  dir=>{ 
+    if(dir==="UP") setPick(); 
+    if(dir==="DOWN") exportSessionPDF();
+  }
+ );
 }
 
-function renderManage(){
-  UI.stack.innerHTML="";
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">MANAGE VAULT</div>
-    <div class="swipe-label sl-up">MASTER</div>
-    <div class="swipe-label sl-down">MY SETS</div>`;
-  UI.stack.appendChild(el);
-
-  new PhysicsController(el,{
-    onCommit:dir=>{
-      if(dir==="UP"){FILTER="MASTER";CURSOR=0;renderFront();}
-      if(dir==="DOWN"){FILTER="USER";CURSOR=0;renderFront();}
-    }
-  });
+function setPick(){
+ card(
+  sets[SET_CURSOR],
+  {left:"",right:"",up:"SELECT",down:"BACK"},
+  dir=>{
+   if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length;setPick();}
+   if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
+   if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];startQuiz();}
+   if(dir==="DOWN") begin();
+  }
+ );
 }
 
-/* ---------------- 8. GAME LOOP ---------------- */
-function startQuiz(setName){
-  STATE.pool = RAW_DATA.filter(d => d.set === setName).sort(()=>Math.random()-.5);
-  SESSION_ALL = []; // Reset Session Log
-  WRONG = [];
-  XP = 0;
-  
-  if(STATE.pool.length === 0) { alert("Empty Set!"); renderFront(); return; }
-  
-  nextQ();
+function startQuiz(){
+ POOL=RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+ WRONG=[];
+ SESSION_ALL=[]; // BRIDGE: Reset Session
+ nextQ();
 }
 
 function nextQ(){
-  if(!STATE.pool.length){ review(); return; }
-  
-  const d = STATE.pool.shift();
-  // Temporarily show ID in header
-  UI.sat.innerText = d.id || "Q_ID";
-  
-  SESSION_ALL.push(d); // Capture for PDF
+ if(!POOL.length){review();return;}
+ const d=POOL.shift();
+ UI.id.textContent=d.id;
+ 
+ // BRIDGE: Log Question
+ SESSION_ALL.push(d);
 
-  card(F(d.q), {up:F(d.u), left:F(d.l), right:F(d.r)}, dir => {
-    const picked = dir==="UP" ? d.u : dir==="LEFT" ? d.l : d.r;
-    if(picked === d.correct) {
-      XP += 10;
-      UI.xp.innerText = `${XP} XP`;
-      UI.bar.style.width = Math.min(100, (XP/100)*100)+"%";
-    } else {
-      WRONG.push(d);
-    }
-    nextQ();
-  });
+ card(
+  d.q,
+  {up:d.u,left:d.l,right:d.r},
+  dir=>{
+   const picked = dir==="UP"?d.u:dir==="LEFT"?d.l:d.r;
+   if(picked!==d.correct) WRONG.push(d);
+   nextQ();
+  }
+ );
 }
 
+/* ---------------- REVIEW ---------------- */
 function review(){
-  if(!WRONG.length){ report(); return; }
-  
-  const d = WRONG[REVIEW_INDEX];
-  UI.sat.innerText = "REVIEW";
-  
-  card(`REVIEW: ${d.id}\n\n${F(d.logic)}`, {up:"RETRY", down:"NEXT"}, dir => {
-    if(dir==="UP"){ 
-      STATE.pool=[d]; 
-      WRONG.splice(REVIEW_INDEX, 1); 
-      nextQ(); 
-    }
-    if(dir==="DOWN"){ 
-      REVIEW_INDEX = (REVIEW_INDEX+1) % WRONG.length; 
-      review(); 
-    }
-  });
+ if(!WRONG.length){reportSlide();return;}
+ const d=WRONG[REVIEW_INDEX];
+ card(
+`REVIEW
+
+${d.logic}
+
+STEP 1
+${d.step1}
+
+STEP 2
+${d.step2}`,
+  {up:"RETRY",down:"NEXT"},
+  dir=>{
+   if(dir==="UP"){
+    POOL=[d];
+    WRONG.splice(REVIEW_INDEX,1);
+    nextQ();
+   }
+   if(dir==="DOWN"){
+    REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
+    review();
+   }
+  }
+ );
 }
 
-function report(){
-  UI.sat.innerText = "DONE";
-  card("SESSION COMPLETE\n\nDOWNLOAD REPORT?", {down:"EXPORT PDF"}, dir => {
-    if(dir==="DOWN") exportSessionPDF();
-  });
+/* ---------------- FINAL REPORT SLIDE ---------------- */
+function reportSlide(){
+ card(
+`SESSION COMPLETE
+
+${WRONG.length} Errors to Review
+PDF Ready with ${SESSION_ALL.length} items.`,
+  {up:"RETRY ERRORS",down:"EXPORT PDF",left:"HOME",right:"NEXT SET"},
+  dir=>{
+   if(dir==="UP"){ POOL=[...WRONG]; WRONG=[]; nextQ(); }
+   if(dir==="DOWN"){ exportSessionPDF(); }
+   if(dir==="LEFT"){ begin(); }
+   if(dir==="RIGHT"){ setPick(); }
+  }
+ );
 }
 
-/* ---------------- 9. PDF ENGINE (UPGRADED) ---------------- */
+/* ---------------- PDF EXPORT (BRIDGE INTEGRATED) ---------------- */
 function exportSessionPDF(){
  const { jsPDF } = window.jspdf;
  const doc = new jsPDF();
- let y = 20;
+ let y=20;
+
+ // BRIDGE: Export SESSION_ALL (Everything) instead of just WRONG
+ if(SESSION_ALL.length === 0) {
+     alert("No session data to export.");
+     begin();
+     return;
+ }
 
  SESSION_ALL.forEach((d, i)=>{
   if(y > 260){ doc.addPage(); y = 20; }
@@ -351,10 +276,6 @@ function exportSessionPDF(){
   doc.setFontSize(11);
   doc.text(`Q${i+1} | REF: ${d.id}`, 15, y);
   y += 8;
-
-  if(d.ctx){
-    doc.setFontSize(8); doc.text(`CTX: ${d.ctx}`, 15, y); y += 5;
-  }
 
   doc.setFont("times","normal");
   doc.setFontSize(11);
@@ -375,11 +296,6 @@ function exportSessionPDF(){
   doc.text(logic, 15, y);
   y += logic.length * 5;
 
-  if(d.trap){
-    doc.setFont("courier","normal"); doc.setFontSize(8); doc.setTextColor(200, 0, 0);
-    doc.text(`TRAP: ${d.trap}`, 15, y); doc.setTextColor(0, 0, 0); y += 5;
-  }
-
   doc.setFont("courier","bold"); doc.setFontSize(9);
   if(d.step1){ doc.text(`STEP 1: ${d.step1}`, 15, y); y += 5; }
   if(d.step2){ doc.text(`STEP 2: ${d.step2}`, 15, y); y += 5; }
@@ -388,11 +304,11 @@ function exportSessionPDF(){
  });
 
  doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
- setTimeout(renderFront, 1000);
+ setTimeout(begin, 1000);
 }
 
-/* ---------------- 10. LAUNCH ---------------- */
-initSystem();
+/* ---------------- INIT ---------------- */
+begin();
 </script>
 
 </body>
