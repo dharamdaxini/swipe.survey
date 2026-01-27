@@ -122,10 +122,6 @@ sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4
 .btn:active { transform: scale(0.96); }
 .btn-gold { background: var(--gold); }
 
-.card {
-    justify-content: space-between;
-}
-
 .card-q {
     margin-bottom: 20px;
 }
@@ -138,4 +134,19 @@ sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4
 
 .card-q {
     margin-bottom: 20px;
+}
+.card {
+    justify-content: flex-start;
+}
+
+.card-q {
+    margin-bottom: 28px;
+}
+
+.katex {
+    font-size: 1em;
+}
+
+.katex-display {
+    margin: 12px 0;
 }
