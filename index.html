@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Alchemist | Neural Backend</title>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
 <!-- KaTeX -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -20,119 +19,58 @@
 
 <style>
 :root{
-  --bg:#000;
-  --card:#111;
-  --border:#222;
-  --gold:#ffd600;
+  --bg:#000;--card:#111;--border:#222;--gold:#ffd600;
   --font-chem:'Crimson Text',serif;
   --font-ui:'Inter',sans-serif;
   --font-code:'JetBrains Mono',monospace;
 }
-
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-
 body{
-  margin:0;
-  height:100vh;
-  background:var(--bg);
-  color:#fff;
-  font-family:var(--font-ui);
-  overflow:hidden;
-  touch-action:pan-y;
+  margin:0;height:100vh;background:var(--bg);color:#fff;
+  font-family:var(--font-ui);overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;
 }
-
 #header{
-  width:90%;
-  margin:20px auto;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-family:var(--font-code);
-  font-size:12px;
-  color:#666;
+  width:100%;padding:12px 16px;border-bottom:1px solid #222;
+  display:flex;align-items:center;justify-content:space-between;
 }
-
-.cmd{
-  border:1px solid #333;
-  padding:6px 12px;
-  color:var(--gold);
-  cursor:pointer;
+#header span{font-family:var(--font-code);font-size:11px;color:#777}
+.btn{
+  background:none;border:1px solid #333;color:var(--gold);
+  font-family:var(--font-code);padding:6px 12px;
 }
-
 #stack{
-  position:relative;
-  width:92%;
-  max-width:420px;
-  height:75vh;
-  margin:auto;
-  perspective:1200px;
+  flex:1;width:100%;display:flex;
+  align-items:center;justify-content:center;
 }
-
 .card{
-  position:absolute;
-  inset:0;
-  background:var(--card);
-  border-radius:40px;
-  border:1px solid var(--border);
-  padding:40px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  touch-action:none;
-  pointer-events:auto;
+  width:90%;max-width:420px;height:70vh;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:36px;padding:40px;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  text-align:center;
+  transition:transform .25s ease,opacity .25s ease;
 }
-
 .card-q{
   font-family:var(--font-chem);
-  font-size:1.7rem;
-  text-align:center;
+  font-size:1.7rem;line-height:1.4;font-style:italic;
 }
-
-.swipe{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:900;
-  font-size:1.5rem;
-  opacity:0;
-  pointer-events:none;
+.opt{
+  position:absolute;font-size:1.1rem;
+  font-family:var(--font-chem);opacity:.85;
 }
-
-.up{color:#fff}
-.left{color:#fff}
-.right{color:#fff}
-.down{color:var(--gold)}
-
-.katex{pointer-events:none}
-
+.opt.up{top:18px}
+.opt.left{left:18px}
+.opt.right{right:18px}
+.opt.down{bottom:18px;font-size:.9rem;color:#4aa3ff}
 .overlay{
-  position:absolute;
-  inset:0;
-  background:#000;
-  padding:40px;
-  border-radius:40px;
-  opacity:0;
-  pointer-events:none;
+  position:absolute;inset:0;background:#000;
+  padding:30px;border-radius:36px;
+  display:none;flex-direction:column;justify-content:center;
 }
-
-.overlay.active{
-  opacity:1;
-  pointer-events:auto;
-}
-
-button{
-  width:100%;
-  padding:14px;
-  margin-top:20px;
-  border:none;
-  border-radius:40px;
-  background:#fff;
-  color:#000;
-  font-weight:900;
-  cursor:pointer;
-}
+.overlay.active{display:flex}
+.overlay button{margin-top:20px}
 </style>
 </head>
 
@@ -141,36 +79,41 @@ button{
 <div id="header">
   <span id="qid">BOOT</span>
   <div>
-    <span class="cmd" onclick="openFile()">LOAD</span>
-    <span class="cmd" onclick="exportPDF()">EXPORT PDF</span>
+    <button class="btn" onclick="openFile()">LOAD</button>
+    <button class="btn" onclick="exportPDF()">EXPORT PDF</button>
   </div>
   <span id="xp">0 XP</span>
 </div>
 
-<input type="file" id="file" hidden />
+<input type="file" id="file" hidden>
 
 <div id="stack"></div>
 
 <script>
-/* ---------------- CONFIG ---------------- */
-const DB='ALCH_DB', STORE='CARDS';
-let XP=0, POOL=[];
+/* ================= DB ================= */
+const DB='ALCH_DB',STORE='CARDS';
+let XP=0,POOL=[];
 
-/* ---------------- DB ---------------- */
 function openDB(){
   return new Promise(res=>{
     const r=indexedDB.open(DB,1);
-    r.onupgradeneeded=e=>e.target.result.createObjectStore(STORE,{keyPath:'id'});
+    r.onupgradeneeded=e=>{
+      if(!e.target.result.objectStoreNames.contains(STORE)){
+        e.target.result.createObjectStore(STORE,{keyPath:'id'});
+      }
+    };
     r.onsuccess=()=>res(r.result);
   });
 }
-
+async function clearDB(){
+  const db=await openDB();
+  db.transaction(STORE,'readwrite').objectStore(STORE).clear();
+}
 async function inject(data){
   const db=await openDB();
   const tx=db.transaction(STORE,'readwrite');
   data.forEach(d=>tx.objectStore(STORE).put(d));
 }
-
 async function fetchAll(){
   const db=await openDB();
   return new Promise(res=>{
@@ -179,13 +122,57 @@ async function fetchAll(){
   });
 }
 
-/* ---------------- TEXT ---------------- */
-function parseText(t){
-  if(!t)return '';
-  return t.replace(/([A-Z][a-z]?)(\d+)/g,'$1<sub>$2</sub>');
+/* ================= FILE ================= */
+function openFile(){file.click();}
+file.onchange=async e=>{
+  const raw=await e.target.files[0].text();
+  await clearDB();
+  let rows=[];
+  if(raw.trim().startsWith('[')){
+    rows=JSON.parse(raw).map(normalize);
+  }else{
+    const lines=raw.split(/\r?\n/).filter(l=>l.trim());
+    const d=lines[0].includes('\t')?'\t':',';
+    for(const l of lines){
+      const c=parseLine(l,d);
+      if(c.length<10)continue;
+      rows.push(normalize({
+        id:c[0],q:c[5],u:c[6],r:c[7],l:c[8],
+        correctKey:c[9],logic:c[10]
+      }));
+    }
+  }
+  if(!rows.length){alert("IMPORT FAILED");return;}
+  await inject(rows);start();
+};
+
+/* ================= CSV SAFE ================= */
+function parseLine(line,d){
+  const out=[],re=new RegExp(
+    `(\\${d}|\\r?\\n|\\r|^)`+
+    `(?:"([^"]*(?:""[^"]*)*)"|([^"\\${d}\\r\\n]*))`,'gi');
+  let m;while(m=re.exec(line)){
+    out.push(m[2]?.replace(/""/g,'"')??m[3]);
+  }return out;
 }
 
-/* ---------------- MATH ---------------- */
+/* ================= NORMALIZE ================= */
+function normalize(r){
+  let correct=r.u;
+  if(r.correctKey==='RIGHT')correct=r.r;
+  if(r.correctKey==='LEFT')correct=r.l;
+  return{
+    id:r.id||crypto.randomUUID(),
+    q:r.q||'—',u:r.u||'—',r:r.r||'—',l:r.l||'—',
+    correct,logic:r.logic||''
+  };
+}
+
+/* ================= TEXT ================= */
+function fmt(t){
+  return (t||'')
+    .replace(/([A-Z][a-z]?)(\d+)/g,'$1<sub>$2</sub>');
+}
 function renderMath(){
   if(window.renderMathInElement){
     renderMathInElement(document.body,{
@@ -197,38 +184,11 @@ function renderMath(){
   }
 }
 
-/* ---------------- FILE ---------------- */
-function openFile(){
-  document.getElementById('file').click();
-}
-
-document.getElementById('file').onchange=async e=>{
-  const text=await e.target.files[0].text();
-  let data=[];
-  if(text.trim().startsWith('[')){
-    data=JSON.parse(text);
-  }else{
-    text.split('\n').forEach(l=>{
-      const c=l.split('\t');
-      if(c.length>6){
-        data.push({
-          id:c[0],q:c[5],
-          u:c[6],r:c[7],l:c[8],
-          correct:c[9]==='RIGHT'?c[7]:c[9]==='LEFT'?c[8]:c[6],
-          logic:c[10]
-        });
-      }
-    });
-  }
-  await inject(data);
-  start();
-};
-
-/* ---------------- SWIPE ---------------- */
+/* ================= SWIPE ================= */
 function swipe(el,cb){
   let sx=0,sy=0,drag=false;
   el.onpointerdown=e=>{
-    drag=true; sx=e.clientX; sy=e.clientY;
+    drag=true;sx=e.clientX;sy=e.clientY;
     el.setPointerCapture(e.pointerId);
   };
   el.onpointermove=e=>{
@@ -239,15 +199,17 @@ function swipe(el,cb){
   el.onpointerup=e=>{
     drag=false;
     const dx=e.clientX-sx,dy=e.clientY-sy;
-    if(Math.abs(dx)>80||Math.abs(dy)>80){
-      cb(dx,dy);
-    }else{
-      el.style.transform='';
-    }
+    if(Math.abs(dx)>80||Math.abs(dy)>80)cb(dx,dy);
+    else el.style.transform='';
   };
 }
 
-/* ---------------- UI ---------------- */
+/* ================= UI ================= */
+async function start(){
+  POOL=await fetchAll();
+  POOL.sort(()=>Math.random()-0.5);
+  next();
+}
 function next(){
   if(!POOL.length){
     stack.innerHTML=`<div class="card"><div class="card-q">DONE<br>${XP} XP</div></div>`;
@@ -258,42 +220,33 @@ function next(){
   const el=document.createElement('div');
   el.className='card';
   el.innerHTML=`
-    <div class="card-q">${parseText(d.q)}</div>
-    <div class="swipe up">${parseText(d.u)}</div>
-    <div class="swipe left">${parseText(d.l)}</div>
-    <div class="swipe right">${parseText(d.r)}</div>
-    <div class="swipe down">HINT</div>
+    <div class="card-q">${fmt(d.q)}</div>
+    <div class="opt up">${fmt(d.u)}</div>
+    <div class="opt left">${fmt(d.l)}</div>
+    <div class="opt right">${fmt(d.r)}</div>
+    <div class="opt down">HINT</div>
     <div class="overlay">
-      ${parseText(d.logic||'')}
-      <button onclick="this.parentElement.classList.remove('active')">BACK</button>
+      ${fmt(d.logic)}
+      <button class="btn" onclick="this.parentElement.classList.remove('active')">BACK</button>
     </div>`;
-  stack.innerHTML='';
-  stack.appendChild(el);
+  stack.innerHTML='';stack.appendChild(el);
   renderMath();
   swipe(el,(dx,dy)=>{
-    if(dy>80){
-      el.querySelector('.overlay').classList.add('active');
-      el.style.transform='';
-      return;
-    }
+    if(dy>80){el.querySelector('.overlay').classList.add('active');el.style.transform='';return;}
     if((dx>0&&d.correct===d.r)||(dx<0&&d.correct===d.l)||(dy<0&&d.correct===d.u)){
-      XP+=10; xp.textContent=XP+' XP';
+      XP+=10;xp.textContent=XP+' XP';
     }
     next();
   });
 }
 
-async function start(){
-  POOL=await fetchAll();
-  POOL.sort(()=>Math.random()-0.5);
-  next();
-}
-
-/* ---------------- PDF ---------------- */
+/* ================= PDF ================= */
 async function exportPDF(){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
-  const canvas=await html2canvas(document.querySelector('.card'),{scale:2});
+  const c=document.querySelector('.card');
+  if(!c)return;
+  const canvas=await html2canvas(c,{scale:2});
   pdf.addImage(canvas.toDataURL(),'PNG',20,20,170,260);
   pdf.save('alchemist.pdf');
 }
