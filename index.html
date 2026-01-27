@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Neural Backend v136.01</title>
+<title>Alchemist | Neural Backend v136.02</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -30,31 +30,54 @@ body{
 }
 .progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
 #progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
+
 #stack{
   position:relative;width:92%;max-width:400px;height:70vh;
   margin:auto;perspective:1200px;
   display:flex;align-items:center;justify-content:center
 }
+
 .card{
   position:absolute;width:100%;height:95%;
-  background:var(--card);border-radius:40px;border:1px solid var(--border);
-  padding:40px;display:flex;flex-direction:column;justify-content:center;
+  background:var(--card);
+  border-radius:40px;
+  border:1px solid var(--border);
+  padding:40px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
   box-shadow:0 30px 90px rgba(0,0,0,.9);
-  will-change:transform;transform-style:preserve-3d
+  will-change:transform;
+  transform-style:preserve-3d;
 }
-.card-q{
+
+/* 🔒 DATA FONT LOCK */
+.data-text{
   font-family:var(--font-chem);
-  font-size:1.7rem;line-height:1.4;
-  font-style:italic;font-weight:600;text-align:center;
-  pointer-events:none
+  font-style:italic;
+  font-weight:600;
+  font-size:1.7rem;
+  line-height:1.45;
+  text-align:center;
+  pointer-events:none;
 }
+
+/* Swipe labels untouched */
 .swipe-label{
-  position:absolute;inset:0;display:flex;
-  align-items:center;justify-content:center;
-  background:#000;font-weight:900;font-size:1.4rem;
-  text-transform:uppercase;border-radius:40px;
-  opacity:0;pointer-events:none;padding:30px;
-  text-align:center;z-index:10;transition:opacity .1s
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#000;
+  font-family:var(--font-ui);
+  font-weight:900;
+  font-size:1.4rem;
+  text-transform:uppercase;
+  border-radius:40px;
+  opacity:0;
+  pointer-events:none;
+  padding:30px;
+  text-align:center;
+  z-index:10;
+  transition:opacity .1s
 }
 .sl-up{color:var(--green)}
 .sl-left,.sl-right{color:var(--red)}
@@ -74,14 +97,14 @@ body{
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code);font-size:11px;color:#666">
+    <div class="data-text" style="font-family:var(--font-code);font-size:11px;color:#666;font-style:normal">
       VIA.STACK<br>INITIALIZING…
     </div>
   </div>
 </div>
 
 <script>
-/* ================= CHEM TEXT NORMALIZER (CRT-001) ================= */
+/* ================= CHEM TEXT NORMALIZER ================= */
 function chemText(t){
   if(!t) return "";
   return String(t)
@@ -95,10 +118,8 @@ const MASTER_URL =
  "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
 const USER_KEY = "ALCHEMIST_DATA_V1";
 
-/* ================= DATA ================= */
 let RAW_DATA=[], MASTER_DATA=[], USER_DATA=[];
 
-/* ================= STATE ================= */
 const UI={
   stack:document.getElementById("stack"),
   id:document.getElementById("id-ui"),
@@ -111,7 +132,7 @@ let POOL=[], WRONG=[], REVIEW_INDEX=0;
 let SESSION_ALL=[], XP=0;
 
 /* ================= PHYSICS (UNCHANGED) ================= */
-class PhysicsController{
+class PhysicsController{ /* unchanged */ 
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
   this.labels={
@@ -158,14 +179,14 @@ class PhysicsController{
  }
 }
 
-/* ================= CARD RENDER (ONLY CHANGE HERE) ================= */
+/* ================= CARD RENDER ================= */
 function card(text,labels,cb){
  const safeText = chemText(text);
  UI.stack.innerHTML="";
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
+  <div class="data-text">${safeText.replace(/\n/g,"<br>")}</div>
   <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
   <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
   <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
@@ -214,7 +235,7 @@ function nextQ(){
 function review(){
  if(!WRONG.length){report();return;}
  const d=WRONG[REVIEW_INDEX];
- card(`REVIEW\n\n${d.logic}\n\nSTEP 1\n${d.step1}\n\nSTEP 2\n${d.step2}`,
+ card(`REVIEW\n\n${d.logic}\n\nSTEP 1\n${d.step1||"—"}\n\nSTEP 2\n${d.step2||"—"}`,
  {up:"RETRY",down:"NEXT"},dir=>{
   if(dir==="UP"){POOL=[d];WRONG.splice(REVIEW_INDEX,1);nextQ();}
   if(dir==="DOWN"){REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;review();}
