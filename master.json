@@ -1,1 +1,202 @@
-
+[
+  {
+    "id": "A_0221",
+    "set": "SET_A",
+    "q": "Which law of thermodynamics states that the total energy of an isolated system is constant?",
+    "u": "First Law",
+    "l": "Third Law",
+    "r": "Second Law",
+    "correct": "UP",
+    "logic": "The First Law is the principle of conservation of energy; it can be transformed from one form to another but cannot be created or destroyed."
+  },
+  {
+    "id": "A_0222",
+    "set": "SET_A",
+    "q": "Which element has the highest electronegativity on the Pauling scale?",
+    "u": "Fluorine",
+    "l": "Francium",
+    "r": "Oxygen",
+    "correct": "UP",
+    "logic": "Fluorine is the most electronegative element (3.98)"
+  },
+  {
+    "id": "A_0223",
+    "set": "SET_A",
+    "q": "What happens to the equilibrium position of N_2(g) + 3H_2(g) \\rightleftharpoons 2NH_3(g) if the concentration of N_2 is increased?",
+    "u": "Shifts toward NH_3",
+    "l": "No change occurs",
+    "r": "Shifts toward N_2",
+    "correct": "UP",
+    "logic": "Adding a reactant increases the rate of the forward reaction"
+  },
+  {
+    "id": "A_0224",
+    "set": "SET_A",
+    "q": "What type of bond is formed by the complete transfer of one or more electrons from one atom to another?",
+    "u": "Ionic Bond",
+    "l": "Metallic Bond",
+    "r": "Covalent Bond",
+    "correct": "UP",
+    "logic": "Ionic bonding typically occurs between a metal and a non-metal"
+  },
+  {
+    "id": "A_0225",
+    "set": "SET_A",
+    "q": "Which principle states that it is impossible to simultaneously determine the exact position and momentum of a particle?",
+    "u": "Heisenberg Uncertainty",
+    "l": "Aufbau Principle",
+    "r": "Pauli Exclusion",
+    "correct": "UP",
+    "logic": "The Uncertainty Principle (\\Delta x \\Delta p \\ge \\hbar/2) is a fundamental limit arising from the wave-particle duality of matter."
+  },
+  {
+    "id": "A_0226",
+    "set": "SET_A",
+    "q": "How does increasing the temperature generally affect the rate of a chemical reaction?",
+    "u": "Increases the rate",
+    "l": "Has no effect",
+    "r": "Decreases the rate",
+    "correct": "UP",
+    "logic": "Higher temperature increases the kinetic energy and collision frequency of molecules"
+  },
+  {
+    "id": "A_0227",
+    "set": "SET_A",
+    "q": "What is the term for a substance changing directly from a solid to a gas without passing through the liquid phase?",
+    "u": "Sublimation",
+    "l": "Condensation",
+    "r": "Deposition",
+    "correct": "UP",
+    "logic": "Sublimation occurs for substances like CO_2 (dry ice) at standard pressure where the liquid phase is not stable."
+  },
+  {
+    "id": "A_0228",
+    "set": "SET_A",
+    "q": "Which state function is a measure of the randomness or disorder of a system?",
+    "u": "Entropy (S)",
+    "l": "Free Energy (G)",
+    "r": "Enthalpy (H)",
+    "correct": "UP",
+    "logic": "Entropy quantifies the number of ways a system can be arranged; spontaneous processes tend toward maximum entropy."
+  },
+  {
+    "id": "A_0229",
+    "set": "SET_A",
+    "q": "Which group of elements is characterized by being generally unreactive due to a full valence shell?",
+    "u": "Noble Gases",
+    "l": "Alkali Metals",
+    "r": "Halogens",
+    "correct": "UP",
+    "logic": "Noble Gases (Group 18) have the most stable electron configuration (s^2p^6)"
+  },
+  {
+    "id": "A_0230",
+    "set": "SET_A",
+    "q": "What molecular geometry is expected for a molecule with three bonding pairs and one lone pair on the central atom?",
+    "u": "Trigonal Pyramidal",
+    "l": "Tetrahedral",
+    "r": "Trigonal Planar",
+    "correct": "UP",
+    "logic": "The electron domains are tetrahedral"
+  },
+  {
+    "id": "A_0231",
+    "set": "SET_A",
+    "q": "What is the pH of a solution that is neutral at 25°C?",
+    "u": "7",
+    "l": "14",
+    "r": "0",
+    "correct": "UP",
+    "logic": "At 25°C"
+  },
+  {
+    "id": "A_0232",
+    "set": "SET_A",
+    "q": "A chemical reaction that releases energy to its surroundings is called:",
+    "u": "Exothermic",
+    "l": "Isentropic",
+    "r": "Endothermic",
+    "correct": "UP",
+    "logic": "In exothermic reactions"
+  },
+  {
+    "id": "A_0233",
+    "set": "SET_A",
+    "q": "Which subatomic particle has a positive charge and resides in the nucleus?",
+    "u": "Proton",
+    "l": "Neutron",
+    "r": "Electron",
+    "correct": "UP",
+    "logic": "The number of protons determines the identity of the element and balances the charge of electrons in a neutral atom."
+  },
+  {
+    "id": "A_0234",
+    "set": "SET_A",
+    "q": "What is the name for the minimum energy required for a collision to result in a reaction?",
+    "u": "Activation Energy",
+    "l": "Lattice Energy",
+    "r": "Threshold Frequency",
+    "correct": "UP",
+    "logic": "Activation energy (E_a) is the energy \"hump\" reactants must climb to reach the transition state."
+  },
+  {
+    "id": "A_0235",
+    "set": "SET_A",
+    "q": "Which element is the most abundant in the universe?",
+    "u": "Hydrogen",
+    "l": "Oxygen",
+    "r": "Helium",
+    "correct": "UP",
+    "logic": "Hydrogen makes up about 75% of the baryonic mass of the universe"
+  },
+  {
+    "id": "A_0236",
+    "set": "SET_A",
+    "q": "Which rule states that electrons fill orbitals of the lowest energy first?",
+    "u": "Aufbau Principle",
+    "l": "Pauli Exclusion",
+    "r": "Hund's Rule",
+    "correct": "UP",
+    "logic": "The Aufbau (building up) Principle provides the sequence of orbital filling based on increasing energy levels."
+  },
+  {
+    "id": "A_0237",
+    "set": "SET_A",
+    "q": "What is the temperature and pressure at which all three phases of a substance coexist in equilibrium?",
+    "u": "Triple Point",
+    "l": "Standard State",
+    "r": "Critical Point",
+    "correct": "UP",
+    "logic": "The triple point is a fixed thermodynamic constant for a pure substance where solid"
+  },
+  {
+    "id": "A_0238",
+    "set": "SET_A",
+    "q": "What is the name of the reaction where an acid and a base react to form water and a salt?",
+    "u": "Neutralization",
+    "l": "Combustion",
+    "r": "Saponification",
+    "correct": "UP",
+    "logic": "Neutralization involves H^+ ions from the acid and OH^- ions from the base combining to form H_2O."
+  },
+  {
+    "id": "A_0239",
+    "set": "SET_A",
+    "q": "For a process to be spontaneous",
+    "u": "the change in Gibbs Free Energy (\\Delta G) must be:",
+    "l": "Positive",
+    "r": "Negative",
+    "correct": "Zero",
+    "logic": "UP"
+  },
+  {
+    "id": "A_0240",
+    "set": "SET_A",
+    "q": "Which type of bonding is described by a \"sea of delocalized electrons\"?",
+    "u": "Metallic Bond",
+    "l": "Hydrogen Bond",
+    "r": "Ionic Bond",
+    "correct": "UP",
+    "logic": "In metals"
+  }
+]
