@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+
 <title>Alchemist | Neural Backend</title>
 
 <!-- Fonts -->
@@ -11,7 +12,7 @@
 <!-- KaTeX -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/auto-render.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
 <!-- PDF -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -19,189 +20,285 @@
 
 <style>
 :root{
-  --bg:#000;--card:#111;--border:#222;--gold:#ffd600;
-  --font-q:'Crimson Text',serif;
+  --bg:#000;
+  --card:#111;
+  --border:#222;
+  --gold:#ffd600;
+  --font-chem:'Crimson Text',serif;
   --font-ui:'Inter',sans-serif;
   --font-code:'JetBrains Mono',monospace;
 }
-*{box-sizing:border-box}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
 body{
-  margin:0;background:var(--bg);color:#fff;
-  font-family:var(--font-ui);height:100vh;
+  margin:0;
+  height:100vh;
+  background:var(--bg);
+  color:#fff;
+  font-family:var(--font-ui);
   overflow:hidden;
+  touch-action:pan-y;
 }
-#top{
-  display:flex;justify-content:space-between;
-  padding:14px 20px;border-bottom:1px solid #222;
-  font-family:var(--font-code);font-size:12px;
+
+#header{
+  width:90%;
+  margin:20px auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:var(--font-code);
+  font-size:12px;
+  color:#666;
 }
-button{
-  background:none;border:1px solid #333;
-  color:var(--gold);padding:4px 10px;
-  cursor:pointer;font-family:var(--font-code);
+
+.cmd{
+  border:1px solid #333;
+  padding:6px 12px;
+  color:var(--gold);
+  cursor:pointer;
 }
+
 #stack{
-  position:relative;width:100%;
-  height:calc(100vh - 52px);
-  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  width:92%;
+  max-width:420px;
+  height:75vh;
+  margin:auto;
+  perspective:1200px;
 }
+
 .card{
-  position:absolute;width:90%;max-width:420px;
-  height:70%;background:var(--card);
-  border-radius:40px;border:1px solid var(--border);
-  padding:40px;display:flex;
-  align-items:center;justify-content:center;
+  position:absolute;
+  inset:0;
+  background:var(--card);
+  border-radius:40px;
+  border:1px solid var(--border);
+  padding:40px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  touch-action:none;
+  pointer-events:auto;
+}
+
+.card-q{
+  font-family:var(--font-chem);
+  font-size:1.7rem;
   text-align:center;
-  transition:transform .3s,opacity .3s;
 }
-.q{
-  font-family:var(--font-q);
-  font-size:1.6rem;line-height:1.4;
+
+.swipe{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:1.5rem;
+  opacity:0;
+  pointer-events:none;
 }
-.opt{
-  position:absolute;font-size:.85rem;
-  color:#bbb;font-family:var(--font-ui);
-}
-.opt.up{top:16px;left:50%;transform:translateX(-50%)}
-.opt.left{left:16px;bottom:50%;transform:translateY(50%)}
-.opt.right{right:16px;bottom:50%;transform:translateY(50%)}
+
+.up{color:#fff}
+.left{color:#fff}
+.right{color:#fff}
+.down{color:var(--gold)}
+
+.katex{pointer-events:none}
+
 .overlay{
-  position:absolute;inset:0;
-  background:#000;padding:30px;
-  display:none;overflow:auto;
+  position:absolute;
+  inset:0;
+  background:#000;
+  padding:40px;
+  border-radius:40px;
+  opacity:0;
+  pointer-events:none;
 }
-.overlay.show{display:block}
+
+.overlay.active{
+  opacity:1;
+  pointer-events:auto;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  margin-top:20px;
+  border:none;
+  border-radius:40px;
+  background:#fff;
+  color:#000;
+  font-weight:900;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<div id="top">
-  <div id="qid">BOOT</div>
-  <button onclick="exportPDF()">EXPORT PDF</button>
-  <div id="xp">0 XP</div>
+<div id="header">
+  <span id="qid">BOOT</span>
+  <div>
+    <span class="cmd" onclick="openFile()">LOAD</span>
+    <span class="cmd" onclick="exportPDF()">EXPORT PDF</span>
+  </div>
+  <span id="xp">0 XP</span>
 </div>
 
-<input type="file" id="file" style="display:none">
+<input type="file" id="file" hidden />
+
 <div id="stack"></div>
 
 <script>
-let DATA=[], SCORE=0;
+/* ---------------- CONFIG ---------------- */
+const DB='ALCH_DB', STORE='CARDS';
+let XP=0, POOL=[];
 
-const fallback=[
-  {
-    id:"PRE_01",
-    q:"Calculate $E^\\circ_{cell}$",
-    u:"$E^\\circ_{cathode}-E^\\circ_{anode}$",
-    l:"$E^\\circ_{anode}-E^\\circ_{cathode}$",
-    r:"$E^\\circ_{cell}/2$",
-    correct:"$E^\\circ_{cathode}-E^\\circ_{anode}$",
-    logic:"Standard electrochemistry definition."
-  }
-];
-
-document.body.addEventListener("dblclick",()=>file.click());
-file.onchange=e=>loadFile(e.target.files[0]);
-
-function loadFile(f){
-  const r=new FileReader();
-  r.onload=()=>{
-    if(r.result.trim().startsWith("[")){
-      DATA=JSON.parse(r.result);
-    }else{
-      DATA=r.result.split("\n").filter(Boolean).map(l=>{
-        const c=l.split("\t");
-        return{
-          id:c[0],q:c[5],u:c[6],l:c[8],r:c[7],
-          correct:c[6],logic:c[10]
-        }
-      })
-    }
-    next();
-  };
-  r.readAsText(f);
-}
-
-function renderMath(el){
-  renderMathInElement(el,{delimiters:[
-    {left:"$",right:"$",display:false},
-    {left:"$$",right:"$$",display:true}
-  ]});
-}
-
-function next(){
-  if(!DATA.length) return;
-  const d=DATA[0];
-  qid.innerText=d.id||"Q";
-  stack.innerHTML="";
-
-  const c=document.createElement("div");
-  c.className="card";
-  c.innerHTML=`
-    <div class="q">${d.q}</div>
-    <div class="opt up">${d.u||""}</div>
-    <div class="opt left">${d.l||""}</div>
-    <div class="opt right">${d.r||""}</div>
-    <div class="overlay">${d.logic||""}</div>
-  `;
-  stack.appendChild(c);
-  renderMath(c);
-
-  swipe(c,(dir,dx,dy)=>{
-    if(dir==="DOWN"){
-      c.querySelector(".overlay").classList.add("show");
-      c.style.transform="translate(0,0)";
-      return;
-    }
-    const sel=dir==="UP"?d.u:dir==="LEFT"?d.l:d.r;
-    if(sel===d.correct){
-      SCORE+=10;xp.innerText=SCORE+" XP";
-    }
-    c.style.transform=`translate(${dx*1.4}px,${dy*1.4}px)`;
-    c.style.opacity=0;
-    setTimeout(()=>{DATA.shift();next()},300);
+/* ---------------- DB ---------------- */
+function openDB(){
+  return new Promise(res=>{
+    const r=indexedDB.open(DB,1);
+    r.onupgradeneeded=e=>e.target.result.createObjectStore(STORE,{keyPath:'id'});
+    r.onsuccess=()=>res(r.result);
   });
 }
 
+async function inject(data){
+  const db=await openDB();
+  const tx=db.transaction(STORE,'readwrite');
+  data.forEach(d=>tx.objectStore(STORE).put(d));
+}
+
+async function fetchAll(){
+  const db=await openDB();
+  return new Promise(res=>{
+    const r=db.transaction(STORE).objectStore(STORE).getAll();
+    r.onsuccess=()=>res(r.result);
+  });
+}
+
+/* ---------------- TEXT ---------------- */
+function parseText(t){
+  if(!t)return '';
+  return t.replace(/([A-Z][a-z]?)(\d+)/g,'$1<sub>$2</sub>');
+}
+
+/* ---------------- MATH ---------------- */
+function renderMath(){
+  if(window.renderMathInElement){
+    renderMathInElement(document.body,{
+      delimiters:[
+        {left:"\\(",right:"\\)",display:false},
+        {left:"\\[",right:"\\]",display:true}
+      ]
+    });
+  }
+}
+
+/* ---------------- FILE ---------------- */
+function openFile(){
+  document.getElementById('file').click();
+}
+
+document.getElementById('file').onchange=async e=>{
+  const text=await e.target.files[0].text();
+  let data=[];
+  if(text.trim().startsWith('[')){
+    data=JSON.parse(text);
+  }else{
+    text.split('\n').forEach(l=>{
+      const c=l.split('\t');
+      if(c.length>6){
+        data.push({
+          id:c[0],q:c[5],
+          u:c[6],r:c[7],l:c[8],
+          correct:c[9]==='RIGHT'?c[7]:c[9]==='LEFT'?c[8]:c[6],
+          logic:c[10]
+        });
+      }
+    });
+  }
+  await inject(data);
+  start();
+};
+
+/* ---------------- SWIPE ---------------- */
 function swipe(el,cb){
-  let sx,sy,dx,dy,act=false;
-  el.ontouchstart=e=>{
-    act=true;
-    sx=e.touches[0].clientX;
-    sy=e.touches[0].clientY;
+  let sx=0,sy=0,drag=false;
+  el.onpointerdown=e=>{
+    drag=true; sx=e.clientX; sy=e.clientY;
+    el.setPointerCapture(e.pointerId);
   };
-  el.ontouchmove=e=>{
-    if(!act)return;
-    dx=e.touches[0].clientX-sx;
-    dy=e.touches[0].clientY-sy;
-    el.style.transform=`translate(${dx}px,${dy}px)`;
+  el.onpointermove=e=>{
+    if(!drag)return;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
   };
-  el.ontouchend=()=>{
-    act=false;
-    const d=Math.hypot(dx,dy);
-    if(d<80){
-      el.style.transform="translate(0,0)";
+  el.onpointerup=e=>{
+    drag=false;
+    const dx=e.clientX-sx,dy=e.clientY-sy;
+    if(Math.abs(dx)>80||Math.abs(dy)>80){
+      cb(dx,dy);
+    }else{
+      el.style.transform='';
+    }
+  };
+}
+
+/* ---------------- UI ---------------- */
+function next(){
+  if(!POOL.length){
+    stack.innerHTML=`<div class="card"><div class="card-q">DONE<br>${XP} XP</div></div>`;
+    return;
+  }
+  const d=POOL.shift();
+  qid.textContent=d.id;
+  const el=document.createElement('div');
+  el.className='card';
+  el.innerHTML=`
+    <div class="card-q">${parseText(d.q)}</div>
+    <div class="swipe up">${parseText(d.u)}</div>
+    <div class="swipe left">${parseText(d.l)}</div>
+    <div class="swipe right">${parseText(d.r)}</div>
+    <div class="swipe down">HINT</div>
+    <div class="overlay">
+      ${parseText(d.logic||'')}
+      <button onclick="this.parentElement.classList.remove('active')">BACK</button>
+    </div>`;
+  stack.innerHTML='';
+  stack.appendChild(el);
+  renderMath();
+  swipe(el,(dx,dy)=>{
+    if(dy>80){
+      el.querySelector('.overlay').classList.add('active');
+      el.style.transform='';
       return;
     }
-    const dir=Math.abs(dx)>Math.abs(dy)
-      ?dx>0?"RIGHT":"LEFT"
-      :dy>0?"DOWN":"UP";
-    cb(dir,dx,dy);
-  };
+    if((dx>0&&d.correct===d.r)||(dx<0&&d.correct===d.l)||(dy<0&&d.correct===d.u)){
+      XP+=10; xp.textContent=XP+' XP';
+    }
+    next();
+  });
 }
 
+async function start(){
+  POOL=await fetchAll();
+  POOL.sort(()=>Math.random()-0.5);
+  next();
+}
+
+/* ---------------- PDF ---------------- */
 async function exportPDF(){
   const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF("p","pt","a4");
-  const card=document.querySelector(".card");
-  const canvas=await html2canvas(card,{scale:2});
-  const img=canvas.toDataURL("image/png");
-  pdf.addImage(img,"PNG",20,20,555,780);
-  pdf.save("alchemist.pdf");
+  const pdf=new jsPDF();
+  const canvas=await html2canvas(document.querySelector('.card'),{scale:2});
+  pdf.addImage(canvas.toDataURL(),'PNG',20,20,170,260);
+  pdf.save('alchemist.pdf');
 }
 
-DATA=fallback;
-next();
+start();
 </script>
 </body>
 </html>
