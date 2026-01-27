@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Academy Edition v136.15</title>
+<title>Alchemist | Academy Edition v136.16</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -306,15 +306,14 @@ function nextQ(){
  });
 }
 
-/* ================= PATCHED REVIEW LOGIC (SWAP) ================= */
 function review(){
  if(!WRONG.length){ report(); return; } 
  const d=WRONG[REVIEW_INDEX];
  
- // HEADER NOW SHOWS THE HINT
+ // HEADER: HINT
  UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
  
- // CARD NOW SHOWS THE EXPLANATION (LOGIC)
+ // CARD: LOGIC
  card(
   `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
   {up:"RETRY", down:"SKIP"},
@@ -333,7 +332,6 @@ function review(){
  );
 }
 
-/* ================= FINAL REPORT SLIDE ================= */
 function report(){
  UI.review.textContent="SESSION COMPLETE"; 
  
@@ -365,7 +363,7 @@ function report(){
  );
 }
 
-/* ================= ACADEMY LAYOUT PDF v132.21 ================= */
+/* ================= ACADEMY LAYOUT PDF v132.21 (HARD GREY LOCK) ================= */
 function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
  const {jsPDF}=window.jspdf;
@@ -413,28 +411,21 @@ function exportSessionPDF(){
   // COL 1: OPTIONS (A/B/C)
   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
   doc.text("OPTIONS",ML,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); 
+  
+  /* --- COLOR LOCK: UNIFORM GREY FOR ALL OPTIONS --- */
+  doc.setTextColor(80,80,80); // HARD LOCK: GREY
   
   const optA = `(A) ${cleanPDF(d.u)}`;
   const optB = `(B) ${cleanPDF(d.l)}`;
   const optC = `(C) ${cleanPDF(d.r)}`;
   
-  let c = d.correct;
-  if(c==="UP") c=d.u; if(c==="LEFT") c=d.l; if(c==="RIGHT") c=d.r;
-  
-  // -- COLOR LOGIC (UNIFORM GREY + GREEN HIGHLIGHT) --
-  // A
-  if(d.u===c) doc.setTextColor(0,150,0); else doc.setTextColor(80,80,80);
   doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); 
   y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
   
-  // B
-  if(d.l===c) doc.setTextColor(0,150,0); else doc.setTextColor(80,80,80);
   doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); 
   y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
   
-  // C
-  if(d.r===c) doc.setTextColor(0,150,0); else doc.setTextColor(80,80,80);
   doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); 
   y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
   
