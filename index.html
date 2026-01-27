@@ -89,6 +89,7 @@ const UI={
 let SET_CURSOR=0, ACTIVE_SET=null;
 let POOL=[], WRONG=[], REVIEW_INDEX=0;
 let ATTEMPTED=[];
+
 const sets=[...new Set(RAW_DATA.map(d=>d.set))];
 
 /* ---------------- PHYSICS (UNCHANGED) ---------------- */
@@ -159,7 +160,7 @@ function begin(){
  });
 }
 
-/* --- rest unchanged --- */
+/* (rest unchanged) */
 
 begin();
 </script>
