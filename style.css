@@ -124,3 +124,35 @@ sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4
 
 /* 12. DEPLOY TAG */
 .v-tag { position: fixed; bottom: 8px; width: 100%; text-align: center; font-family: var(--font-code); font-size: 10px; color: #444; letter-spacing: 2px; z-index: 9999; pointer-events: none; }
+
+.q-text{
+  font-size:1.6rem;
+  line-height:1.4;
+  margin-bottom:30px;
+}
+
+.opt{
+  position:absolute;
+  font-family:var(--font-ui);
+  font-size:0.9rem;
+  color:#ccc;
+  opacity:0.9;
+}
+
+.opt-up{
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+}
+
+.opt-left{
+  left:18px;
+  bottom:50%;
+  transform:translateY(50%);
+}
+
+.opt-right{
+  right:18px;
+  bottom:50%;
+  transform:translateY(50%);
+}
