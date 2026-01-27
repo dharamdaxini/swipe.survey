@@ -1,62 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alchemist v130.2</title>
 
-<title>Alchemist | Neural Backend</title>
-
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Crimson+Text:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-
-<!-- CSS -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Crimson+Text:wght@600&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-
 </head>
+
 <body>
 
-<!-- ================= PORTAL ================= -->
+<!-- PORTAL -->
 <div id="portal">
     <h1>ALCHEMIST DATA PORTAL</h1>
 
     <textarea id="data-input" placeholder="Paste TSV dataset here..."></textarea>
 
     <button class="btn btn-gold" onclick="importDataset()">IMPORT DATASET</button>
-
-    <!-- START SESSION BUTTON -->
-    <button id="start-btn"
-            class="btn"
-            style="margin-top:16px; display:none;"
-            onclick="startSession()">
-        START SESSION
-    </button>
+    <button class="btn" style="margin-top:12px" onclick="startFromPortal()">START SLIDES</button>
 
     <div class="v-tag">ALCHEMIST v130.2</div>
 </div>
 
-<!-- ================= HUD ================= -->
+<!-- HEADER -->
 <div id="header">
     <div class="header-meta">
-        <div id="p-text">0/20 UNITS</div>
-        <div>
-            <span id="score-text">0 XP</span>
-        </div>
+        <span id="p-text">0/20 UNITS</span>
+        <span id="score-text">0 XP</span>
     </div>
     <div class="progress-track">
         <div id="progress-bar"></div>
     </div>
 </div>
 
-<!-- ================= CARD STACK ================= -->
+<!-- STACK -->
 <div id="stack"></div>
 
-<!-- ================= OVERLAY ================= -->
+<!-- OVERLAY -->
 <div id="global-overlay" class="overlay" onclick="closeOverlay()">
     <div id="overlay-content" class="overlay-body"></div>
+    <button class="btn btn-gold">CLOSE</button>
 </div>
 
-<!-- JS -->
 <script src="script.js"></script>
-
 </body>
 </html>
