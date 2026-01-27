@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>VIA.STACK</title>
+<title>VIA.STACK // ADMIN</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
@@ -18,103 +18,69 @@ body{
  font-family:Inter,sans-serif;overflow:hidden
 }
 
-/* ================= FRONT ================= */
+/* FRONT */
 #front{
- position:fixed;inset:0;z-index:10;
- display:flex;flex-direction:column;
- align-items:center;justify-content:center
+ position:fixed;inset:0;display:flex;
+ flex-direction:column;align-items:center;justify-content:center
 }
 .front-btn{
- width:260px;padding:18px 0;margin:10px 0;
+ width:260px;padding:18px;margin:10px 0;
  border-radius:60px;font-weight:900;
  border:2px solid var(--gold);
  background:rgba(0,0,0,.6);color:var(--gold)
 }
 .front-btn.ghost{border-color:#333;color:#555}
 
-/* STATUS */
-.status{
- margin-top:32px;width:260px;
- font-family:'JetBrains Mono',monospace;font-size:.75rem
-}
-.status h4{margin:0 0 10px;color:var(--green)}
-.status h4.user{color:var(--blue)}
-.user-row{display:flex;gap:10px}
-.pill{
- flex:1;padding:16px;border-radius:18px;
- text-align:center;font-weight:800;
- border:1px solid var(--blue);color:var(--blue)
-}
-.plus{
- width:42px;height:42px;border-radius:50%;
- display:flex;align-items:center;justify-content:center;
- font-weight:900;font-size:1.4rem;
- border:1px solid var(--blue);color:var(--blue)
-}
-
-/* ================= ADMIN ================= */
+/* ADMIN */
 #admin{
  position:fixed;inset:0;background:#050505;
  display:none;flex-direction:column;color:#ccc
 }
 header{
- position:sticky;top:0;z-index:50;
- background:#050505;border-bottom:1px solid var(--border);
- padding:15px 25px;display:flex;
- justify-content:space-between;align-items:center
+ padding:16px 22px;border-bottom:1px solid var(--border);
+ display:flex;justify-content:space-between;align-items:center
 }
 .brand{font-weight:900;color:#fff}
 .brand span{color:var(--gold)}
-.back{
- font-family:'JetBrains Mono',monospace;
- font-size:.65rem;border:1px solid #333;
- padding:6px 14px;border-radius:20px;
- background:#000;color:#aaa
+.exit{
+ font-family:JetBrains Mono;font-size:.7rem;
+ border:1px solid #333;padding:6px 14px;
+ border-radius:20px;background:#000;color:#aaa
 }
-#scroll{flex:1;overflow-y:auto;padding-bottom:80px}
-.zone{padding:30px;border-bottom:1px dashed #222}
-.zone-title{
- font-size:.7rem;font-weight:900;color:#666;margin-bottom:15px
-}
+#scroll{flex:1;overflow-y:auto;padding-bottom:100px}
 
-/* UPLOAD */
+.zone{padding:28px;border-bottom:1px dashed #222}
+.zone-title{font-size:.75rem;font-weight:900;color:#666;margin-bottom:14px}
+
+/* Upload */
 .upload-box{
  border:2px dashed #333;border-radius:20px;
  padding:40px 20px;text-align:center;
- color:#aaa;font-family:'JetBrains Mono',monospace
+ font-family:JetBrains Mono;color:#777
 }
-.upload-box strong{color:#fff;font-size:.9rem}
-.upload-box span{display:block;margin-top:8px;font-size:.7rem;color:#666}
+.upload-box strong{color:#fff}
+.upload-box span{display:block;margin-top:6px;font-size:.7rem;color:#555}
 
 .btn{
- margin-top:20px;padding:16px 28px;
+ margin-top:18px;padding:16px 28px;
  border-radius:50px;font-weight:900;
  border:none;background:var(--gold);color:#000;width:100%
 }
-.btn.red{background:var(--red);color:#fff}
-
-.export-row{
- display:grid;
- grid-template-columns:repeat(3,1fr);
- gap:12px;
- margin-top:15px
-}
-.export-btn{
- padding:14px;
- border-radius:18px;
- background:#111;
- border:1px solid #222;
- color:#aaa;
- font-weight:800;
- font-size:.7rem;
- text-align:center
-}
 
 .terminal{
- margin-top:15px;background:#000;border:1px solid #222;
- border-radius:8px;padding:15px;
- font-family:'JetBrains Mono',monospace;
- font-size:.7rem;color:#666;white-space:pre-wrap
+ margin-top:14px;background:#000;border:1px solid #222;
+ border-radius:10px;padding:14px;
+ font-family:JetBrains Mono;font-size:.7rem;
+ color:#999;min-height:64px
+}
+
+.export-row{
+ display:flex;gap:12px;margin-top:16px
+}
+.export-row button{
+ flex:1;background:#111;color:#aaa;
+ border:1px solid #222;border-radius:14px;
+ padding:14px;font-weight:900
 }
 </style>
 </head>
@@ -123,28 +89,19 @@ header{
 
 <!-- FRONT -->
 <div id="front">
-  <div class="front-btn">INITIATE SESSION</div>
-  <div class="front-btn ghost" onclick="openAdmin()">MANAGE VAULTS</div>
-
-  <div class="status">
-    <h4>✓ MASTER LIBRARY</h4>
-    <h4 class="user">✓ USER VAULT</h4>
-    <div class="user-row">
-      <div class="pill">Custom Sets</div>
-      <div class="plus" onclick="openAdmin()">+</div>
-    </div>
-  </div>
+  <button class="front-btn ghost" onclick="openAdmin()">MANAGE VAULT</button>
 </div>
 
 <!-- ADMIN -->
 <div id="admin">
 <header>
-  <div class="brand">VIA.<span>STACK</span></div>
-  <div class="back" onclick="closeAdmin()">EXIT</div>
+  <div class="brand">VIA.<span>STACK</span> // ADMIN</div>
+  <div class="exit" onclick="closeAdmin()">EXIT</div>
 </header>
 
 <div id="scroll">
 
+  <!-- INGESTION -->
   <div class="zone">
     <div class="zone-title">01 // INGESTION ENGINE</div>
 
@@ -155,139 +112,115 @@ header{
 
     <input id="fileInput" type="file" style="display:none">
 
-    <button class="btn" onclick="processFile()">INITIATE ALIGNMENT</button>
-    <div class="terminal" id="log">> SYSTEM STANDBY…</div>
+    <button class="btn" onclick="alignData()">INITIATE ALIGNMENT</button>
+
+    <div class="terminal" id="status">
+      > SYSTEM STANDBY
+    </div>
   </div>
 
+  <!-- DEPLOY -->
   <div class="zone">
     <div class="zone-title">02 // DEPLOYMENT DOCK</div>
     <button class="btn" onclick="pushToIndex()">PUSH TO OPERATOR INDEX</button>
   </div>
 
+  <!-- EXPORT -->
   <div class="zone">
     <div class="zone-title" style="color:var(--red)">03 // EXPORT & DANGER ZONE</div>
-
     <div class="export-row">
-      <div class="export-btn" onclick="exportData('json')">JSON</div>
-      <div class="export-btn" onclick="exportData('tsv')">TSV</div>
-      <div class="export-btn" onclick="exportData('csv')">CSV</div>
-      <div class="export-btn" onclick="exportData('txt')">TXT</div>
+      <button onclick="exportJSON()">JSON</button>
+      <button onclick="exportTSV()">TSV</button>
+      <button onclick="purge()">PURGE</button>
     </div>
-
-    <button class="btn red" style="margin-top:25px"
-      onclick="localStorage.clear();location.reload()">
-      PURGE SYSTEM MEMORY
-    </button>
   </div>
 
 </div>
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const STORAGE_KEY="ALCHEMIST_DATA_V1";
-let STAGED=[];
+const DB_KEY = "ALCHEMIST_DATA_V1";
+let RAW_FILE = "";
+let STAGED = [];
 
-/* ================= NAV ================= */
-function openAdmin(){
- front.style.display="none";
- admin.style.display="flex";
-}
-function closeAdmin(){
- admin.style.display="none";
- front.style.display="flex";
-}
+/* UI */
+const status = m => document.getElementById("status").innerText = "> " + m;
 
-/* ================= UPLOAD ================= */
+/* Upload */
 function triggerUpload(){
- fileInput.value=null;
- fileInput.click();
+ const i=document.getElementById("fileInput");
+ i.value=null;i.click();
 }
 
-function processFile(){
- const f=fileInput.files[0];
- if(!f) return log("NO FILE SELECTED");
-
+document.getElementById("fileInput").addEventListener("change",e=>{
+ const f=e.target.files[0];
+ if(!f) return;
  const r=new FileReader();
- r.onload=e=>{
-  try{
-   const txt=e.target.result;
-   STAGED = f.name.endsWith(".json")
-     ? JSON.parse(txt).filter(validRow)
-     : parseTSV(txt);
-   log(`STAGED ${STAGED.length} ROWS`);
-  }catch{
-   STAGED=[];
-   log("PARSE ERROR");
-  }
+ r.onload=ev=>{
+   RAW_FILE=ev.target.result;
+   status("FILE LOADED: " + f.name);
  };
  r.readAsText(f);
+});
+
+/* ALIGN */
+function alignData(){
+ if(!RAW_FILE) return status("NO FILE BUFFER");
+
+ try{
+   if(RAW_FILE.trim().startsWith("{") || RAW_FILE.trim().startsWith("[")){
+     STAGED = JSON.parse(RAW_FILE);
+     status("JSON PARSED: " + STAGED.length + " ROWS");
+   } else {
+     const rows = RAW_FILE.trim().split(/\r?\n/);
+     STAGED = rows.slice(1).map(r=>{
+       const c=r.split("\t");
+       return {
+         id:c[0],set:c[1],q:c[5],
+         u:c[6],r:c[7],l:c[8],
+         correct:c[9],logic:c[10],
+         step1:c[22],step2:c[23]
+       };
+     });
+     status("TSV PARSED: " + STAGED.length + " ROWS");
+   }
+ }catch(e){
+   status("ALIGNMENT FAILED");
+ }
 }
 
-function parseTSV(txt){
- const rows=txt.trim().split(/\r?\n/);
- const start=rows[0].toLowerCase().includes("id")?1:0;
- return rows.slice(start).map(r=>{
-  const c=r.split("\t");
-  return{
-   id:c[0],q:c[5],u:c[6],r:c[7],l:c[8],
-   correct:c[9],logic:c[10]
-  };
- }).filter(validRow);
-}
-
-function validRow(r){
- return r&&r.id&&r.q&&r.u&&r.l&&r.r&&r.correct&&r.logic;
-}
-
-/* ================= DEPLOY ================= */
+/* PUSH */
 function pushToIndex(){
- if(!STAGED.length) return log("NO DATA STAGED");
- localStorage.setItem(STORAGE_KEY,JSON.stringify(STAGED));
- log("DATA PUSHED TO INDEX");
+ if(!STAGED.length) return status("NO DATA TO PUSH");
+ localStorage.setItem(DB_KEY,JSON.stringify(STAGED));
+ status("DATA PUSHED → INDEX READY");
 }
 
-/* ================= EXPORT ================= */
-function exportData(type){
- const data = STAGED.length
-   ? STAGED
-   : JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-
- if(!data.length) return log("NO DATA TO EXPORT");
-
- let out="",mime="text/plain",ext=type;
-
- if(type==="json"){
-  out=JSON.stringify(data,null,2);
-  mime="application/json";
- }
-
- if(type==="tsv"){
-  out=data.map(r=>Object.values(r).join("\t")).join("\n");
- }
-
- if(type==="csv"){
-  out=data.map(r=>Object.values(r).map(v=>`"${v}"`).join(",")).join("\n");
- }
-
- if(type==="txt"){
-  out=data.map(r=>`${r.id}\n${r.q}\n→ ${r.correct}\n`).join("\n---\n");
- }
-
- const blob=new Blob([out],{type:mime});
+/* EXPORT */
+function exportJSON(){
+ if(!STAGED.length) return;
+ const b=new Blob([JSON.stringify(STAGED,null,2)],{type:"application/json"});
+ download(b,"master.json");
+}
+function exportTSV(){
+ if(!STAGED.length) return;
+ const rows=STAGED.map(o=>Object.values(o).join("\t")).join("\n");
+ download(new Blob([rows]),"master.tsv");
+}
+function download(blob,name){
  const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download=`alchemist_export.${ext}`;
- a.click();
- URL.revokeObjectURL(a.href);
-
- log(`EXPORTED ${data.length} ROWS → ${ext.toUpperCase()}`);
+ a.href=URL.createObjectURL(blob);a.download=name;a.click();
 }
 
-/* ================= LOG ================= */
-function log(m){
- logEl.innerText="> "+m;
+/* DANGER */
+function purge(){
+ localStorage.clear();
+ status("SYSTEM MEMORY PURGED");
 }
+
+/* NAV */
+function openAdmin(){front.style.display="none";admin.style.display="flex"}
+function closeAdmin(){admin.style.display="none";front.style.display="flex"}
 </script>
 
 </body>
