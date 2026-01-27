@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Academy Edition v136.16</title>
+<title>Alchemist | Final Grey v136.17</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#050505; --card:#121212; --border:#333;
-  --gold:#d4af37; /* Academic Gold */
-  --blue:#4a90e2; --green:#50c878; --red:#e74c3c;
+  --bg:#000; --card:#121212; --border:#333;
+  --gold:#d4af37; 
+  /* ALL OPTIONS GREY PROTOCOL */
+  --option-grey: #888888;
   
-  /* TYPOGRAPHY PROTOCOL v132.21 */
   --font-serif: 'Crimson Text', serif;
   --font-sans: 'Inter', sans-serif;
   --font-code: 'JetBrains Mono', monospace;
@@ -28,22 +28,20 @@ body{
   overflow:hidden; display:flex; flex-direction:column;
 }
 
-/* HEADER */
 #header{ width:90%; margin:25px auto 0; z-index:100; }
 .header-meta{
   display:flex; justify-content:space-between;
   font-family:var(--font-code); font-size:0.75rem; 
-  color:#888; letter-spacing:1.5px; text-transform:uppercase;
+  color:#666; letter-spacing:1.5px; text-transform:uppercase;
 }
 
-/* REVIEW TEXT (NOW HOLDS THE HINT) */
+/* REVIEW TEXT HEADER */
 #review-text{
-  margin-top:25px;
+  margin-top:20px;
   font-family:var(--font-serif);
-  font-size:1.3rem; line-height:1.5;
+  font-size:1.2rem; line-height:1.4;
   font-style:italic; text-align:center;
-  color:var(--gold); /* Highlighted color for Hint */
-  min-height:4em;
+  color:#e0e0e0; min-height:3.5em;
   display:flex; align-items:flex-end; justify-content:center;
   text-shadow: 0 4px 12px rgba(0,0,0,0.9);
 }
@@ -51,7 +49,6 @@ body{
 .progress-track{ width:100%; height:3px; background:#222; margin-top:15px; border-radius:2px; }
 #progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
 
-/* STACK ENGINE */
 #stack{
   position:relative; width:90%; max-width:420px; height:62vh;
   margin:auto; perspective:1500px;
@@ -67,31 +64,35 @@ body{
   will-change:transform; transform-style:preserve-3d;
 }
 
-/* QUESTION TYPOGRAPHY */
+/* MAIN QUESTION TEXT - SLIGHT GREY */
 .card-q{
   font-family:var(--font-serif);
-  font-size:1.6rem; line-height:1.4; /* Slightly adjusted for long explanations */
+  font-size:1.7rem; line-height:1.4;
   font-weight:600; text-align:center;
-  color:#fff; pointer-events:none;
+  color:#d0d0d0; /* Slight Grey as requested */
+  pointer-events:none;
 }
 .card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
 .card-q sup{ font-size:0.7em; vertical-align:0.5em; }
 
-/* SWIPE LABELS */
+/* SWIPE LABELS - STRICT GREY PROTOCOL */
 .swipe-label{
   position:absolute; inset:0; display:flex;
   align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.92);
-  font-family:var(--font-sans); font-weight:800; font-size:1.6rem;
-  text-transform:uppercase; letter-spacing:2px;
-  opacity:0; pointer-events:none; padding:30px;
-  text-align:center; z-index:10; transition:opacity 0.15s ease;
+  background:#000; /* Turns black in swipe mode */
+  font-family:var(--font-sans); font-weight:700; font-size:1.5rem;
+  text-transform:uppercase; letter-spacing:1px;
+  opacity:0; pointer-events:none; padding:40px;
+  text-align:center; z-index:10; transition:opacity 0.1s ease;
   border-radius:12px;
+  
+  /* FORCE GREY TEXT */
+  color: var(--option-grey) !important;
+  border: 1px solid #333; /* Subtle border instead of colored */
 }
-.sl-up{ color:var(--green); border:2px solid var(--green); }
-.sl-left{ color:var(--red); border:2px solid var(--red); }
-.sl-right{ color:var(--red); border:2px solid var(--red); }
-.sl-down{ color:var(--blue); border:2px solid var(--blue); }
+
+/* Remove Color Overrides */
+.sl-up, .sl-left, .sl-right, .sl-down { color: var(--option-grey); }
 
 </style>
 </head>
@@ -109,7 +110,7 @@ body{
 <div id="stack">
   <div class="card">
     <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | ACADEMY<br>INITIALIZING SYSTEM...
+      VIA.STACK | FINAL<br>INITIALIZING SYSTEM...
     </div>
   </div>
 </div>
@@ -276,6 +277,7 @@ function nextQ(){
  UI.id.textContent=d.id;
  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
 
+ // SHUFFLE OPTIONS
  const opts = shuffle([d.u, d.l, d.r]);
  const map = { up: opts[0], left: opts[1], right: opts[2] };
 
@@ -285,6 +287,7 @@ function nextQ(){
   if(dir==="LEFT") picked = map.left;
   if(dir==="RIGHT") picked = map.right;
 
+  // ANSWER RESOLUTION
   let c = d.correct;
   if(c==="UP"||c==="A") c=d.u;
   else if(c==="LEFT"||c==="B") c=d.l;
@@ -306,6 +309,7 @@ function nextQ(){
  });
 }
 
+/* ================= CLOSED LOOP REVIEW ================= */
 function review(){
  if(!WRONG.length){ report(); return; } 
  const d=WRONG[REVIEW_INDEX];
@@ -332,6 +336,7 @@ function review(){
  );
 }
 
+/* ================= REPORT CARD ================= */
 function report(){
  UI.review.textContent="SESSION COMPLETE"; 
  
@@ -363,7 +368,7 @@ function report(){
  );
 }
 
-/* ================= ACADEMY LAYOUT PDF v132.21 (HARD GREY LOCK) ================= */
+/* ================= PDF ENGINE v132.21 (GREY LOCK) ================= */
 function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
  const {jsPDF}=window.jspdf;
@@ -392,46 +397,37 @@ function exportSessionPDF(){
  unique.forEach((d,i)=>{
   if(y>240){doc.addPage();y=20;}
 
-  // 1. HEADER (ID)
+  // HEADER
   doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
   doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||"CONCEPTS"}`,ML,y); y+=5;
 
-  // 2. QUESTION
+  // QUESTION
   doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
   const qText = cleanPDF(d.q);
   const qLines = doc.splitTextToSize(qText,W);
   doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
 
-  // DIVIDER
   doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
 
-  // 3. COLUMNS
   const startY=y;
   
-  // COL 1: OPTIONS (A/B/C)
+  // OPTIONS - HARD GREY
   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
   doc.text("OPTIONS",ML,y); y+=4;
   doc.setFont("helvetica","normal"); doc.setFontSize(9); 
-  
-  /* --- COLOR LOCK: UNIFORM GREY FOR ALL OPTIONS --- */
-  doc.setTextColor(80,80,80); // HARD LOCK: GREY
+  doc.setTextColor(80,80,80); // GREY FOR ALL
   
   const optA = `(A) ${cleanPDF(d.u)}`;
   const optB = `(B) ${cleanPDF(d.l)}`;
   const optC = `(C) ${cleanPDF(d.r)}`;
   
-  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); 
-  y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
-  
-  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); 
-  y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
-  
-  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); 
-  y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
   
   let maxH = y; y=startY;
 
-  // COL 2: THEORY & LOGIC
+  // LOGIC
   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
   doc.text("THEORY & LOGIC",COL_LOG_X,y); y+=4;
   doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
@@ -441,7 +437,7 @@ function exportSessionPDF(){
   if(col2H>maxH) maxH=col2H;
   y=startY;
 
-  // COL 3: EXECUTION
+  // EXECUTION
   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
   doc.text("EXECUTION",COL_EXE_X,y); y+=4;
   doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
@@ -456,7 +452,7 @@ function exportSessionPDF(){
 
   y=maxH+5;
 
-  // 4. DISTRACTOR
+  // DISTRACTOR
   if(d.trap||d.note){
     doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
     doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50);
@@ -467,11 +463,10 @@ function exportSessionPDF(){
   y+=5;
  });
 
- doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
+ doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
 
-/* ================= BOOTSTRAP ================= */
 async function init(){
  try{USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]");}catch{USER_DATA=[];}
  try{const r=await fetch(MASTER_URL);MASTER_DATA=await r.json();}catch{MASTER_DATA=[];}
