@@ -156,3 +156,78 @@ sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4
   bottom:50%;
   transform:translateY(50%);
 }
+
+.card{
+  position:relative;
+  width:90%;
+  max-width:420px;
+  height:72vh;
+  background:#111;
+  border:1px solid #222;
+  border-radius:36px;
+  padding:24px;
+  display:grid;
+  grid-template-rows: 70px 1fr 70px;
+  grid-template-columns: 70px 1fr 70px;
+  text-align:center;
+  touch-action:none;
+}
+
+/* QUESTION ZONE */
+.card-q{
+  grid-row:2;
+  grid-column:2;
+  align-self:center;
+  justify-self:center;
+  font-family:'Crimson Text',serif;
+  font-size:1.6rem;
+  line-height:1.45;
+  font-style:italic;
+  max-width:100%;
+}
+
+/* OPTIONS — GUARANTEED ISOLATION */
+.opt{
+  font-family:'Crimson Text',serif;
+  font-size:1.05rem;
+  opacity:.85;
+  text-align:center;
+  padding:4px;
+  pointer-events:none;
+}
+
+.opt.up{
+  grid-row:1;
+  grid-column:2;
+  align-self:center;
+}
+
+.opt.left{
+  grid-row:2;
+  grid-column:1;
+  align-self:center;
+}
+
+.opt.right{
+  grid-row:2;
+  grid-column:3;
+  align-self:center;
+}
+
+.opt.down{
+  grid-row:3;
+  grid-column:2;
+  align-self:center;
+  color:#4aa3ff;
+}
+
+/* HINT OVERLAY */
+.overlay{
+  position:absolute;
+  inset:0;
+  background:#000;
+  padding:32px;
+  border-radius:36px;
+  display:none;
+}
+.overlay.active{display:block}
