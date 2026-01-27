@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Neural Backend v136.10</title>
+<title>Alchemist | Neural Backend v136.12</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -30,7 +30,6 @@ body{
   font-size:.7rem;color:#555;letter-spacing:2px
 }
 
-/* FIXED REVIEW HEADER PLACEMENT */
 #review-text{
   margin-top:20px;
   font-family:var(--font-chem);
@@ -112,13 +111,29 @@ body{
 </div>
 
 <script>
-/* ================= CHEM TEXT NORMALIZER ================= */
+/* ================= UTILS ================= */
 function chemText(t){
   if(!t) return "";
   return String(t)
     .replace(/_([0-9]+)/g,"<sub>$1</sub>")
     .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
     .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
+}
+
+function cleanPDF(t){
+  if(!t) return "";
+  // Strip HTML tags for PDF rendering
+  return String(t).replace(/<[^>]*>/g, "");
+}
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
 }
 
 /* ================= CONFIG ================= */
@@ -240,8 +255,9 @@ function volumePick(){
 }
 
 function startQuiz(){
- let base=RAW_DATA.filter(d=>d.set===ACTIVE_SET).sort(()=>Math.random()-.5);
- if(VOLUME_LIMIT) base=base.slice(0,VOLUME_LIMIT);
+ let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+ base = shuffle(base); 
+ if(VOLUME_LIMIT) base = base.slice(0, VOLUME_LIMIT);
  POOL=base;
  WRONG=[]; SESSION_ALL=[]; REVIEW_INDEX=0; XP=0; ATTEMPTED = new Set();
  nextQ();
@@ -257,8 +273,7 @@ function nextQ(){
  UI.id.textContent=d.id;
  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
 
- // SHUFFLE ENGINE
- const opts = [d.u, d.l, d.r].sort(() => Math.random() - 0.5);
+ const opts = shuffle([d.u, d.l, d.r]);
  const map = { up: opts[0], left: opts[1], right: opts[2] };
 
  card(d.q, map, dir=>{
@@ -267,14 +282,11 @@ function nextQ(){
   if(dir==="LEFT") picked = map.left;
   if(dir==="RIGHT") picked = map.right;
 
-  // === ROBUST ANSWER RESOLVER v136.10 ===
   let c = d.correct;
-  // 1. Resolve Directional Pointers
   if(c==="UP"||c==="A") c=d.u;
   else if(c==="LEFT"||c==="B") c=d.l;
   else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
 
-  // 2. Fuzzy Compare (Trim + Lowercase)
   const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
 
   if(!isCorrect){
@@ -291,22 +303,19 @@ function nextQ(){
  });
 }
 
-/* ================= CLOSED LOOP REVIEW ================= */
 function review(){
  if(!WRONG.length){ report(); return; } 
  const d=WRONG[REVIEW_INDEX];
-
  UI.review.innerHTML = chemText(d.logic || "Review this concept.");
-
  card(
   `HINT\n\n${d.hint || "Recall the definition."}`,
   {up:"RETRY", down:"SKIP"},
   dir=>{
     if(dir==="UP"){
-        WRONG.splice(REVIEW_INDEX,1); // Remove from Wrong
-        POOL.unshift(d); // Push back to Active
+        WRONG.splice(REVIEW_INDEX,1);
+        POOL.unshift(d);
         if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX=0;
-        nextQ(); // Trigger Quiz Mode
+        nextQ();
     }
     if(dir==="DOWN"){
         REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
@@ -316,7 +325,6 @@ function review(){
  );
 }
 
-/* ================= 4-WAY REPORT ================= */
 function report(){
  UI.review.textContent=""; 
  card(
@@ -341,10 +349,11 @@ function report(){
  );
 }
 
-/* ================= PDF EXPORT ================= */
+/* ================= ACADEMY LAYOUT PDF v132.21 ================= */
 function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
- const {jsPDF}=window.jspdf;const doc=new jsPDF();let y=20;
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
  
  const seen=new Set();
  const unique=SESSION_ALL.filter(q=>{
@@ -352,16 +361,100 @@ function exportSessionPDF(){
   seen.add(q.id);return true;
  });
 
+ let y=20;
+ const ML=15; // Margin Left
+ const W=180; // Content Width
+ const COL_OPT_W=45;
+ const COL_LOG_W=65;
+ const COL_EXE_W=65;
+ const COL_LOG_X=ML+COL_OPT_W+5;
+ const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+
+ // TITLE
+ doc.setFont("times","bold"); doc.setFontSize(16);
+ doc.text("ACADEMY SESSION REPORT",105,y,{align:"center"});
+ doc.line(ML,y+2,195,y+2); doc.line(ML,y+3,195,y+3);
+ y+=15;
+
  unique.forEach((d,i)=>{
-  if(y>260){doc.addPage();y=20;}
-  doc.setFont("courier","bold");doc.text(`Q${i+1} | ${d.id}`,15,y);y+=8;
-  doc.setFont("times","normal");
-  doc.text(doc.splitTextToSize(d.q,180),15,y);y+=12;
-  doc.text(`A) ${d.u}`,15,y);y+=5;
-  doc.text(`B) ${d.l}`,15,y);y+=5;
-  doc.text(`C) ${d.r}`,15,y);y+=5;
-  doc.text(`ANSWER: ${d.correct}`,15,y);y+=10;
+  if(y>240){doc.addPage();y=20;}
+
+  // 1. HEADER (ID)
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+  doc.text(`${d.id} // ${d.set||"GENERAL"}`,ML,y); y+=5;
+
+  // 2. QUESTION
+  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qText = cleanPDF(d.q);
+  const qLines = doc.splitTextToSize(qText,W);
+  doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+
+  // DIVIDER
+  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+
+  // 3. COLUMNS
+  const startY=y;
+  
+  // COL 1: OPTIONS (A/B/C)
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("OPTIONS",ML,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  
+  const optA = `(A) ${cleanPDF(d.u)}`;
+  const optB = `(B) ${cleanPDF(d.l)}`;
+  const optC = `(C) ${cleanPDF(d.r)}`;
+  
+  // Green Highlight Logic
+  let c = d.correct;
+  if(c==="UP") c=d.u; if(c==="LEFT") c=d.l; if(c==="RIGHT") c=d.r;
+  
+  if(d.u===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  
+  if(d.l===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  
+  if(d.r===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  
+  let maxH = y; y=startY;
+
+  // COL 2: THEORY & LOGIC
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("THEORY & LOGIC",COL_LOG_X,y); y+=4;
+  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT = doc.splitTextToSize(cleanPDF(d.logic||"No logic provided."),COL_LOG_W);
+  doc.text(logT,COL_LOG_X,y); 
+  const col2H = y+(logT.length*4);
+  if(col2H>maxH) maxH=col2H;
+  y=startY;
+
+  // COL 3: EXECUTION
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("EXECUTION",COL_EXE_X,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  const s1 = `1. ${cleanPDF(d.s1||d.step1||"-")}`;
+  const s2 = `2. ${cleanPDF(d.s2||d.step2||"-")}`;
+  const s1L = doc.splitTextToSize(s1,COL_EXE_W);
+  doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
+  const s2L = doc.splitTextToSize(s2,COL_EXE_W);
+  doc.text(s2L,COL_EXE_X,y);
+  const col3H = y+(s2L.length*4);
+  if(col3H>maxH) maxH=col3H;
+
+  y=maxH+5;
+
+  // 4. DISTRACTOR
+  if(d.trap||d.note){
+    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50);
+    doc.text("DISTRACTOR ANALYSIS:",ML,y);
+    doc.setFont("times","italic"); doc.setTextColor(80);
+    doc.text(cleanPDF(d.trap||d.note),ML+35,y); y+=8;
+  } else {y+=5;}
+  y+=5;
  });
+
  doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
