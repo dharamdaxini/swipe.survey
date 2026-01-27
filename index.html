@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Academy Edition v136.13</title>
+<title>Alchemist | Academy Edition v136.14</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -36,13 +36,14 @@ body{
   color:#888; letter-spacing:1.5px; text-transform:uppercase;
 }
 
-/* REVIEW TEXT (Logic Display) */
+/* REVIEW TEXT (NOW HOLDS THE HINT) */
 #review-text{
   margin-top:25px;
   font-family:var(--font-serif);
   font-size:1.3rem; line-height:1.5;
   font-style:italic; text-align:center;
-  color:#f0f0f0; min-height:4em;
+  color:#gold; /* Highlighted color for Hint */
+  min-height:4em;
   display:flex; align-items:flex-end; justify-content:center;
   text-shadow: 0 4px 12px rgba(0,0,0,0.9);
 }
@@ -59,7 +60,7 @@ body{
 
 .card{
   position:absolute; width:100%; height:95%;
-  background:var(--card); border-radius:12px; /* Sharper corners for academic feel */
+  background:var(--card); border-radius:12px; 
   border:1px solid var(--border);
   padding:35px; display:flex; flex-direction:column; justify-content:center;
   box-shadow:0 20px 60px rgba(0,0,0,0.95);
@@ -69,7 +70,7 @@ body{
 /* QUESTION TYPOGRAPHY */
 .card-q{
   font-family:var(--font-serif);
-  font-size:1.8rem; line-height:1.4;
+  font-size:1.6rem; line-height:1.4; /* Slightly adjusted for long explanations */
   font-weight:600; text-align:center;
   color:#fff; pointer-events:none;
 }
@@ -114,7 +115,7 @@ body{
 </div>
 
 <script>
-/* ================= CHEM TEXT NORMALIZER ================= */
+/* ================= UTILS ================= */
 function chemText(t){
   if(!t) return "";
   return String(t)
@@ -183,7 +184,7 @@ class PhysicsController{
   if(!this.active)return;
   const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
   const d=Math.hypot(dx,dy);
-  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`; /* Smoother rotation */
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
   Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
   if(d>20){
     const dir=this.dir(dx,dy);
@@ -305,12 +306,17 @@ function nextQ(){
  });
 }
 
+/* ================= PATCHED REVIEW LOGIC (SWAP) ================= */
 function review(){
  if(!WRONG.length){ report(); return; } 
  const d=WRONG[REVIEW_INDEX];
- UI.review.innerHTML = chemText(d.logic || "Review this concept.");
+ 
+ // HEADER NOW SHOWS THE HINT
+ UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
+ 
+ // CARD NOW SHOWS THE EXPLANATION (LOGIC)
  card(
-  `HINT\n\n${d.hint || "Recall the definition."}`,
+  `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
   {up:"RETRY", down:"SKIP"},
   dir=>{
     if(dir==="UP"){
@@ -331,7 +337,6 @@ function review(){
 function report(){
  UI.review.textContent="SESSION COMPLETE"; 
  
- // Calculate Performance
  const total = SESSION_ALL.length;
  const percent = Math.round((XP / total) * 100);
  let feedback = "Review Recommended.";
@@ -415,7 +420,9 @@ function exportSessionPDF(){
   const optC = `(C) ${cleanPDF(d.r)}`;
   
   let c = d.correct;
-  if(c==="UP") c=d.u; if(c==="LEFT") c=d.l; if(c==="RIGHT") c=d.r;
+  if(c==="UP"||c==="A") c=d.u;
+  if(c==="LEFT"||c==="B") c=d.l;
+  if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
   
   if(d.u===c) doc.setTextColor(0,150,0); else doc.setTextColor(0);
   doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
@@ -464,7 +471,7 @@ function exportSessionPDF(){
   y+=5;
  });
 
- doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
+ doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
 
