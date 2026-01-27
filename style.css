@@ -154,3 +154,37 @@ sup { font-size: 0.75em; vertical-align: baseline; position: relative; top: -0.4
 .portal {
     touch-action: auto;
 }
+
+/* QUESTION ↔ OPTION TRANSITION ENGINE */
+.card-q {
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease,
+        filter 0.25s ease;
+}
+
+.card[data-state="intent"] .card-q {
+    opacity: 0.15;
+    transform: scale(0.97) translateY(-6px);
+    filter: blur(1.5px);
+}
+
+.card[data-state="commit"] .card-q {
+    opacity: 0;
+    transform: scale(0.9);
+}
+
+/* Swipe label animation */
+.swipe-label {
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+.card[data-state="intent"] .swipe-label {
+    transform: scale(1.02);
+}
+
+.card[data-state="idle"] .swipe-label {
+    transform: scale(0.96);
+}
