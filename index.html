@@ -44,18 +44,12 @@ sub{font-size:.7em}sup{font-size:.7em}
   box-shadow:0 30px 90px rgba(0,0,0,.9);
   will-change:transform
 }
-.card.study-active{
-  filter:blur(20px) brightness(.2);opacity:.5;
-  transform:scale(.85) translateY(40px)!important;
-  pointer-events:none
-}
 .card-q{
   font-family:var(--font-chem);
   font-size:1.7rem;line-height:1.4;
   font-style:italic;font-weight:600;
   text-align:center
 }
-
 .swipe-label{
   position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;
@@ -81,7 +75,6 @@ sub{font-size:.7em}sup{font-size:.7em}
   font-size:1.1rem;line-height:1.6;
   color:#bbb;margin-bottom:30px
 }
-
 .btn{
   width:100%;padding:18px;border-radius:50px;
   border:none;background:#fff;color:#000;
@@ -118,18 +111,13 @@ const UI={
   bar:document.getElementById("progress-bar"),
   id:document.getElementById("id-ui")
 };
-
-let MODE="FRONT"; // FRONT | MANAGE | QUIZ
-let FILTER="MASTER"; // MASTER | USER
+let FILTER="MASTER";
 let CURSOR=0;
 let STATE={pool:[],score:0};
 
 /* ---------------- HELPERS ---------------- */
 const F=t=>t?t.replace(/([A-Z][a-z]?)(\d+)/g,"$1<sub>$2</sub>").replace(/\^(\d+)/g,"<sup>$1</sup>"):"";
-
-function getSets(){
-  return [...new Set(RAW_DATA.filter(d=>FILTER==="MASTER"?d.dom==="MASTER":d.dom==="USER").map(d=>d.set))];
-}
+const getSets=()=>[...new Set(RAW_DATA.filter(d=>FILTER==="MASTER"?d.dom==="MASTER":d.dom==="USER").map(d=>d.set))];
 
 /* ---------------- PHYSICS ---------------- */
 class PhysicsController{
@@ -146,13 +134,13 @@ class PhysicsController{
   bind(){
     const s=e=>this.startDrag(e.touches?e.touches[0]:e);
     const m=e=>this.move(e.touches?e.touches[0]:e);
-    const e=()=>this.end();
+    const e2=()=>this.end();
     this.el.addEventListener("mousedown",s);
     window.addEventListener("mousemove",m);
-    window.addEventListener("mouseup",e);
+    window.addEventListener("mouseup",e2);
     this.el.addEventListener("touchstart",s,{passive:false});
     this.el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
-    this.el.addEventListener("touchend",e);
+    this.el.addEventListener("touchend",e2);
   }
   startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
   move(p){
@@ -186,9 +174,8 @@ class PhysicsController{
   }
 }
 
-/* ---------------- FRONT SLIDE ---------------- */
+/* ---------------- FRONT ---------------- */
 function renderFront(){
-  MODE="FRONT";
   const sets=getSets();
   const left=sets[CURSOR%sets.length]||"—";
   const right=sets[(CURSOR+1)%sets.length]||"—";
@@ -208,15 +195,13 @@ function renderFront(){
     onCommit:dir=>{
       if(dir==="DOWN"){CURSOR+=2;renderFront();return;}
       if(dir==="UP"){renderManage();return;}
-      if(dir==="LEFT"){startQuiz(left);return;}
-      if(dir==="RIGHT"){startQuiz(right);return;}
+      if(dir==="LEFT"||dir==="RIGHT"){startQuiz();return;}
     }
   });
 }
 
-/* ---------------- MANAGE VAULT ---------------- */
+/* ---------------- MANAGE ---------------- */
 function renderManage(){
-  MODE="MANAGE";
   UI.stack.innerHTML="";
   const el=document.createElement("div");
   el.className="card";
@@ -234,10 +219,12 @@ function renderManage(){
   });
 }
 
-/* ---------------- QUIZ ---------------- */
-function startQuiz(set){
-  STATE.pool=RAW_DATA.filter(d=>d.set===set).sort(()=>Math.random()-.5);
-  STATE.score=0;UI.bar.style.width="0%";UI.xp.textContent="0 XP";
+/* ---------------- QUIZ (UPGRADED) ---------------- */
+function startQuiz(){
+  STATE.pool=[...RAW_DATA].sort(()=>Math.random()-.5); // LOAD ALL QUESTIONS
+  STATE.score=0;
+  UI.bar.style.width="0%";
+  UI.xp.textContent="0 XP";
   next();
 }
 
@@ -264,7 +251,8 @@ function next(){
     onCommit:dir=>{
       if(dir==="DOWN"){el.querySelector(".overlay").classList.add("active");return;}
       if((dir==="UP"&&d.u===d.correct)||(dir==="LEFT"&&d.l===d.correct)||(dir==="RIGHT"&&d.r===d.correct)){
-        STATE.score+=10;UI.xp.textContent=`${STATE.score} XP`;
+        STATE.score+=10;
+        UI.xp.textContent=`${STATE.score} XP`;
         UI.bar.style.width=(STATE.score%100)+"%";
       }
       el.style.transition=".4s";el.style.opacity=0;
