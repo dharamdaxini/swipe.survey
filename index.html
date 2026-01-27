@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Neural Backend v136.02</title>
-
+<title>Alchemist | Neural Backend v136.09</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 :root{
   --bg:#000;--card:#111;--border:#222;
@@ -31,6 +29,21 @@ body{
   font-family:var(--font-code);
   font-size:.7rem;color:#555;letter-spacing:2px
 }
+
+/* DYNAMIC HEADER FOR LOGIC TEXT */
+#review-text{
+  margin-top:15px;
+  font-family:var(--font-chem);
+  font-size:1.1rem;
+  line-height:1.4;
+  font-style:italic;
+  text-align:center;
+  color:#e0e0e0;
+  min-height:3.5em; 
+  display:flex; align-items:flex-end; justify-content:center;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
 .progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
 #progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
 
@@ -79,7 +92,6 @@ body{
 .sl-down{color:var(--blue)}
 </style>
 </head>
-
 <body>
 
 <div id="header">
@@ -87,6 +99,7 @@ body{
     <span id="id-ui">BOOT</span>
     <span id="xp-ui">0 XP</span>
   </div>
+  <div id="review-text"></div>
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
@@ -108,28 +121,27 @@ function chemText(t){
     .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
 }
 
-/* ================= BRIDGE CONFIG ================= */
-const MASTER_URL =
- "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
+/* ================= CONFIG ================= */
+const MASTER_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
 const USER_KEY = "ALCHEMIST_DATA_V1";
 
-/* ================= DATA ================= */
-let RAW_DATA=[], MASTER_DATA=[], USER_DATA=[];
-
 /* ================= STATE ================= */
+let RAW_DATA=[], MASTER_DATA=[], USER_DATA=[];
 const UI={
   stack:document.getElementById("stack"),
   id:document.getElementById("id-ui"),
   xp:document.getElementById("xp-ui"),
-  bar:document.getElementById("progress-bar")
+  bar:document.getElementById("progress-bar"),
+  review:document.getElementById("review-text")
 };
 
 let SET_CURSOR=0, ACTIVE_SET=null;
 let POOL=[], WRONG=[], REVIEW_INDEX=0;
 let SESSION_ALL=[], XP=0;
 let VOLUME_LIMIT=null;
+let ATTEMPTED = new Set(); // Tracks unique questions seen for scoring
 
-/* ================= PHYSICS (UNCHANGED) ================= */
+/* ================= PHYSICS ENGINE (UNCHANGED) ================= */
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
@@ -177,7 +189,7 @@ class PhysicsController{
  }
 }
 
-/* ================= CARD RENDER ================= */
+/* ================= RENDER LOGIC ================= */
 function card(text,labels,cb){
  const safeText=chemText(text);
  UI.stack.innerHTML="";
@@ -193,8 +205,9 @@ function card(text,labels,cb){
  new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= FLOW ================= */
+/* ================= APP FLOW ================= */
 function begin(){
+ UI.review.textContent=""; 
  card("BEGIN",{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP") setPick();
   if(dir==="DOWN") exportSessionPDF();
@@ -203,6 +216,7 @@ function begin(){
 
 function setPick(){
  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ if(sets.length===0) { alert("No Data Loaded"); return; }
  card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
   if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length;setPick();}
   if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
@@ -211,7 +225,6 @@ function setPick(){
  });
 }
 
-/* ===== NEW SLIDE: QUESTION VOLUME SELECTOR ===== */
 function volumePick(){
  card(
   `QUESTION VOLUME`,
@@ -230,46 +243,130 @@ function startQuiz(){
  let base=RAW_DATA.filter(d=>d.set===ACTIVE_SET).sort(()=>Math.random()-.5);
  if(VOLUME_LIMIT) base=base.slice(0,VOLUME_LIMIT);
  POOL=base;
- WRONG=[]; SESSION_ALL=[]; REVIEW_INDEX=0; XP=0;
+ WRONG=[]; SESSION_ALL=[]; REVIEW_INDEX=0; XP=0; ATTEMPTED = new Set();
  nextQ();
 }
 
 function nextQ(){
- if(!POOL.length){review();return;}
+ UI.review.textContent=""; 
+ if(!POOL.length){
+    // === CLOSED LOOP GATEKEEPER ===
+    // If WRONG array has items, loop them until empty.
+    if(WRONG.length){ review(); return; }
+    // Only proceed to Report if WRONG is empty.
+    report(); return;
+ }
+ 
  const d=POOL.shift();
  UI.id.textContent=d.id;
- SESSION_ALL.push(d);
- card(d.q,{up:d.u,left:d.l,right:d.r},dir=>{
-  const picked=dir==="UP"?d.u:dir==="LEFT"?d.l:d.r;
-  if(picked!==d.correct) WRONG.push(d);
-  else{XP+=10;UI.xp.textContent=`${XP} XP`;UI.bar.style.width=Math.min(100,XP)+"%";}
+ if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+
+ // SHUFFLE ENGINE: Randomize options A/B/C to UP/LEFT/RIGHT
+ const opts = [d.u, d.l, d.r].sort(() => Math.random() - 0.5);
+ const map = { up: opts[0], left: opts[1], right: opts[2] };
+
+ card(d.q, map, dir=>{
+  let picked = null;
+  if(dir==="UP") picked = map.up;
+  if(dir==="LEFT") picked = map.left;
+  if(dir==="RIGHT") picked = map.right;
+
+  // SAFETY: Resolve "Correct" pointer if data uses directional keys
+  let correctVal = d.correct;
+  if(correctVal === "UP") correctVal = d.u;
+  else if(correctVal === "LEFT") correctVal = d.l;
+  else if(correctVal === "RIGHT" || correctVal === "R") correctVal = d.r;
+
+  // CHECK ANSWER
+  if(picked !== correctVal){
+    WRONG.push(d); // Add to closed loop pile
+  } else {
+    // FIRST ATTEMPT SCORING: Only award point if ID not in ATTEMPTED
+    if(!ATTEMPTED.has(d.id)){
+        XP+=1; 
+    }
+  }
+  
+  // Track that we've seen this question
+  ATTEMPTED.add(d.id);
+  
+  // Update HUD
+  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
+  UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
+  
   nextQ();
  });
 }
 
+/* ================= CLOSED LOOP REVIEW ================= */
 function review(){
- if(!WRONG.length){report();return;}
+ if(!WRONG.length){ report(); return; } 
  const d=WRONG[REVIEW_INDEX];
- card(`REVIEW\n\n${d.logic}\n\nSTEP 1\n${d.step1}\n\nSTEP 2\n${d.step2}`,
- {up:"RETRY",down:"NEXT"},dir=>{
-  if(dir==="UP"){POOL=[d];WRONG.splice(REVIEW_INDEX,1);nextQ();}
-  if(dir==="DOWN"){REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;review();}
- });
+
+ UI.review.innerHTML = chemText(d.logic || "Review this concept.");
+
+ card(
+  `HINT\n\n${d.hint || "Recall the definition."}`,
+  {up:"RETRY", down:"SKIP"},
+  dir=>{
+    if(dir==="UP"){
+        // === ACTION: RE-INSERT TO ACTIVE DECK ===
+        WRONG.splice(REVIEW_INDEX,1); // Remove from 'Wrong' pile
+        POOL.unshift(d); // Add to front of 'Active' pile
+        
+        // Reset index to prevent out-of-bounds
+        if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX=0;
+        
+        // Go back to Quiz Mode (this will re-shuffle options)
+        nextQ();
+    }
+    if(dir==="DOWN"){
+        // Cycle to next wrong card
+        REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
+        review();
+    }
+  }
+ );
 }
 
+/* ================= 4-WAY REPORT CARD ================= */
 function report(){
- card(`SESSION COMPLETE\n\nPDF READY (${SESSION_ALL.length})`,
- {down:"EXPORT PDF",left:"HOME"},dir=>{
-  if(dir==="DOWN") exportSessionPDF();
-  if(dir==="LEFT") begin();
- });
+ UI.review.textContent=""; 
+ card(
+  `SESSION COMPLETE\n\nSCORE: ${XP} / ${SESSION_ALL.length}`,
+  {down:"PDF", up:"RETRY", left:"MENU", right:"NEXT LVL"},
+  dir=>{
+    if(dir==="DOWN") exportSessionPDF();
+    if(dir==="UP") startQuiz(); 
+    if(dir==="LEFT") begin();
+    if(dir==="RIGHT"){
+        // FIND NEXT SET
+        const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+        const curr = sets.indexOf(ACTIVE_SET);
+        if(curr > -1 && curr < sets.length - 1){
+            ACTIVE_SET = sets[curr+1];
+            volumePick(); // Enter volume selection for next set
+        } else {
+            alert("All Sets Completed!");
+            begin();
+        }
+    }
+  }
+ );
 }
 
-/* ================= PDF ================= */
+/* ================= PDF EXPORT ================= */
 function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
  const {jsPDF}=window.jspdf;const doc=new jsPDF();let y=20;
- SESSION_ALL.forEach((d,i)=>{
+ 
+ const seen=new Set();
+ const unique=SESSION_ALL.filter(q=>{
+  if(seen.has(q.id)) return false;
+  seen.add(q.id);return true;
+ });
+
+ unique.forEach((d,i)=>{
   if(y>260){doc.addPage();y=20;}
   doc.setFont("courier","bold");doc.text(`Q${i+1} | ${d.id}`,15,y);y+=8;
   doc.setFont("times","normal");
@@ -283,7 +380,7 @@ function exportSessionPDF(){
  setTimeout(begin,500);
 }
 
-/* ================= BOOT ================= */
+/* ================= BOOTSTRAP ================= */
 async function init(){
  try{USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]");}catch{USER_DATA=[];}
  try{const r=await fetch(MASTER_URL);MASTER_DATA=await r.json();}catch{MASTER_DATA=[];}
@@ -292,6 +389,5 @@ async function init(){
 }
 init();
 </script>
-
 </body>
 </html>
