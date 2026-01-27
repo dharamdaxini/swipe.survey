@@ -95,7 +95,7 @@ header{
  margin-top:15px;background:#000;border:1px solid #222;
  border-radius:8px;padding:15px;
  font-family:'JetBrains Mono',monospace;
- font-size:.7rem;color:#666
+ font-size:.7rem;color:#666;white-space:pre-wrap
 }
 </style>
 </head>
@@ -134,12 +134,7 @@ header{
       <span>TSV or JSON (Android Safe)</span>
     </div>
 
-    <!-- ANDROID-SAFE INPUT -->
-    <input
-      id="fileInput"
-      type="file"
-      style="display:none"
-    >
+    <input id="fileInput" type="file" style="display:none">
 
     <button class="btn" onclick="processFile()">INITIATE ALIGNMENT</button>
     <div class="terminal" id="log">> SYSTEM STANDBY…</div>
@@ -162,10 +157,30 @@ header{
 </div>
 
 <script>
-const DB_KEY="ALCHEMIST_MASTER_DB";
-let STAGED=[];
+/* =========================================================
+   CONFIG
+========================================================= */
 
-/* ANDROID SAFE TRIGGER */
+const STORAGE_KEY = "ALCHEMIST_DATA_V1";
+let STAGED = [];
+
+/* =========================================================
+   UI NAV
+========================================================= */
+
+function openAdmin(){
+ document.getElementById("front").style.display="none";
+ document.getElementById("admin").style.display="flex";
+}
+function closeAdmin(){
+ document.getElementById("admin").style.display="none";
+ document.getElementById("front").style.display="flex";
+}
+
+/* =========================================================
+   UPLOAD
+========================================================= */
+
 function triggerUpload(){
  const input=document.getElementById("fileInput");
  input.value=null;
@@ -179,45 +194,94 @@ function processFile(){
  const reader=new FileReader();
  reader.onload=e=>{
   try{
+   const txt=e.target.result;
+
    if(f.name.toLowerCase().endsWith(".json")){
-     STAGED=JSON.parse(e.target.result);
-     log("JSON INGESTED: "+STAGED.length+" ROWS");
+     ingestJSON(txt);
    }else{
-     const rows=e.target.result.trim().split(/\r?\n/);
-     STAGED=rows.slice(1).map(r=>{
-       const c=r.split("\t");
-       return{
-         id:c[0],set:c[1],dom:c[2],topic:c[3],
-         q:c[5],u:c[6],r:c[7],l:c[8],
-         correct:c[9],logic:c[10],hint:c[11]
-       };
-     });
-     log("TSV INGESTED: "+STAGED.length+" ROWS");
+     ingestTSV(txt);
    }
-  }catch(err){
+
+   log(`STAGED ${STAGED.length} VALID ROWS`);
+  }catch{
+   STAGED=[];
    log("PARSE ERROR");
   }
  };
  reader.readAsText(f);
 }
 
-function pushToIndex(){
- if(!STAGED.length) return log("NO DATA STAGED");
- localStorage.setItem(DB_KEY,JSON.stringify(STAGED));
- log("DATA PUSHED TO OPERATOR INDEX");
+/* =========================================================
+   INGESTION
+========================================================= */
+
+function ingestJSON(txt){
+ const raw=JSON.parse(txt);
+ if(!Array.isArray(raw)) throw 0;
+ STAGED = raw.filter(validRow).map(normalizeRow);
 }
+
+function ingestTSV(txt){
+ const rows=txt.trim().split(/\r?\n/);
+ const start=rows[0].toLowerCase().includes("id") ? 1 : 0;
+
+ STAGED=[];
+ for(let i=start;i<rows.length;i++){
+  const c=rows[i].split("\t");
+  if(c.length < 11) continue;
+
+  const row={
+    id:c[0],
+    q:c[5],
+    u:c[6],
+    r:c[7],
+    l:c[8],
+    correct:c[9],
+    logic:c[10]
+  };
+  if(validRow(row)) STAGED.push(row);
+ }
+}
+
+function validRow(r){
+ return r &&
+  typeof r.id==="string" &&
+  typeof r.q==="string" &&
+  typeof r.u==="string" &&
+  typeof r.l==="string" &&
+  typeof r.r==="string" &&
+  typeof r.correct==="string" &&
+  typeof r.logic==="string";
+}
+
+function normalizeRow(r){
+ return{
+  id:r.id,
+  q:r.q,
+  u:r.u,
+  l:r.l,
+  r:r.r,
+  correct:r.correct,
+  logic:r.logic
+ };
+}
+
+/* =========================================================
+   DEPLOY
+========================================================= */
+
+function pushToIndex(){
+ if(!STAGED.length) return log("NO VALID DATA TO PUSH");
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(STAGED));
+ log("DATA PUSHED → OPERATOR INDEX");
+}
+
+/* =========================================================
+   LOG
+========================================================= */
 
 function log(m){
  document.getElementById("log").innerText="> "+m;
-}
-
-function openAdmin(){
- document.getElementById("front").style.display="none";
- document.getElementById("admin").style.display="flex";
-}
-function closeAdmin(){
- document.getElementById("admin").style.display="none";
- document.getElementById("front").style.display="flex";
 }
 </script>
 
