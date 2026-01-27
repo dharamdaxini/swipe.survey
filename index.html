@@ -1,44 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Alchemist | Neural Backend</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Alchemist | Neural Backend</title>
 
-    <!-- CORE FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- GOOGLE FONTS -->
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
-    <!-- MAIN CSS -->
-    <link rel="stylesheet" href="style.css">
+<!-- KATEX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <!-- KATEX ASSETS (CHUNK 1) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<!-- PDF EXPORT -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-    <!-- PDF ENGINE DEPENDENCIES -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- MAIN CSS -->
+<link rel="stylesheet" href="style.css">
+
 </head>
-
 <body>
 
-<!-- =======================
-     DATA PORTAL (TSV INPUT)
-======================== -->
+<!-- ===== DATA PORTAL ===== -->
 <div id="portal">
     <h1>ALCHEMIST DATA PORTAL</h1>
-    <textarea id="data-input" placeholder="Paste TSV data here..."></textarea>
-    <button class="btn btn-gold" onclick="importDataset()">IMPORT DATASET</button>
+
+    <textarea id="data-input" placeholder="Paste TSV here or upload file..."></textarea>
+
+    <input type="file" id="file-upload" accept=".tsv,.csv,.json" style="display:none">
+
+    <button class="btn btn-gold" onclick="document.getElementById('file-upload').click()">IMPORT DATASET</button>
 </div>
 
-<!-- =======================
-     HEADER / HUD
-======================== -->
+<!-- ===== HUD ===== -->
 <div id="header">
     <div class="header-meta">
         <span id="p-text">BOOT</span>
         <div>
-            <button class="btn btn-gold" onclick="exportAcademicPDF()">EXPORT PDF</button>
+            <button class="cmd-btn" onclick="document.getElementById('file-upload').click()">LOAD</button>
+            <button class="cmd-btn" onclick="exportAcademicPDF()">EXPORT PDF</button>
         </div>
         <span id="score-text">0 XP</span>
     </div>
@@ -47,28 +49,62 @@
     </div>
 </div>
 
-<!-- =======================
-     CARD STACK
-======================== -->
+<!-- ===== STACK ===== -->
 <div id="stack"></div>
 
-<!-- =======================
-     GLOBAL OVERLAY (LEARN)
-======================== -->
+<!-- ===== OVERLAY ===== -->
 <div id="global-overlay" class="overlay">
     <div class="overlay-body" id="overlay-content"></div>
-    <button class="btn" onclick="closeOverlay()">CLOSE</button>
+    <button class="btn btn-gold" onclick="closeOverlay()">RESUME</button>
 </div>
 
-<!-- =======================
-     DEPLOY TAG
-======================== -->
+<!-- ===== DEPLOY TAG ===== -->
 <div class="v-tag">ALCHEMIST v130.2</div>
 
-<!-- =======================
-     CORE SCRIPT
-======================== -->
+<!-- ===== MAIN SCRIPT ===== -->
 <script src="script.js"></script>
+
+<!-- ===== KATEX RENDER HOOK (NON-DESTRUCTIVE) ===== -->
+<script>
+function renderMath() {
+    if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false},
+                {left: "\\(", right: "\\)", display: false},
+                {left: "\\[", right: "\\]", display: true}
+            ],
+            throwOnError: false
+        });
+    }
+}
+
+/* Call AFTER every render */
+const _renderNext = window.renderNext;
+window.renderNext = function () {
+    _renderNext();
+    requestAnimationFrame(renderMath);
+};
+
+const _renderSlide = window.renderSlide;
+window.renderSlide = function (...args) {
+    _renderSlide(...args);
+    requestAnimationFrame(renderMath);
+};
+
+/* File Upload Bridge */
+document.getElementById('file-upload').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        document.getElementById('data-input').value = ev.target.result;
+        importDataset();
+    };
+    reader.readAsText(file);
+});
+</script>
 
 </body>
 </html>
