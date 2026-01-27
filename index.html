@@ -6,6 +6,7 @@
 <title>Alchemist | Neural Backend</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
@@ -73,8 +74,8 @@ body{
 <script>
 /* ---------------- DATA ---------------- */
 const RAW_DATA=[
- {id:"A1",set:"SET_A",q:"Electrode potential of Mg?",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"Ecell calc",step1:"Find E°",step2:"Subtract"},
- {id:"B1",set:"SET_B",q:"Alcohol → Aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"Selective oxidant",step1:"Choose mild",step2:"Stop oxidation"}
+ {id:"A1",set:"SET_A",q:"Electrode potential of Mg?",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"Ecell = Ecathode − Eanode",step1:"Identify electrodes",step2:"Subtract potentials"},
+ {id:"B1",set:"SET_B",q:"Alcohol → Aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"Mild oxidation stops at aldehyde",step1:"Avoid strong oxidant",step2:"Use PCC"}
 ];
 
 /* ---------------- STATE ---------------- */
@@ -134,13 +135,13 @@ class PhysicsController{
  }
 }
 
-/* ---------------- RENDER ---------------- */
+/* ---------------- CARD RENDER ---------------- */
 function card(text,labels,cb){
  UI.stack.innerHTML="";
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${text}</div>
+  <div class="card-q">${text.replace(/\n/g,"<br>")}</div>
   <div class="swipe-label sl-up">${labels.up||""}</div>
   <div class="swipe-label sl-left">${labels.left||""}</div>
   <div class="swipe-label sl-right">${labels.right||""}</div>
@@ -151,42 +152,113 @@ function card(text,labels,cb){
 
 /* ---------------- FLOW ---------------- */
 function begin(){
- card("BEGIN",{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
-  if(dir==="UP") setPick();
- });
+ card(
+  "BEGIN",
+  {up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},
+  dir=>{ if(dir==="UP") setPick(); }
+ );
 }
 
 function setPick(){
- card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
-  if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length;setPick();}
-  if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
-  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];startQuiz();}
-  if(dir==="DOWN") begin();
- });
+ card(
+  sets[SET_CURSOR],
+  {left:"",right:"",up:"SELECT",down:"BACK"},
+  dir=>{
+   if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length;setPick();}
+   if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
+   if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];startQuiz();}
+   if(dir==="DOWN") begin();
+  }
+ );
 }
 
 function startQuiz(){
  POOL=RAW_DATA.filter(d=>d.set===ACTIVE_SET);
- WRONG=[]; nextQ();
+ WRONG=[];
+ nextQ();
 }
 
 function nextQ(){
  if(!POOL.length){review();return;}
  const d=POOL.shift();
  UI.id.textContent=d.id;
- card(d.q,{up:d.u,left:d.l,right:d.r},dir=>{
-  if(d[dir==="UP"?"u":dir==="LEFT"?"l":"r"]!==d.correct)WRONG.push(d);
-  nextQ();
- });
+ card(
+  d.q,
+  {up:d.u,left:d.l,right:d.r},
+  dir=>{
+   const picked = dir==="UP"?d.u:dir==="LEFT"?d.l:d.r;
+   if(picked!==d.correct) WRONG.push(d);
+   nextQ();
+  }
+ );
 }
 
+/* ---------------- REVIEW ---------------- */
 function review(){
- if(!WRONG.length){begin();return;}
+ if(!WRONG.length){reportSlide();return;}
  const d=WRONG[REVIEW_INDEX];
- card(`REVIEW\n\n${d.logic}\n\n${d.step1}\n\n${d.step2}`,{up:"RETRY",down:"NEXT"},dir=>{
-  if(dir==="UP"){POOL=[d];WRONG.splice(REVIEW_INDEX,1);nextQ();}
-  if(dir==="DOWN"){REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;review();}
+ card(
+`REVIEW
+
+${d.logic}
+
+STEP 1
+${d.step1}
+
+STEP 2
+${d.step2}`,
+  {up:"RETRY",down:"NEXT"},
+  dir=>{
+   if(dir==="UP"){
+    POOL=[d];
+    WRONG.splice(REVIEW_INDEX,1);
+    nextQ();
+   }
+   if(dir==="DOWN"){
+    REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
+    review();
+   }
+  }
+ );
+}
+
+/* ---------------- FINAL REPORT SLIDE ---------------- */
+function reportSlide(){
+ card(
+`SESSION COMPLETE
+
+REVIEW SUMMARY
+
+Your weak areas were identified.
+Offline review recommended.`,
+  {up:"RETRY",down:"PDF",left:"RESTART",right:"CHANGE SET"},
+  dir=>{
+   if(dir==="UP"){ POOL=[...WRONG]; WRONG=[]; nextQ(); }
+   if(dir==="DOWN"){ exportSessionPDF(); }
+   if(dir==="LEFT"){ begin(); }
+   if(dir==="RIGHT"){ setPick(); }
+  }
+ );
+}
+
+/* ---------------- PDF EXPORT ---------------- */
+function exportSessionPDF(){
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+ let y=20;
+
+ WRONG.forEach(d=>{
+  if(y>240){doc.addPage();y=20;}
+  doc.setFont("courier","bold");doc.setFontSize(10);
+  doc.text("ALCHEMIST SESSION REVIEW",15,y);y+=8;
+  doc.setFont("times","normal");doc.setFontSize(10);
+  doc.text(`Q: ${d.q}`,15,y);y+=6;
+  doc.text(`LOGIC: ${d.logic}`,15,y);y+=6;
+  doc.text(`STEP 1: ${d.step1}`,15,y);y+=6;
+  doc.text(`STEP 2: ${d.step2}`,15,y);y+=10;
  });
+
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
 }
 
 /* ---------------- INIT ---------------- */
