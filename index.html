@@ -373,90 +373,13 @@ function nextQ(){
       } else {
         if(!ATTEMPTED.has(d.id)){ XP+=1; }
       }
-      ATTEMPTED.add(d.id);
-      UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
-      UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
-      
-      nextQ();
-    }
-  );
-}
-
-function review(){
- if(!WRONG.length){ report(); return; } 
- const d=WRONG[REVIEW_INDEX];
- UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
- 
- // LOGIC IN MAIN CARD (Scrollable)
- card(
-  `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
-  {up:"RETRY", down:"SKIP"},
-  dir=>{
-    if(dir==="UP"){
-        WRONG.splice(REVIEW_INDEX,1);
-        POOL.unshift(d);
-        if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX=0;
-        nextQ();
-    }
-    if(dir==="DOWN"){
-        REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
-        review();
-    }
-  }
- );
-}
-
-function report(){
- UI.review.textContent="SESSION COMPLETE"; 
- const total = SESSION_ALL.length;
- const percent = Math.round((XP / total) * 100);
- let feedback = percent > 90 ? "Excellent Mastery." : "Review Recommended.";
- 
- card(
-  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\n${feedback}`,
-  {down:"EXPORT PDF", up:"RETRY SET", left:"MAIN MENU", right:"NEXT LEVEL"},
-  dir=>{
-    if(dir==="DOWN") exportSessionPDF();
-    if(dir==="UP") startQuiz(); 
-    if(dir==="LEFT") begin();
-    if(dir==="RIGHT"){
-        const sets=[...new Set(RAW_DATA.map(d=>d.set))];
-        const curr = sets.indexOf(ACTIVE_SET);
-        if(curr > -1 && curr < sets.length - 1){
-            ACTIVE_SET = sets[curr+1];
-            volumePick();
-        } else {
-            alert("All Sets Completed!");
-            begin();
-        }
-    }
-  }
- );
-}
-
-/* ================= PDF EXPORT (v132.21 Academy Layout) ================= */
-function exportSessionPDF(){
- if(!SESSION_ALL.length){alert("No session data");return;}
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- const unique=SESSION_ALL.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
-
- let y=20;
- const ML=15; const W=180;
- const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
- const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
-
- doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text("ACADEMY SESSION REPORT",105,y,{align:"center"});
 <script>
 /* ================= FINAL INIT — LOCAL FIRST, HARD STOP ================= */
 async function init(){
 
   let sourceData = null;
 
-  /* --------------------------------------------------
-     1. LOCAL STORAGE HAS ABSOLUTE PRIORITY
-     -------------------------------------------------- */
+  // 1. LOCAL FIRST — HARD STOP
   if (localStorage.getItem(MASTER_KEY) !== null) {
     try {
       sourceData = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
@@ -475,24 +398,16 @@ async function init(){
     }
   }
 
-  /* --------------------------------------------------
-     2. REMOTE BOOTSTRAP (ONLY IF LOCAL DOES NOT EXIST)
-     -------------------------------------------------- */
+  // 2. REMOTE BOOTSTRAP (FIRST INSTALL ONLY)
   if (sourceData === null) {
     try {
-      console.log("INIT: No local master. Fetching remote bootstrap.");
       const res = await fetch(
         MASTER_URL + "?t=" + Date.now(),
         { cache: "no-store" }
       );
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       sourceData = await res.json();
-
-      // Persist immediately — future loads are local-only
       localStorage.setItem(MASTER_KEY, JSON.stringify(sourceData));
-
     } catch (e) {
       card(
         `BOOTSTRAP FAILURE\nNo local data and remote fetch failed.\n\n${e.message}`,
@@ -504,32 +419,16 @@ async function init(){
     }
   }
 
-  /* --------------------------------------------------
-     3. NORMALIZE DATA
-     -------------------------------------------------- */
+  // 3. NORMALIZE
   RAW_DATA = Array.isArray(sourceData)
     ? sourceData.map(normalize).filter(Boolean)
     : [];
 
-  /* --------------------------------------------------
-     4. FINAL GUARD
-     -------------------------------------------------- */
-  if (RAW_DATA.length === 0) {
-    console.log("INIT: Data empty. Starting clean session.");
-    begin(); // shows "0 Questions Loaded"
-    return;
-  }
-
-  /* --------------------------------------------------
-     5. START APP
-     -------------------------------------------------- */
-  console.log(`INIT: Loaded ${RAW_DATA.length} questions.`);
+  // 4. START
   begin();
 }
 
-/* --------------------------------------------------
-   EXECUTE
-   -------------------------------------------------- */
+// EXECUTE ONCE
 init();
 </script>
 </body>
