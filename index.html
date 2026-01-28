@@ -122,13 +122,25 @@ body{
 
 <script>
 /* ================= CONFIG ================= */
-const MASTER_KEY="ALCHEMIST_MASTER_V1";
+const MASTER_KEY = "ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA=[],POOL=[],WRONG=[],REVIEW_POOL=[];
-let SESSION_ALL=[],XP=0,IDX=0,CURR=null;
+let RAW_DATA = [];
+let POOL = [];
+let WRONG = [];
+let REVIEW_POOL = [];
+let SESSION_ALL = [];
+let XP = 0;
+let IDX = 0;
+let CURR = null;
 
 /* ================= UTILS ================= */
+function chemText(t){
+ if(!t) return "";
+ return String(t)
+  .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
+}
 function shuffle(a){
  for(let i=a.length-1;i>0;i--){
   const j=Math.floor(Math.random()*(i+1));
@@ -199,7 +211,7 @@ function card(text,labels,cb){
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${text}</div>
+  <div class="card-q">${chemText(text)}</div>
   <div class="swipe-label sl-up">${labels.up||""}</div>
   <div class="swipe-label sl-left">${labels.left||""}</div>
   <div class="swipe-label sl-right">${labels.right||""}</div>
@@ -210,36 +222,101 @@ function card(text,labels,cb){
  new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= QUIZ FLOW (UNCHANGED) ================= */
+/* ================= HEADER ================= */
+function reviewHeader(hint){
+ UI.review.innerHTML=`
+  <div class="review-title">REVIEW</div>
+  <div class="review-line"></div>
+  ${hint||""}
+ `;
+}
+function clearHeader(){UI.review.textContent="";}
+
+/* ================= QUIZ ================= */
 function startQuiz(){
- POOL=shuffle([...RAW_DATA]);
- WRONG=[];SESSION_ALL=[];XP=0;
+ POOL = shuffle([...RAW_DATA]);
+ WRONG = [];
+ SESSION_ALL = [];
+ XP = 0;
+ IDX = 0;
  nextQuiz();
 }
 function nextQuiz(){
  if(!POOL.length){ scoreCard(); return; }
- CURR=POOL.shift();
+ CURR = POOL.shift();
  SESSION_ALL.push(CURR);
- const opts=shuffle([CURR.u,CURR.l,CURR.r]);
- card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},()=>{
-  WRONG.push(CURR);
+ UI.id.textContent = CURR.id;
+ UI.xp.textContent = `${XP}`;
+ const opts = shuffle([CURR.u, CURR.l, CURR.r]);
+ card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
+  const picked = dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
+  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()) XP++;
+  else WRONG.push(CURR);
+  UI.bar.style.width = `${(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100}%`;
   nextQuiz();
  });
 }
+
+/* ================= SCORE ================= */
 function scoreCard(){
- card(`DONE\n${XP}/${SESSION_ALL.length}`,{down:"PDF"},d=>{
-  if(d==="DOWN")exportPDF();
+ clearHeader();
+ card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{
+  if(dir==="UP") startQuiz();
+  if(dir==="DOWN") startReview();
  });
 }
 
-/* ================= PDF (LOCKED FORMAT) ================= */
+/* ================= REVIEW ================= */
+function startReview(){
+ REVIEW_POOL = [...WRONG];
+ IDX = 0;
+ if(REVIEW_POOL.length===0){ endSlide(); return; }
+ nextReviewQ();
+}
+function nextReviewQ(){
+ if(REVIEW_POOL.length===0){ endSlide(); return; }
+ if(IDX >= REVIEW_POOL.length) IDX = 0;
+ CURR = REVIEW_POOL[IDX];
+ reviewHeader(CURR.hint || "");
+ const opts = shuffle([CURR.u, CURR.l, CURR.r]);
+ card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{
+  if(dir==="UP"){ reviewExplain(); return; }
+  const picked = dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
+  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){
+   REVIEW_POOL.splice(IDX,1);
+  }else{
+   IDX++;
+  }
+  nextReviewQ();
+ });
+}
+function reviewExplain(){
+ reviewHeader(CURR.hint || "");
+ card(CURR.logic || "",{
+  up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"
+ },dir=>{
+  if(dir==="LEFT"||dir==="RIGHT") IDX++;
+  nextReviewQ();
+ });
+}
+
+/* ================= END ================= */
+function endSlide(){
+ clearHeader();
+ card("SESSION COMPLETE",{down:"PDF",right:"MENU"},dir=>{
+  if(dir==="DOWN") exportPDF();
+  if(dir==="RIGHT") location.reload();
+ });
+}
+
+/* ================= PDF ================= */
 function exportPDF(){
  const { jsPDF } = window.jspdf;
  const doc = new jsPDF();
  let y = 20;
 
  SESSION_ALL.forEach((d,i)=>{
-  if(y>260){doc.addPage();y=20;}
+  if(y>260){ doc.addPage(); y=20; }
 
   doc.setFont("courier","bold");
   doc.setFontSize(11);
@@ -252,16 +329,12 @@ function exportPDF(){
 
   doc.setFont("times","normal");
   doc.setFontSize(11);
-  const q=doc.splitTextToSize(`Q: ${d.q}`,180);
+  const q = doc.splitTextToSize(`Q: ${d.q}`,180);
   doc.text(q,15,y); y+=q.length*6;
 
-  if(d.ref){
+  if(d.hint){
    doc.setFont("courier","normal");
    doc.setFontSize(8);
-   doc.text(`REF: ${d.ref}`,15,y); y+=5;
-  }
-
-  if(d.hint){
    doc.text(`HINT: ${d.hint}`,15,y); y+=5;
   }
 
@@ -271,22 +344,16 @@ function exportPDF(){
   doc.text(`C) ${d.r}`,15,y); y+=6;
 
   doc.setFont("courier","bold");
-  doc.text(`ANSWER: ${d.correct||d.u}`,15,y); y+=6;
+  doc.text(`ANSWER: ${d.u}`,15,y); y+=6;
 
   if(d.logic){
    doc.setFont("times","italic");
-   const logic=doc.splitTextToSize(`LOGIC: ${d.logic}`,180);
+   const logic = doc.splitTextToSize(`LOGIC: ${d.logic}`,180);
    doc.text(logic,15,y); y+=logic.length*5;
   }
 
-  if(d.trap){
-   doc.setFont("courier","normal");
-   doc.setFontSize(8);
-   doc.text(`TRAP: ${d.trap}`,15,y); y+=5;
-  }
-
-  if(d.step1){doc.text(`STEP 1: ${d.step1}`,15,y); y+=5;}
-  if(d.step2){doc.text(`STEP 2: ${d.step2}`,15,y); y+=5;}
+  if(d.step1){ doc.text(`STEP 1: ${d.step1}`,15,y); y+=5; }
+  if(d.step2){ doc.text(`STEP 2: ${d.step2}`,15,y); y+=5; }
 
   y+=10;
  });
@@ -297,9 +364,9 @@ function exportPDF(){
 
 /* ================= INIT ================= */
 (function(){
- const raw=localStorage.getItem(MASTER_KEY);
- RAW_DATA=raw?JSON.parse(raw):[];
- card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&startQuiz());
+ const raw = localStorage.getItem(MASTER_KEY);
+ RAW_DATA = raw ? JSON.parse(raw) : [];
+ card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP" && startQuiz());
 })();
 </script>
 </body>
