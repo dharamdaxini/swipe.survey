@@ -2,132 +2,255 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alchemist Admin Console</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>VIA.STACK // MASTER ADMIN</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
-body{
-  background:#000;
-  color:#e0e0e0;
-  font-family:monospace;
-  padding:20px;
+:root{
+ --bg:#050505;--card:#111;--border:#222;
+ --gold:#ffd600;--blue:#2979ff;--red:#ff4757;--green:#00e676;
+ --font-ui:'Inter',sans-serif;--font-code:'JetBrains Mono',monospace;
 }
-textarea{
-  width:100%;
-  height:240px;
-  background:#111;
-  color:#0f0;
-  border:1px solid #333;
-  padding:10px;
-  font-family:monospace;
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;height:100vh;background:var(--bg);color:#eee;font-family:var(--font-ui);display:flex;flex-direction:column}
+
+/* HEADER */
+header{
+ padding:15px 20px;border-bottom:1px solid var(--border);background:#000;
+ display:flex;justify-content:space-between;align-items:center;height:60px;
 }
-button{
-  margin-top:10px;
-  padding:10px 20px;
-  background:#222;
-  color:#fff;
-  border:1px solid #444;
-  cursor:pointer;
+.brand{font-size:14px;font-weight:900;letter-spacing:1px}
+.brand span{color:var(--gold)}
+.status-badge{
+ font-family:var(--font-code);font-size:10px;padding:4px 8px;
+ background:#222;border-radius:4px;color:#888;
 }
-pre{
-  background:#111;
-  padding:10px;
-  overflow:auto;
-  border:1px solid #333;
+
+/* MAIN LAYOUT */
+#layout{flex:1;display:grid;grid-template-columns:1fr;overflow:hidden}
+@media(min-width:768px){#layout{grid-template-columns:300px 1fr}}
+
+/* SIDEBAR */
+aside{
+ border-right:1px solid var(--border);padding:20px;background:#080808;
+ display:flex;flex-direction:column;gap:20px;overflow-y:auto;
 }
+.zone-label{font-family:var(--font-code);font-size:10px;color:#555;margin-bottom:10px;font-weight:700}
+.btn{
+ width:100%;padding:14px;border:1px solid var(--border);background:#111;
+ color:#ccc;font-family:var(--font-code);font-size:11px;font-weight:700;
+ cursor:pointer;border-radius:6px;transition:.2s;text-align:left;
+ display:flex;justify-content:space-between;align-items:center;
+}
+.btn:hover{border-color:var(--gold);color:#fff}
+.btn.primary{background:var(--gold);color:#000;border-color:var(--gold)}
+.btn.danger{background:#220000;color:var(--red);border-color:#440000}
+
+/* WORKSPACE */
+main{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+
+/* TERMINAL */
+#terminal{
+ font-family:var(--font-code);font-size:11px;color:#666;
+ background:#000;border:1px solid var(--border);border-radius:8px;
+ padding:15px;height:200px;overflow-y:auto;white-space:pre-wrap;
+}
+.log-success{color:var(--green)}
+.log-error{color:var(--red)}
+.log-warn{color:var(--gold)}
+
+/* STATS GRID */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}
+.stat-box{background:#000;padding:10px;border-radius:6px;border:1px solid #222}
+.stat-val{font-size:18px;font-weight:900;color:#fff}
+.stat-lbl{font-size:10px;color:#666;font-family:var(--font-code)}
+
 </style>
 </head>
-
 <body>
 
-<h2>ALCHEMIST ADMIN — TSV INGEST</h2>
+<header>
+ <div class="brand">VIA.<span>STACK</span> // MASTER ADMIN</div>
+ <div class="status-badge" id="db-status">DB: DISCONNECTED</div>
+</header>
 
-<textarea id="tsv" placeholder="Paste TSV here (TAB separated)"></textarea>
-<br>
-<button onclick="ingest()">INGEST TSV</button>
+<div id="layout">
+ <aside>
+  <div>
+   <div class="zone-label">01 // INGESTION</div>
+   <input type="file" id="fileInput" hidden onchange="handleFile(this)">
+   <button class="btn" onclick="document.getElementById('fileInput').click()">
+    <span>UPLOAD TSV (26-COL)</span> <span>+</span>
+   </button>
+  </div>
 
-<pre id="log"></pre>
+  <div>
+   <div class="zone-label">02 // MASTER VAULT OPS</div>
+   <button class="btn primary" onclick="pushToMaster()">
+    <span>PUSH TO MASTER</span> <span>→</span>
+   </button>
+   <div style="height:10px"></div>
+   <button class="btn" onclick="exportMaster()">
+    <span>EXPORT MASTER (JSON)</span> <span>↓</span>
+   </button>
+  </div>
+
+  <div style="margin-top:auto">
+   <div class="zone-label" style="color:var(--red)">DANGER ZONE</div>
+   <button class="btn danger" onclick="purgeMaster()">
+    <span>PURGE MASTER VAULT</span> <span>×</span>
+   </button>
+  </div>
+ </aside>
+
+ main>
+  <div class="panel">
+   <div class="zone-label">STAGING BUFFER</div>
+   <div class="stats">
+    <div class="stat-box">
+     <div class="stat-val" id="count-staged">0</div>
+     <div class="stat-lbl">ROWS STAGED</div>
+    </div>
+    <div class="stat-box">
+     <div class="stat-val" id="count-master">0</div>
+     <div class="stat-lbl">ROWS IN MASTER</div>
+    </div>
+   </div>
+   <div id="terminal">> SYSTEM INITIALIZED... WAITING FOR INPUT</div>
+  </div>
+ </main>
+</div>
 
 <script>
-const MASTER_KEY = "ALCHEMIST_MASTER_V1";
+/* --- CONFIG --- */
+const MASTER_KEY = "ALCHEMIST_MASTER_V1"; // Separate key for Read-Only Master Data
+let STAGED_DATA = [];
 
-function log(msg){
-  document.getElementById("log").textContent += msg + "\n";
+/* --- INIT --- */
+window.onload = () => {
+ updateStats();
+ log("Admin Console Ready. Target: MASTER VAULT", "normal");
 }
 
-/* ================= NORMALIZER (MATCHES RUNTIME) ================= */
-function normalize(row){
-  if(!row || row.length < 10) return null;
+/* --- PARSER ENGINE (26-COLUMN SUPPORT) --- */
+function handleFile(input) {
+ const file = input.files[0];
+ if(!file) return;
 
-  const [
-    id,set,dom,topic,sub,lvl,
-    q,u,l,r,
-    correctRaw,
-    logic,hint,trap,
-    step1,step2,
-    ref,link
-  ] = row;
+ const reader = new FileReader();
+ reader.onload = (e) => {
+  try {
+   const text = e.target.result;
+   const rows = text.trim().split(/\r?\n/);
+   
+   // 26-Column Mapping based on your Electrochemistry Data
+   const parsed = rows.map((line, idx) => {
+    const c = line.split("\t");
+    if(c.length < 10) return null; // Basic integrity check
 
-  let correct = correctRaw;
+    // Resolve Correct Answer (OPT_A -> Actual Value)
+    let correctVal = c[9] || ""; // Default to raw if logic fails
+    if(c[9] && c[9].includes("OPT_A")) correctVal = c[6];
+    if(c[9] && c[9].includes("OPT_B")) correctVal = c[7];
+    if(c[9] && c[9].includes("OPT_C")) correctVal = c[8];
 
-  // Direction / OPT → value resolution
-  if(correctRaw === "UP" || correctRaw === "A" || correctRaw === "OPT_A") correct = u;
-  if(correctRaw === "LEFT" || correctRaw === "B" || correctRaw === "OPT_B") correct = l;
-  if(correctRaw === "RIGHT" || correctRaw === "C" || correctRaw === "OPT_C") correct = r;
+    return {
+     id: c[0],               // A_00901
+     set: c[1] || "SET_A",   // SET_A
+     dom: "MASTER",          // FORCE MASTER DOMAIN
+     topic: c[2],            // Electrochemistry
+     sub: c[3],              // Potentiometry
+     lvl: c[4],              // 5
+     q: c[5],                // Question
+     u: c[6],                // Option A (UP/Primary)
+     l: c[7],                // Option B (LEFT)
+     r: c[8],                // Option C (RIGHT)
+     correct: correctVal,    // RESOLVED ANSWER
+     logic: c[10],           // Logic Explanation
+     ref: c[13],             // Reference (Bard)
+     link: c[16]             // Goldbook Link
+    };
+   }).filter(r => r !== null && r.id);
 
-  return {
-    id: String(id).trim(),
-    set: set || "SET_A",
-    dom: dom || "GENERAL",
-    topic: topic || "",
-    sub: sub || "",
-    lvl: lvl || "",
-    q, u, l, r,
-    correct,
-    logic: logic || "",
-    hint: hint || "",
-    trap: trap || "",
-    step1: step1 || "",
-    step2: step2 || "",
-    ref: ref || "",
-    link: link || ""
-  };
+   STAGED_DATA = parsed;
+   log(`PARSED ${parsed.length} ROWS SUCCESSFULLY`, "success");
+   updateStats();
+  } catch (err) {
+   log("CRITICAL PARSE ERROR: " + err.message, "error");
+  }
+ };
+ reader.readAsText(file);
+ document.getElementById('fileInput').value = ""; // Reset
 }
 
-/* ================= INGEST ================= */
-function ingest(){
-  const raw = document.getElementById("tsv").value.trim();
-  if(!raw){
-    log("NO TSV DATA");
-    return;
-  }
+/* --- VAULT OPERATIONS --- */
+function pushToMaster() {
+ if(STAGED_DATA.length === 0) return log("BUFFER EMPTY. UPLOAD TSV FIRST.", "warn");
 
-  const rows = raw.split("\n").map(r=>r.split("\t"));
-  let parsed = rows.map(normalize).filter(Boolean);
+ const existing = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
+ 
+ // MERGE LOGIC: Update existing by ID, Append new
+ const map = new Map();
+ existing.forEach(item => map.set(item.id, item));
+ STAGED_DATA.forEach(item => map.set(item.id, item)); // Overwrite matches
+ 
+ const merged = Array.from(map.values());
+ 
+ localStorage.setItem(MASTER_KEY, JSON.stringify(merged));
+ 
+ log(`PUSHED TO MASTER. TOTAL VAULT SIZE: ${merged.length} UNITS`, "success");
+ STAGED_DATA = []; // Clear buffer
+ updateStats();
+}
 
-  if(parsed.length === 0){
-    log("NO VALID ROWS PARSED");
-    return;
-  }
+function purgeMaster() {
+ if(confirm("WARNING: THIS WILL WIPE THE ENTIRE MASTER VAULT. USERS WILL LOSE ACCESS TO THESE QUESTIONS. CONFIRM?")) {
+  localStorage.removeItem(MASTER_KEY);
+  log("MASTER VAULT PURGED.", "error");
+  updateStats();
+ }
+}
 
-  // Load existing
-  let existing = [];
-  try{
-    const stored = localStorage.getItem(MASTER_KEY);
-    if(stored) existing = JSON.parse(stored);
-  }catch(e){}
+function exportMaster() {
+ const data = localStorage.getItem(MASTER_KEY);
+ if(!data) return log("MASTER VAULT IS EMPTY", "warn");
+ 
+ const blob = new Blob([data], {type: "application/json"});
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement("a");
+ a.href = url;
+ a.download = `ALCHEMIST_MASTER_BACKUP_${new Date().toISOString().slice(0,10)}.json`;
+ a.click();
+ log("MASTER VAULT EXPORTED", "success");
+}
 
-  // Merge by ID (new overwrites old)
-  const map = new Map();
-  existing.forEach(d=>map.set(d.id,d));
-  parsed.forEach(d=>map.set(d.id,d));
+/* --- UI HELPERS --- */
+function log(msg, type="normal") {
+ const term = document.getElementById("terminal");
+ const line = document.createElement("div");
+ line.textContent = `> ${msg}`;
+ if(type==="success") line.className = "log-success";
+ if(type==="error") line.className = "log-error";
+ if(type==="warn") line.className = "log-warn";
+ term.appendChild(line);
+ term.scrollTop = term.scrollHeight;
+}
 
-  const merged = Array.from(map.values());
-  localStorage.setItem(MASTER_KEY, JSON.stringify(merged));
-
-  log(`INGEST COMPLETE`);
-  log(`Rows added: ${parsed.length}`);
-  log(`Total records: ${merged.length}`);
+function updateStats() {
+ const master = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
+ document.getElementById("count-staged").innerText = STAGED_DATA.length;
+ document.getElementById("count-master").innerText = master.length;
+ 
+ const status = document.getElementById("db-status");
+ if(master.length > 0) {
+  status.innerText = "DB: CONNECTED";
+  status.style.color = "#00e676";
+ } else {
+  status.innerText = "DB: EMPTY";
+  status.style.color = "#ff4757";
+ }
 }
 </script>
 
