@@ -9,150 +9,61 @@
 
 <style>
 :root{
- --bg:#050505;
- --card:#111;
- --border:#222;
- --gold:#ffd600;
- --red:#ff4d4d;
- --green:#00e676;
- --font-ui:'Inter',sans-serif;
- --font-code:'JetBrains Mono',monospace;
+ --bg:#050505; --card:#111; --border:#222;
+ --gold:#ffd600; --red:#ff4d4d; --green:#00e676;
+ --font-ui:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace;
 }
 *{box-sizing:border-box}
 body{
- margin:0;height:100vh;
- background:var(--bg);
- color:#eee;
- font-family:var(--font-ui);
- display:flex;
- flex-direction:column;
+ margin:0;height:100vh; background:var(--bg); color:#eee;
+ font-family:var(--font-ui); display:flex; flex-direction:column;
 }
-
-/* HEADER */
 header{
- padding:16px 20px;
- background:#000;
- border-bottom:1px solid var(--border);
- display:flex;
- justify-content:space-between;
- align-items:center;
+ padding:16px 20px; background:#000; border-bottom:1px solid var(--border);
+ display:flex; justify-content:space-between; align-items:center;
 }
 .brand{font-weight:900;letter-spacing:1px}
 .brand span{color:var(--gold)}
 .status{
- font-family:var(--font-code);
- font-size:11px;
- padding:4px 8px;
- background:#222;
- border-radius:4px;
- color:#888;
+ font-family:var(--font-code); font-size:11px; padding:4px 8px;
+ background:#222; border-radius:4px; color:#888;
 }
-
-/* LAYOUT */
-#layout{
- flex:1;
- display:grid;
- grid-template-columns:320px 1fr;
- overflow:hidden;
-}
-
-/* SIDEBAR */
+#layout{ flex:1; display:grid; grid-template-columns:320px 1fr; overflow:hidden; }
 aside{
- padding:20px;
- border-right:1px solid var(--border);
- background:#080808;
- display:flex;
- flex-direction:column;
- gap:20px;
+ padding:20px; border-right:1px solid var(--border); background:#080808;
+ display:flex; flex-direction:column; gap:20px;
 }
-.label{
- font-family:var(--font-code);
- font-size:11px;
- color:#555;
- letter-spacing:1px;
-}
-
-/* BUTTONS */
+.label{ font-family:var(--font-code); font-size:11px; color:#555; letter-spacing:1px; }
 .btn{
- width:100%;
- padding:14px;
- background:#111;
- border:1px solid var(--border);
- color:#ccc;
- font-family:var(--font-code);
- font-size:11px;
- font-weight:700;
- border-radius:6px;
- cursor:pointer;
- display:flex;
- justify-content:space-between;
- align-items:center;
- transition:.2s;
+ width:100%; padding:14px; background:#111; border:1px solid var(--border);
+ color:#ccc; font-family:var(--font-code); font-size:11px; font-weight:700;
+ border-radius:6px; cursor:pointer; display:flex; justify-content:space-between;
+ align-items:center; transition:.2s;
 }
 .btn:hover{border-color:var(--gold);color:#fff}
 .btn.primary{background:var(--gold);color:#000;border-color:var(--gold)}
 .btn.danger{background:#200;color:var(--red);border-color:#400}
-
-/* MAIN */
-main{
- padding:20px;
- overflow-y:auto;
-}
-.panel{
- background:var(--card);
- border:1px solid var(--border);
- border-radius:12px;
- padding:20px;
-}
-
-/* STATS */
-.stats{
- display:grid;
- grid-template-columns:repeat(2,1fr);
- gap:12px;
- margin-bottom:14px;
-}
-.stat{
- background:#000;
- border:1px solid #222;
- border-radius:6px;
- padding:10px;
-}
+main{ padding:20px; overflow-y:auto; }
+.panel{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.stats{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px; }
+.stat{ background:#000; border:1px solid #222; border-radius:6px; padding:10px; }
 .stat-val{font-size:18px;font-weight:900}
-.stat-lbl{
- font-size:10px;
- font-family:var(--font-code);
- color:#666;
-}
-
-/* TERMINAL */
+.stat-lbl{ font-size:10px; font-family:var(--font-code); color:#666; }
 #terminal{
- background:#000;
- border:1px solid var(--border);
- border-radius:8px;
- padding:14px;
- height:220px;
- overflow-y:auto;
- font-family:var(--font-code);
- font-size:11px;
- color:#666;
- white-space:pre-wrap;
+ background:#000; border:1px solid var(--border); border-radius:8px;
+ padding:14px; height:220px; overflow-y:auto; font-family:var(--font-code);
+ font-size:11px; color:#666; white-space:pre-wrap;
 }
-.log-ok{color:var(--green)}
-.log-warn{color:var(--gold)}
-.log-err{color:var(--red)}
+.log-ok{color:var(--green)} .log-warn{color:var(--gold)} .log-err{color:var(--red)}
 </style>
 </head>
 
 <body>
-
 <header>
  <div class="brand">VIA.<span>STACK</span> // ADMIN</div>
  <div class="status" id="vault-status">VAULT: EMPTY</div>
 </header>
-
 <div id="layout">
-
 <aside>
  <div>
   <div class="label">01 // INGEST TSV</div>
@@ -161,7 +72,6 @@ main{
    <span>UPLOAD TSV</span><span>+</span>
   </button>
  </div>
-
  <div>
   <div class="label">02 // VAULT OPS</div>
   <button class="btn primary" onclick="commitVault()">
@@ -172,7 +82,6 @@ main{
    <span>EXPORT JSON</span><span>↓</span>
   </button>
  </div>
-
  <div style="margin-top:auto">
   <div class="label" style="color:var(--red)">DANGER</div>
   <button class="btn danger" onclick="purgeVault()">
@@ -180,7 +89,6 @@ main{
   </button>
  </div>
 </aside>
-
 <main>
  <div class="panel">
   <div class="stats">
@@ -196,86 +104,55 @@ main{
   <div id="terminal">> ADMIN READY</div>
  </div>
 </main>
-
 </div>
 
 <script>
-/* ================= CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1";
 let STAGED = [];
 
-/* ================= TSV LOADER ================= */
 function loadTSV(input){
  const file = input.files[0];
  if(!file) return;
-
  const reader = new FileReader();
  reader.onload = e => {
   try{
    const rows = e.target.result.trim().split(/\r?\n/);
-   
    STAGED = rows.map(line=>{
-     // SPLIT BY TAB
      const c = line.split("\t");
-     
-     // Integrity Check
      if(c.length < 9) return null;
-
-     // Correct Answer Logic: Check if explicit OPT_X or default to U
-     let correctVal = c[6]; // Default to U (Option A)
+     let correctVal = c[6];
      if(c[9] && c[9].includes("OPT_B")) correctVal = c[7];
      if(c[9] && c[9].includes("OPT_C")) correctVal = c[8];
-
      return {
-       id: c[0].trim(),
-       set: c[1].trim() || "SET_A",
-       dom: c[2] || "MASTER",
-       topic: c[3] || "", // Fixed Mapping Index
-       q: c[5],
-       u: c[6],
-       l: c[7],
-       r: c[8],
-       correct: correctVal,
-       logic: c[10] || "",
-       hint: c[11] || "",
-       trap: c[12] || "",
-       // Extended Fields for PDF
-       s1: c[23] || "", 
-       s2: c[24] || ""
+       id: c[0].trim(), set: c[1].trim() || "SET_A", dom: c[2] || "MASTER",
+       topic: c[3] || "", q: c[5], u: c[6], l: c[7], r: c[8],
+       correct: correctVal, logic: c[10] || "", hint: c[11] || "",
+       trap: c[12] || "", s1: c[23] || "", s2: c[24] || ""
      };
    }).filter(Boolean);
-
    log(`TSV LOADED: ${STAGED.length} QUESTIONS`, "ok");
    updateStats();
-  }catch(err){
-   log("TSV PARSE FAILED: " + err.message, "err");
-  }
+  }catch(err){ log("TSV PARSE FAILED: " + err.message, "err"); }
  };
  reader.readAsText(file);
  input.value="";
 }
 
-/* ================= VAULT OPS ================= */
 function commitVault(){
  if(!STAGED.length) return log("NO DATA TO COMMIT", "warn");
-
- // Merge Logic: Get existing -> Map by ID -> Overwrite with New -> Save
  const existing = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
  const map = new Map();
- 
  existing.forEach(q => map.set(q.id, q));
- STAGED.forEach(q => map.set(q.id, q)); // Updates existing IDs
-
+ STAGED.forEach(q => map.set(q.id, q));
  const finalData = [...map.values()];
  localStorage.setItem(MASTER_KEY, JSON.stringify(finalData));
- 
  STAGED = [];
  log(`VAULT UPDATED. TOTAL SIZE: ${finalData.length}`, "ok");
  updateStats();
 }
 
 function purgeVault(){
- if(!confirm("THIS WILL DELETE ALL QUESTIONS FROM LOCAL STORAGE.")) return;
+ if(!confirm("DELETE ALL?")) return;
  localStorage.removeItem(MASTER_KEY);
  log("VAULT PURGED", "err");
  updateStats();
@@ -284,7 +161,6 @@ function purgeVault(){
 function exportVault(){
  const data = localStorage.getItem(MASTER_KEY);
  if(!data) return log("VAULT EMPTY", "warn");
-
  const blob = new Blob([data], {type:"application/json"});
  const a = document.createElement("a");
  a.href = URL.createObjectURL(blob);
@@ -293,30 +169,23 @@ function exportVault(){
  log("VAULT EXPORTED", "ok");
 }
 
-/* ================= UI ================= */
 function log(msg,type=""){
  const t=document.getElementById("terminal");
  const d=document.createElement("div");
  d.textContent="> "+msg;
  d.className = type==="ok"?"log-ok":type==="warn"?"log-warn":"log-err";
- t.appendChild(d);
- t.scrollTop=t.scrollHeight;
+ t.appendChild(d); t.scrollTop=t.scrollHeight;
 }
 
 function updateStats(){
  const vault = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
  document.getElementById("staged-count").textContent = STAGED.length;
  document.getElementById("vault-count").textContent = vault.length;
- document.getElementById("vault-status").textContent =
-  vault.length ? "VAULT: READY" : "VAULT: EMPTY";
- 
- document.getElementById("vault-status").style.color = 
-  vault.length ? "#00e676" : "#ff4d4d";
+ document.getElementById("vault-status").textContent = vault.length ? "VAULT: READY" : "VAULT: EMPTY";
+ document.getElementById("vault-status").style.color = vault.length ? "#00e676" : "#ff4d4d";
 }
 
-/* ================= INIT ================= */
 updateStats();
 </script>
-
 </body>
 </html>
