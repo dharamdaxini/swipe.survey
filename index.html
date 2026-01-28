@@ -13,18 +13,17 @@
   --bg:#000; --card:#121212; --border:#333;
   --gold:#d4af37;
   --option-grey:#888888;
-
   --font-serif:'Crimson Text',serif;
   --font-sans:'Inter',sans-serif;
   --font-code:'JetBrains Mono',monospace;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   margin:0;height:100vh;background:var(--bg);
   color:#e0e0e0;font-family:var(--font-sans);
   overflow:hidden;display:flex;flex-direction:column;
 }
-#header{width:90%;margin:25px auto 0;z-index:100;}
+#header{width:90%;margin:25px auto 0;z-index:100}
 .header-meta{
   display:flex;justify-content:space-between;
   font-family:var(--font-code);font-size:.75rem;
@@ -35,10 +34,9 @@ body{
   font-size:1.2rem;line-height:1.4;font-style:italic;
   text-align:center;color:#e0e0e0;min-height:3.5em;
   display:flex;align-items:flex-end;justify-content:center;
-  text-shadow:0 4px 12px rgba(0,0,0,.9);
 }
-.progress-track{width:100%;height:3px;background:#222;margin-top:15px;border-radius:2px;}
-#progress-bar{height:100%;background:var(--gold);width:0%;transition:width .4s ease;border-radius:2px;}
+.progress-track{width:100%;height:3px;background:#222;margin-top:15px;border-radius:2px}
+#progress-bar{height:100%;background:var(--gold);width:0%;transition:width .4s ease}
 #stack{
   position:relative;width:90%;max-width:420px;height:62vh;
   margin:auto;perspective:1500px;
@@ -57,8 +55,6 @@ body{
   font-size:1.7rem;line-height:1.4;font-weight:600;
   text-align:center;color:#d0d0d0;pointer-events:none;
 }
-.card-q sub{font-size:.7em;vertical-align:-.3em;}
-.card-q sup{font-size:.7em;vertical-align:.5em;}
 .swipe-label{
   position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;
@@ -66,16 +62,15 @@ body{
   font-weight:700;font-size:1.5rem;
   text-transform:uppercase;letter-spacing:1px;
   opacity:0;pointer-events:none;padding:40px;
-  text-align:center;z-index:10;transition:opacity .1s ease;
-  border-radius:12px;color:var(--option-grey)!important;
-  border:1px solid #333;
+  text-align:center;z-index:10;
+  color:var(--option-grey)!important;
+  border:1px solid #333;border-radius:12px;
 }
-.sl-up,.sl-left,.sl-right,.sl-down{color:var(--option-grey);}
+.sl-up,.sl-left,.sl-right,.sl-down{color:var(--option-grey)}
 </style>
 </head>
 
 <body>
-
 <div id="header">
   <div class="header-meta">
     <span id="id-ui">BOOT</span>
@@ -87,7 +82,7 @@ body{
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code);font-size:.9rem;color:#666;">
+    <div class="card-q" style="font-family:var(--font-code);font-size:.9rem;color:#666">
       VIA.STACK | FINAL<br>INITIALIZING SYSTEM...
     </div>
   </div>
@@ -96,15 +91,10 @@ body{
 <script>
 /* ================= UTILS ================= */
 function chemText(t){
-  if(!t) return "";
+  if(!t)return"";
   return String(t)
     .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
-    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
-}
-function cleanPDF(t){
-  if(!t) return "";
-  return String(t).replace(/<[^>]*>/g,"");
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
 }
 function shuffle(a){
   for(let i=a.length-1;i>0;i--){
@@ -120,6 +110,11 @@ const USER_KEY="ALCHEMIST_DATA_V1";
 
 /* ================= STATE ================= */
 let RAW_DATA=[],MASTER_DATA=[],USER_DATA=[];
+let SET_CURSOR=0,ACTIVE_SET=null;
+let POOL=[],WRONG=[],REVIEW_INDEX=0;
+let SESSION_ALL=[],XP=0,VOLUME_LIMIT=null;
+let ATTEMPTED=new Set();
+
 const UI={
   stack:document.getElementById("stack"),
   id:document.getElementById("id-ui"),
@@ -127,40 +122,6 @@ const UI={
   bar:document.getElementById("progress-bar"),
   review:document.getElementById("review-text")
 };
-let SET_CURSOR=0,ACTIVE_SET=null;
-let POOL=[],WRONG=[],REVIEW_INDEX=0;
-let SESSION_ALL=[],XP=0,VOLUME_LIMIT=null;
-let ATTEMPTED=new Set();
-
-/* ================= BACKEND ADAPTER (NEW – ONLY UPGRADE) ================= */
-function normalizeRow(d){
-  if(!d) return null;
-  if(d.active===0) return null;
-  if(d.status && d.status!=="VERIFIED") return null;
-
-  let correct=d.correct;
-  if(correct==="UP"||correct==="A") correct=d.u;
-  if(correct==="LEFT"||correct==="B") correct=d.l;
-  if(correct==="RIGHT"||correct==="C") correct=d.r;
-
-  return {
-    id:d.id,
-    set:d.set,
-    dom:d.dom||"GENERAL",
-    topic:d.topic||"",
-    q:d.q,
-    u:d.u,
-    l:d.l,
-    r:d.r,
-    correct:correct,
-    logic:d.logic||"",
-    hint:d.hint||"",
-    trap:d.trap||"",
-    step1:d.step1||d.s1||"",
-    step2:d.step2||d.s2||"",
-    note:d.note||""
-  };
-}
 
 /* ================= PHYSICS ENGINE (UNCHANGED) ================= */
 class PhysicsController{
@@ -189,16 +150,12 @@ class PhysicsController{
   const d=Math.hypot(dx,dy);
   this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
   Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
-  if(d>20){
-    const dir=this.dir(dx,dy);
-    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
-  }
+  if(d>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1))}
  }
  end(){
   if(!this.active)return;this.active=false;
   const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-  const dx=m.m41,dy=m.m42;
-  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  if(Math.hypot(m.m41,m.m42)>100)this.cbs.onCommit(this.dir(m.m41,m.m42));
   else{this.el.style.transition=".4s cubic-bezier(.2,.8,.2,1)";this.el.style.transform="translate(0,0)"}
  }
  dir(dx,dy){
@@ -210,22 +167,80 @@ class PhysicsController{
  }
 }
 
-/* ================= RENDER / FLOW (UNCHANGED) ================= */
-/* ALL ORIGINAL LOGIC CONTINUES UNMODIFIED */
-/* ... */
-/* (UNCHANGED — exactly your original code) */
+/* ================= DATA NORMALIZATION ================= */
+function normalizeRow(d){
+  if(!d||!d.id||!d.q||!d.u||!d.l||!d.r)return null;
+  let c=d.correct;
+  if(c==="UP"||c==="A")c=d.u;
+  else if(c==="LEFT"||c==="B")c=d.l;
+  else if(c==="RIGHT"||c==="C")c=d.r;
+  return{
+    id:d.id,set:d.set||"SET_A",dom:d.dom||"GENERAL",
+    topic:d.topic||"",q:d.q,u:d.u,l:d.l,r:d.r,
+    correct:c||d.u,logic:d.logic||"",
+    hint:d.hint||"",trap:d.trap||"",
+    step1:d.step1||"",step2:d.step2||""
+  };
+}
 
-/* ================= INIT (ONE LINE CHANGED) ================= */
+/* ================= RENDER ================= */
+function card(text,labels,cb){
+  UI.stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">${chemText(text)}</div>
+    <div class="swipe-label sl-up">${labels.up||""}</div>
+    <div class="swipe-label sl-left">${labels.left||""}</div>
+    <div class="swipe-label sl-right">${labels.right||""}</div>
+    <div class="swipe-label sl-down">${labels.down||""}</div>`;
+  UI.stack.appendChild(el);
+  new PhysicsController(el,{onCommit:cb});
+}
+
+/* ================= FLOW ================= */
+function begin(){
+  UI.review.textContent="";
+  card("BEGIN SESSION",{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
+    if(dir==="UP")setPick();
+  });
+}
+
+function setPick(){
+  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+  card(sets[SET_CURSOR]||"NO DATA",{up:"SELECT",down:"BACK"},dir=>{
+    if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];startQuiz()}
+    if(dir==="DOWN")begin();
+  });
+}
+
+function startQuiz(){
+  POOL=shuffle(RAW_DATA.filter(d=>d.set===ACTIVE_SET));
+  WRONG=[];SESSION_ALL=[];XP=0;ATTEMPTED=new Set();
+  nextQ();
+}
+
+function nextQ(){
+  if(!POOL.length){begin();return;}
+  const d=POOL.shift();
+  UI.id.textContent=d.id;
+  SESSION_ALL.push(d);
+  const opts=shuffle([d.u,d.l,d.r]);
+  card(d.q,{up:opts[0],left:opts[1],right:opts[2]},()=>nextQ());
+}
+
+/* ================= INIT ================= */
 async function init(){
- try{USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]");}catch{USER_DATA=[];}
- try{const r=await fetch(MASTER_URL);MASTER_DATA=await r.json();}catch{MASTER_DATA=[];}
-
- RAW_DATA=[
-   ...MASTER_DATA.map(normalizeRow).filter(Boolean),
-   ...USER_DATA.map(normalizeRow).filter(Boolean)
- ];
-
- begin();
+  try{USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]")}catch{}
+  try{
+    const r=await fetch(MASTER_URL);
+    MASTER_DATA=await r.json();
+  }catch{}
+  RAW_DATA=[
+    ...MASTER_DATA.map(normalizeRow).filter(Boolean),
+    ...USER_DATA.map(normalizeRow).filter(Boolean)
+  ];
+  begin(); // GUARANTEED BOOT
 }
 init();
 </script>
