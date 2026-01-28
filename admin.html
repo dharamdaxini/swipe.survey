@@ -2,257 +2,150 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>VIA.STACK // MASTER ADMIN</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VIA.STACK | DATASET PUSHER v1.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
 :root{
- --bg:#050505;--card:#111;--border:#222;
- --gold:#ffd600;--blue:#2979ff;--red:#ff4757;--green:#00e676;
- --font-ui:'Inter',sans-serif;--font-code:'JetBrains Mono',monospace;
+ --bg:#050505;--card:#111;--border:#222;--gold:#ffd600;
+ --green:#00e676;--red:#ff4757;--font-ui:Inter,sans-serif;--font-code:JetBrains Mono,monospace;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
 body{margin:0;height:100vh;background:var(--bg);color:#eee;font-family:var(--font-ui);display:flex;flex-direction:column}
-
-/* HEADER */
-header{
- padding:15px 20px;border-bottom:1px solid var(--border);background:#000;
- display:flex;justify-content:space-between;align-items:center;height:60px;
-}
-.brand{font-size:14px;font-weight:900;letter-spacing:1px}
-.brand span{color:var(--gold)}
-.status-badge{
- font-family:var(--font-code);font-size:10px;padding:4px 8px;
- background:#222;border-radius:4px;color:#888;
-}
-
-/* MAIN LAYOUT */
-#layout{flex:1;display:grid;grid-template-columns:1fr;overflow:hidden}
-@media(min-width:768px){#layout{grid-template-columns:300px 1fr}}
-
-/* SIDEBAR */
-aside{
- border-right:1px solid var(--border);padding:20px;background:#080808;
- display:flex;flex-direction:column;gap:20px;overflow-y:auto;
-}
-.zone-label{font-family:var(--font-code);font-size:10px;color:#555;margin-bottom:10px;font-weight:700}
-.btn{
- width:100%;padding:14px;border:1px solid var(--border);background:#111;
- color:#ccc;font-family:var(--font-code);font-size:11px;font-weight:700;
- cursor:pointer;border-radius:6px;transition:.2s;text-align:left;
- display:flex;justify-content:space-between;align-items:center;
-}
-.btn:hover{border-color:var(--gold);color:#fff}
+header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+.brand{font-weight:900}.brand span{color:var(--gold)}
+.status{font-family:var(--font-code);font-size:11px;color:#888}
+main{flex:1;display:grid;grid-template-columns:280px 1fr}
+aside{border-right:1px solid var(--border);padding:20px;background:#080808}
+.btn{width:100%;padding:12px;border:1px solid var(--border);background:#111;color:#ccc;
+ font-family:var(--font-code);font-size:11px;font-weight:700;border-radius:6px;cursor:pointer}
 .btn.primary{background:var(--gold);color:#000;border-color:var(--gold)}
-.btn.danger{background:#220000;color:var(--red);border-color:#440000}
-
-/* WORKSPACE */
-main{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
-.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
-
-/* TERMINAL */
-#terminal{
- font-family:var(--font-code);font-size:11px;color:#666;
- background:#000;border:1px solid var(--border);border-radius:8px;
- padding:15px;height:200px;overflow-y:auto;white-space:pre-wrap;
-}
-.log-success{color:var(--green)}
-.log-error{color:var(--red)}
-.log-warn{color:var(--gold)}
-
-/* STATS GRID */
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}
-.stat-box{background:#000;padding:10px;border-radius:6px;border:1px solid #222}
-.stat-val{font-size:18px;font-weight:900;color:#fff}
-.stat-lbl{font-size:10px;color:#666;font-family:var(--font-code)}
-
+.panel{padding:20px}
+#terminal{background:#000;border:1px solid var(--border);border-radius:8px;
+ font-family:var(--font-code);font-size:11px;color:#666;padding:12px;height:260px;overflow:auto}
+.log-ok{color:var(--green)} .log-err{color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.stat{background:#000;border:1px solid #222;border-radius:6px;padding:10px}
+.stat b{font-size:18px}
 </style>
 </head>
 <body>
 
 <header>
- <div class="brand">VIA.<span>STACK</span> // MASTER ADMIN</div>
- <div class="status-badge" id="db-status">DB: DISCONNECTED</div>
+ <div class="brand">VIA.<span>STACK</span> // DATASET PUSHER</div>
+ <div class="status" id="db">DB: EMPTY</div>
 </header>
 
-<div id="layout">
- <aside>
-  <div>
-   <div class="zone-label">01 // INGESTION</div>
-   <input type="file" id="fileInput" hidden onchange="handleFile(this)">
-   <button class="btn" onclick="document.getElementById('fileInput').click()">
-    <span>UPLOAD TSV (26-COL)</span> <span>+</span>
-   </button>
-  </div>
+<main>
+<aside>
+ <input type="file" id="file" hidden>
+ <button class="btn" onclick="file.click()">UPLOAD TSV</button><br><br>
+ <button class="btn primary" onclick="push()">PUSH TO MASTER</button><br><br>
+ <button class="btn" onclick="exportMaster()">EXPORT MASTER JSON</button><br><br>
+ <button class="btn" onclick="purge()">PURGE MASTER</button>
+</aside>
 
-  <div>
-   <div class="zone-label">02 // MASTER VAULT OPS</div>
-   <button class="btn primary" onclick="pushToMaster()">
-    <span>PUSH TO MASTER</span> <span>→</span>
-   </button>
-   <div style="height:10px"></div>
-   <button class="btn" onclick="exportMaster()">
-    <span>EXPORT MASTER (JSON)</span> <span>↓</span>
-   </button>
-  </div>
-
-  <div style="margin-top:auto">
-   <div class="zone-label" style="color:var(--red)">DANGER ZONE</div>
-   <button class="btn danger" onclick="purgeMaster()">
-    <span>PURGE MASTER VAULT</span> <span>×</span>
-   </button>
-  </div>
- </aside>
-
- main>
-  <div class="panel">
-   <div class="zone-label">STAGING BUFFER</div>
-   <div class="stats">
-    <div class="stat-box">
-     <div class="stat-val" id="count-staged">0</div>
-     <div class="stat-lbl">ROWS STAGED</div>
-    </div>
-    <div class="stat-box">
-     <div class="stat-val" id="count-master">0</div>
-     <div class="stat-lbl">ROWS IN MASTER</div>
-    </div>
-   </div>
-   <div id="terminal">> SYSTEM INITIALIZED... WAITING FOR INPUT</div>
-  </div>
- </main>
+<div class="panel">
+ <div class="stats">
+  <div class="stat"><b id="staged">0</b><div>STAGED</div></div>
+  <div class="stat"><b id="valid">0</b><div>VALID</div></div>
+  <div class="stat"><b id="master">0</b><div>MASTER</div></div>
+ </div>
+ <div id="terminal">> READY</div>
 </div>
+</main>
 
 <script>
-/* --- CONFIG --- */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1"; // Separate key for Read-Only Master Data
-let STAGED_DATA = [];
+/* ================= CONFIG ================= */
+const MASTER_KEY="ALCHEMIST_MASTER_V1";
+const COLS=25;
+let STAGED=[];
 
-/* --- INIT --- */
-window.onload = () => {
- updateStats();
- log("Admin Console Ready. Target: MASTER VAULT", "normal");
+/* ================= UTIL ================= */
+const log=(m,t="")=>{
+ const d=document.createElement("div");
+ d.textContent="> "+m;
+ if(t==="ok") d.className="log-ok";
+ if(t==="err") d.className="log-err";
+ terminal.appendChild(d); terminal.scrollTop=terminal.scrollHeight;
+};
+const s=x=>String(x??"");
+
+/* ================= TSV REPAIR ================= */
+function normalizeLine(line){
+ let parts=line.split("\t");
+ if(parts.length===COLS) return parts;
+ // heuristic repair: collapse overflow into Explanation_Long (col 11)
+ if(parts.length>COLS){
+  const fixed=parts.slice(0,COLS);
+  fixed[10]=parts.slice(10,parts.length-(COLS-11)).join(" ");
+  return fixed;
+ }
+ // pad missing
+ while(parts.length<COLS) parts.push("");
+ return parts;
 }
 
-/* --- PARSER ENGINE (26-COLUMN SUPPORT) --- */
-function handleFile(input) {
- const file = input.files[0];
- if(!file) return;
-
- const reader = new FileReader();
- reader.onload = (e) => {
-  try {
-   const text = e.target.result;
-   const rows = text.trim().split(/\r?\n/);
-   
-   // 26-Column Mapping based on your Electrochemistry Data
-   const parsed = rows.map((line, idx) => {
-    const c = line.split("\t");
-    if(c.length < 10) return null; // Basic integrity check
-
-    // Resolve Correct Answer (OPT_A -> Actual Value)
-    let correctVal = c[9] || ""; // Default to raw if logic fails
-    if(c[9] && c[9].includes("OPT_A")) correctVal = c[6];
-    if(c[9] && c[9].includes("OPT_B")) correctVal = c[7];
-    if(c[9] && c[9].includes("OPT_C")) correctVal = c[8];
-
-    return {
-     id: c[0],               // A_00901
-     set: c[1] || "SET_A",   // SET_A
-     dom: "MASTER",          // FORCE MASTER DOMAIN
-     topic: c[2],            // Electrochemistry
-     sub: c[3],              // Potentiometry
-     lvl: c[4],              // 5
-     q: c[5],                // Question
-     u: c[6],                // Option A (UP/Primary)
-     l: c[7],                // Option B (LEFT)
-     r: c[8],                // Option C (RIGHT)
-     correct: correctVal,    // RESOLVED ANSWER
-     logic: c[10],           // Logic Explanation
-     ref: c[13],             // Reference (Bard)
-     link: c[16]             // Goldbook Link
-    };
-   }).filter(r => r !== null && r.id);
-
-   STAGED_DATA = parsed;
-   log(`PARSED ${parsed.length} ROWS SUCCESSFULLY`, "success");
-   updateStats();
-  } catch (err) {
-   log("CRITICAL PARSE ERROR: " + err.message, "error");
-  }
+/* ================= PARSE ================= */
+file.onchange=()=>{
+ STAGED=[]; valid.textContent=0;
+ const r=new FileReader();
+ r.onload=e=>{
+  const lines=e.target.result.split(/\r?\n/).filter(l=>l.trim());
+  lines.forEach((ln,i)=>{
+   const c=normalizeLine(ln);
+   if(c.length!==COLS || !c[0]) return;
+   STAGED.push({
+    id:s(c[0]), set:s(c[1]), dom:s(c[2]), topic:s(c[3]), lvl:s(c[4]),
+    q:s(c[5]), correct:s(c[6]), u:s(c[7]), l:s(c[8]), r:s(c[9]),
+    logic:s(c[10]), hint:s(c[11]), label:s(c[12]), ref:s(c[13]),
+    tags:s(c[14]), link:s(c[16]), trap:s(c[18]),
+    s1:s(c[23]), s2:s(c[24])
+   });
+  });
+  staged.textContent=STAGED.length;
+  valid.textContent=STAGED.length;
+  log(`PARSED ${STAGED.length} ROWS`,`ok`);
  };
- reader.readAsText(file);
- document.getElementById('fileInput').value = ""; // Reset
+ r.readAsText(file.files[0]);
+};
+
+/* ================= PUSH ================= */
+function push(){
+ if(!STAGED.length) return log("NO DATA","err");
+ const existing=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
+ const map=new Map(existing.map(x=>[x.id,x]));
+ STAGED.forEach(r=>map.set(r.id,r));
+ const merged=[...map.values()];
+ localStorage.setItem(MASTER_KEY,JSON.stringify(merged));
+ STAGED=[];
+ update();
+ log(`PUSHED. MASTER SIZE ${merged.length}`,"ok");
 }
 
-/* --- VAULT OPERATIONS --- */
-function pushToMaster() {
- if(STAGED_DATA.length === 0) return log("BUFFER EMPTY. UPLOAD TSV FIRST.", "warn");
-
- const existing = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
- 
- // MERGE LOGIC: Update existing by ID, Append new
- const map = new Map();
- existing.forEach(item => map.set(item.id, item));
- STAGED_DATA.forEach(item => map.set(item.id, item)); // Overwrite matches
- 
- const merged = Array.from(map.values());
- 
- localStorage.setItem(MASTER_KEY, JSON.stringify(merged));
- 
- log(`PUSHED TO MASTER. TOTAL VAULT SIZE: ${merged.length} UNITS`, "success");
- STAGED_DATA = []; // Clear buffer
- updateStats();
+/* ================= EXPORT / PURGE ================= */
+function exportMaster(){
+ const d=localStorage.getItem(MASTER_KEY);
+ if(!d) return;
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([d],{type:"application/json"}));
+ a.download="ALCHEMIST_MASTER.json"; a.click();
 }
-
-function purgeMaster() {
- if(confirm("WARNING: THIS WILL WIPE THE ENTIRE MASTER VAULT. USERS WILL LOSE ACCESS TO THESE QUESTIONS. CONFIRM?")) {
-  localStorage.removeItem(MASTER_KEY);
-  log("MASTER VAULT PURGED.", "error");
-  updateStats();
+function purge(){
+ if(confirm("WIPE MASTER?")){
+  localStorage.removeItem(MASTER_KEY); update(); log("MASTER PURGED","err");
  }
 }
 
-function exportMaster() {
- const data = localStorage.getItem(MASTER_KEY);
- if(!data) return log("MASTER VAULT IS EMPTY", "warn");
- 
- const blob = new Blob([data], {type: "application/json"});
- const url = URL.createObjectURL(blob);
- const a = document.createElement("a");
- a.href = url;
- a.download = `ALCHEMIST_MASTER_BACKUP_${new Date().toISOString().slice(0,10)}.json`;
- a.click();
- log("MASTER VAULT EXPORTED", "success");
+/* ================= STATUS ================= */
+function update(){
+ const m=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
+ master.textContent=m.length;
+ db.textContent=m.length?"DB: CONNECTED":"DB: EMPTY";
+ db.style.color=m.length?"#00e676":"#ff4757";
+ staged.textContent=STAGED.length;
 }
-
-/* --- UI HELPERS --- */
-function log(msg, type="normal") {
- const term = document.getElementById("terminal");
- const line = document.createElement("div");
- line.textContent = `> ${msg}`;
- if(type==="success") line.className = "log-success";
- if(type==="error") line.className = "log-error";
- if(type==="warn") line.className = "log-warn";
- term.appendChild(line);
- term.scrollTop = term.scrollHeight;
-}
-
-function updateStats() {
- const master = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
- document.getElementById("count-staged").innerText = STAGED_DATA.length;
- document.getElementById("count-master").innerText = master.length;
- 
- const status = document.getElementById("db-status");
- if(master.length > 0) {
-  status.innerText = "DB: CONNECTED";
-  status.style.color = "#00e676";
- } else {
-  status.innerText = "DB: EMPTY";
-  status.style.color = "#ff4757";
- }
-}
+update();
 </script>
-
 </body>
 </html>
