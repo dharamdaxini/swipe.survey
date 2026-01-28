@@ -2,150 +2,160 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>VIA.STACK | DATASET PUSHER v1.0</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALCHEMIST // DATASET PUSHER</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
 :root{
- --bg:#050505;--card:#111;--border:#222;--gold:#ffd600;
- --green:#00e676;--red:#ff4757;--font-ui:Inter,sans-serif;--font-code:JetBrains Mono,monospace;
+  --bg:#050505; --panel:#111; --border:#222;
+  --gold:#ffd600; --green:#00e676; --red:#ff5252;
+  --font-ui:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace;
 }
 *{box-sizing:border-box}
-body{margin:0;height:100vh;background:var(--bg);color:#eee;font-family:var(--font-ui);display:flex;flex-direction:column}
-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
-.brand{font-weight:900}.brand span{color:var(--gold)}
-.status{font-family:var(--font-code);font-size:11px;color:#888}
-main{flex:1;display:grid;grid-template-columns:280px 1fr}
-aside{border-right:1px solid var(--border);padding:20px;background:#080808}
-.btn{width:100%;padding:12px;border:1px solid var(--border);background:#111;color:#ccc;
- font-family:var(--font-code);font-size:11px;font-weight:700;border-radius:6px;cursor:pointer}
-.btn.primary{background:var(--gold);color:#000;border-color:var(--gold)}
-.panel{padding:20px}
-#terminal{background:#000;border:1px solid var(--border);border-radius:8px;
- font-family:var(--font-code);font-size:11px;color:#666;padding:12px;height:260px;overflow:auto}
-.log-ok{color:var(--green)} .log-err{color:var(--red)}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
-.stat{background:#000;border:1px solid #222;border-radius:6px;padding:10px}
-.stat b{font-size:18px}
+body{
+  margin:0; background:var(--bg); color:#eee;
+  font-family:var(--font-ui); padding:30px;
+}
+h1{font-size:18px;margin-bottom:10px}
+.panel{
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:12px; padding:20px; margin-bottom:20px;
+}
+button{
+  background:var(--gold); color:#000;
+  border:none; padding:14px 20px;
+  font-weight:900; cursor:pointer; border-radius:8px;
+}
+button.secondary{
+  background:#222; color:#ccc; border:1px solid #333;
+}
+pre{
+  background:#000; border:1px solid #222;
+  padding:15px; border-radius:8px;
+  font-family:var(--font-code); font-size:11px;
+  max-height:260px; overflow:auto;
+}
+.ok{color:var(--green)}
+.err{color:var(--red)}
 </style>
 </head>
+
 <body>
 
-<header>
- <div class="brand">VIA.<span>STACK</span> // DATASET PUSHER</div>
- <div class="status" id="db">DB: EMPTY</div>
-</header>
-
-<main>
-<aside>
- <input type="file" id="file" hidden>
- <button class="btn" onclick="file.click()">UPLOAD TSV</button><br><br>
- <button class="btn primary" onclick="push()">PUSH TO MASTER</button><br><br>
- <button class="btn" onclick="exportMaster()">EXPORT MASTER JSON</button><br><br>
- <button class="btn" onclick="purge()">PURGE MASTER</button>
-</aside>
+<h1>ALCHEMIST // FINAL DATASET PUSHER</h1>
 
 <div class="panel">
- <div class="stats">
-  <div class="stat"><b id="staged">0</b><div>STAGED</div></div>
-  <div class="stat"><b id="valid">0</b><div>VALID</div></div>
-  <div class="stat"><b id="master">0</b><div>MASTER</div></div>
- </div>
- <div id="terminal">> READY</div>
+  <input type="file" id="file" accept=".tsv,.txt">
+  <br><br>
+  <button onclick="parseTSV()">PARSE TSV</button>
+  <button class="secondary" onclick="exportJSON()">EXPORT master.json</button>
 </div>
-</main>
+
+<div class="panel">
+  <pre id="log">> Waiting for TSV input…</pre>
+</div>
 
 <script>
-/* ================= CONFIG ================= */
-const MASTER_KEY="ALCHEMIST_MASTER_V1";
-const COLS=25;
-let STAGED=[];
+let DATA = [];
 
-/* ================= UTIL ================= */
-const log=(m,t="")=>{
- const d=document.createElement("div");
- d.textContent="> "+m;
- if(t==="ok") d.className="log-ok";
- if(t==="err") d.className="log-err";
- terminal.appendChild(d); terminal.scrollTop=terminal.scrollHeight;
-};
-const s=x=>String(x??"");
-
-/* ================= TSV REPAIR ================= */
-function normalizeLine(line){
- let parts=line.split("\t");
- if(parts.length===COLS) return parts;
- // heuristic repair: collapse overflow into Explanation_Long (col 11)
- if(parts.length>COLS){
-  const fixed=parts.slice(0,COLS);
-  fixed[10]=parts.slice(10,parts.length-(COLS-11)).join(" ");
-  return fixed;
- }
- // pad missing
- while(parts.length<COLS) parts.push("");
- return parts;
-}
-
-/* ================= PARSE ================= */
-file.onchange=()=>{
- STAGED=[]; valid.textContent=0;
- const r=new FileReader();
- r.onload=e=>{
-  const lines=e.target.result.split(/\r?\n/).filter(l=>l.trim());
-  lines.forEach((ln,i)=>{
-   const c=normalizeLine(ln);
-   if(c.length!==COLS || !c[0]) return;
-   STAGED.push({
-    id:s(c[0]), set:s(c[1]), dom:s(c[2]), topic:s(c[3]), lvl:s(c[4]),
-    q:s(c[5]), correct:s(c[6]), u:s(c[7]), l:s(c[8]), r:s(c[9]),
-    logic:s(c[10]), hint:s(c[11]), label:s(c[12]), ref:s(c[13]),
-    tags:s(c[14]), link:s(c[16]), trap:s(c[18]),
-    s1:s(c[23]), s2:s(c[24])
-   });
-  });
-  staged.textContent=STAGED.length;
-  valid.textContent=STAGED.length;
-  log(`PARSED ${STAGED.length} ROWS`,`ok`);
- };
- r.readAsText(file.files[0]);
+const log = (msg, type="")=>{
+  const el=document.getElementById("log");
+  const line=document.createElement("div");
+  line.className=type;
+  line.textContent="> "+msg;
+  el.appendChild(line);
+  el.scrollTop=el.scrollHeight;
 };
 
-/* ================= PUSH ================= */
-function push(){
- if(!STAGED.length) return log("NO DATA","err");
- const existing=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
- const map=new Map(existing.map(x=>[x.id,x]));
- STAGED.forEach(r=>map.set(r.id,r));
- const merged=[...map.values()];
- localStorage.setItem(MASTER_KEY,JSON.stringify(merged));
- STAGED=[];
- update();
- log(`PUSHED. MASTER SIZE ${merged.length}`,"ok");
+function clean(t){
+  return String(t||"").replace(/\s+/g," ").trim();
 }
 
-/* ================= EXPORT / PURGE ================= */
-function exportMaster(){
- const d=localStorage.getItem(MASTER_KEY);
- if(!d) return;
- const a=document.createElement("a");
- a.href=URL.createObjectURL(new Blob([d],{type:"application/json"}));
- a.download="ALCHEMIST_MASTER.json"; a.click();
-}
-function purge(){
- if(confirm("WIPE MASTER?")){
-  localStorage.removeItem(MASTER_KEY); update(); log("MASTER PURGED","err");
- }
+function stripMarkdownLink(url){
+  if(!url) return "";
+  return url.replace(/^\[|\]$|\(.*?\)/g,"").trim();
 }
 
-/* ================= STATUS ================= */
-function update(){
- const m=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
- master.textContent=m.length;
- db.textContent=m.length?"DB: CONNECTED":"DB: EMPTY";
- db.style.color=m.length?"#00e676":"#ff4757";
- staged.textContent=STAGED.length;
+function parseTSV(){
+  const file=document.getElementById("file").files[0];
+  if(!file){ log("No file selected","err"); return; }
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    DATA=[];
+    const lines=e.target.result.split(/\r?\n/).filter(l=>l.trim());
+
+    for(let i=0;i<lines.length;i++){
+      const c=lines[i].split("\t");
+      if(c.length<25){ log(`Row ${i+1} skipped (column mismatch)`,"err"); continue; }
+
+      const optA=clean(c[6]);
+      const optB=clean(c[7]);
+      const optC=clean(c[8]);
+
+      let correctDir=clean(c[9]).toUpperCase();
+      let correct="";
+      if(correctDir==="UP"||correctDir==="A") correct=optA;
+      else if(correctDir==="LEFT"||correctDir==="B") correct=optB;
+      else if(correctDir==="RIGHT"||correctDir==="C") correct=optC;
+      else{
+        log(`Row ${c[0]} invalid correct flag`,"err");
+        continue;
+      }
+
+      if(![optA,optB,optC].includes(correct)){
+        log(`Row ${c[0]} correct mismatch`,"err");
+        continue;
+      }
+
+      DATA.push({
+        id: clean(c[0]),
+        set: clean(c[1]),
+        dom: clean(c[2]),
+        topic: clean(c[3]),
+        lvl: Number(c[4]),
+
+        q: clean(c[5]),
+        u: optA,
+        l: optB,
+        r: optC,
+
+        correct: correct,
+
+        logic: clean(c[10]),
+        hint: clean(c[11]),
+        trap: clean(c[18]),
+
+        s1: clean(c[23]),
+        s2: clean(c[24]),
+
+        ref: clean(c[14]),
+        link: stripMarkdownLink(clean(c[17])),
+
+        version: clean(c[20]||"1.0"),
+        active: 1,
+        deprecated: 0,
+        status: "VERIFIED"
+      });
+    }
+
+    log(`Parsed ${DATA.length} valid rows`,"ok");
+  };
+  reader.readAsText(file);
 }
-update();
+
+function exportJSON(){
+  if(!DATA.length){ log("Nothing to export","err"); return; }
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="master.json";
+  a.click();
+  log("master.json exported","ok");
+}
 </script>
+
 </body>
 </html>
