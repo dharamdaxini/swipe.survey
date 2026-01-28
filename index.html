@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>Alchemist | Operator UI v136.33</title>
+<title>Alchemist | Operator UI v136.34</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -122,18 +122,12 @@ body{
 
 <script>
 /* ================= CONFIG ================= */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1";
+const MASTER_KEY="ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA = [];
-let POOL = [];
-let WRONG = [];
-let REVIEW_POOL = [];
-let SESSION_ALL = [];
-let XP = 0;
-let IDX = 0;
-let CURR = null;
-let QUESTION_LIMIT = null;
+let RAW_DATA=[],POOL=[],WRONG=[],REVIEW_POOL=[];
+let SESSION_ALL=[],XP=0,IDX=0,CURR=null;
+let QUESTION_LIMIT=null;
 
 /* ================= UTILS ================= */
 function chemText(t){
@@ -223,35 +217,58 @@ function card(text,labels,cb){
  new PhysicsController(el,{onCommit:cb});
 }
 
+/* ================= HEADER ================= */
+function reviewHeader(hint){
+ UI.review.innerHTML=`
+  <div class="review-title">REVIEW</div>
+  <div class="review-line"></div>
+  ${hint||""}
+ `;
+}
+function clearHeader(){UI.review.textContent="";}
+
 /* ================= QUESTION VOLUME ================= */
-function volumeLayer(){
- card("QUESTION VOLUME",{up:"10",left:"25",right:"50",down:"100"},dir=>{
-  QUESTION_LIMIT = dir==="UP"?10:dir==="LEFT"?25:dir==="RIGHT"?50:100;
+function volumeSelect(){
+ clearHeader();
+ card("QUESTION VOLUME",{
+  up:"10 QUESTIONS",
+  left:"25 QUESTIONS",
+  right:"50 QUESTIONS",
+  down:"100 QUESTIONS"
+ },dir=>{
+  QUESTION_LIMIT =
+   dir==="UP"?10:
+   dir==="LEFT"?25:
+   dir==="RIGHT"?50:100;
   startQuiz();
  });
 }
 
 /* ================= QUIZ ================= */
 function startQuiz(){
+
+ /* 🔒 CRASH GUARD */
+ if(!QUESTION_LIMIT || isNaN(QUESTION_LIMIT)){
+  QUESTION_LIMIT = RAW_DATA.length;
+ }
+
  POOL = shuffle([...RAW_DATA]).slice(0, QUESTION_LIMIT);
- WRONG = [];
- SESSION_ALL = [];
- XP = 0;
- IDX = 0;
+ WRONG=[];SESSION_ALL=[];XP=0;IDX=0;
  nextQuiz();
 }
+
 function nextQuiz(){
  if(!POOL.length){ scoreCard(); return; }
- CURR = POOL.shift();
+ CURR=POOL.shift();
  SESSION_ALL.push(CURR);
- UI.id.textContent = CURR.id;
- UI.xp.textContent = `${XP}`;
- const opts = shuffle([CURR.u, CURR.l, CURR.r]);
+ UI.id.textContent=CURR.id;
+ UI.xp.textContent=`${XP}`;
+ const opts=shuffle([CURR.u,CURR.l,CURR.r]);
  card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
-  const picked = dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
-  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()) XP++;
+  const picked=dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
+  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase())XP++;
   else WRONG.push(CURR);
-  UI.bar.style.width = `${(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100}%`;
+  UI.bar.style.width=`${(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100}%`;
   nextQuiz();
  });
 }
@@ -260,38 +277,36 @@ function nextQuiz(){
 function scoreCard(){
  clearHeader();
  card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{
-  if(dir==="UP") volumeLayer();
+  if(dir==="UP") volumeSelect();
   if(dir==="DOWN") startReview();
  });
 }
 
 /* ================= REVIEW ================= */
 function startReview(){
- REVIEW_POOL = [...WRONG];
- IDX = 0;
+ REVIEW_POOL=[...WRONG];
+ IDX=0;
  if(REVIEW_POOL.length===0){ endSlide(); return; }
  nextReviewQ();
 }
 function nextReviewQ(){
  if(REVIEW_POOL.length===0){ endSlide(); return; }
- if(IDX >= REVIEW_POOL.length) IDX = 0;
- CURR = REVIEW_POOL[IDX];
- reviewHeader(CURR.hint || "");
- const opts = shuffle([CURR.u, CURR.l, CURR.r]);
+ if(IDX>=REVIEW_POOL.length) IDX=0;
+ CURR=REVIEW_POOL[IDX];
+ reviewHeader(CURR.hint||"");
+ const opts=shuffle([CURR.u,CURR.l,CURR.r]);
  card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{
   if(dir==="UP"){ reviewExplain(); return; }
-  const picked = dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
+  const picked=dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
   if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){
    REVIEW_POOL.splice(IDX,1);
-  }else{
-   IDX++;
-  }
+  }else IDX++;
   nextReviewQ();
  });
 }
 function reviewExplain(){
- reviewHeader(CURR.hint || "");
- card(CURR.logic || "",{
+ reviewHeader(CURR.hint||"");
+ card(CURR.logic||"",{
   up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"
  },dir=>{
   if(dir==="LEFT"||dir==="RIGHT") IDX++;
@@ -310,39 +325,30 @@ function endSlide(){
 
 /* ================= PDF ================= */
 function exportPDF(){
- const { jsPDF } = window.jspdf;
- const doc = new jsPDF();
- let y = 20;
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ let y=20;
 
  SESSION_ALL.forEach((d,i)=>{
-  if(y>260){ doc.addPage(); y=20; }
-
+  if(y>260){doc.addPage();y=20;}
   doc.setFont("courier","bold");
   doc.setFontSize(11);
-  doc.text(`Q${i+1} | SESSION QUESTION`,15,y); y+=8;
-
+  doc.text(`Q${i+1} | SESSION QUESTION`,15,y);y+=8;
   doc.setFont("times","normal");
-  doc.setFontSize(11);
-  const q = doc.splitTextToSize(`Q: ${d.q}`,180);
-  doc.text(q,15,y); y+=q.length*6;
-
-  doc.setFontSize(10);
-  doc.text(`A) ${d.u}`,15,y); y+=5;
-  doc.text(`B) ${d.l}`,15,y); y+=5;
-  doc.text(`C) ${d.r}`,15,y); y+=6;
-
-  y+=10;
+  const q=doc.splitTextToSize(`Q: ${d.q}`,180);
+  doc.text(q,15,y);y+=q.length*6;
+  doc.save;
  });
 
  doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
- volumeLayer();
+ volumeSelect();
 }
 
 /* ================= INIT ================= */
 (function(){
- const raw = localStorage.getItem(MASTER_KEY);
- RAW_DATA = raw ? JSON.parse(raw) : [];
- card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP" && volumeLayer());
+ const raw=localStorage.getItem(MASTER_KEY);
+ RAW_DATA=raw?JSON.parse(raw):[];
+ card("BEGIN SESSION",{up:"START"},d=>d==="UP"&&volumeSelect());
 })();
 </script>
 </body>
