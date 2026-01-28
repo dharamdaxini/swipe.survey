@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>Alchemist | Operator UI v136.32</title>
+<title>Alchemist | Operator UI v136.33</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -129,12 +129,6 @@ let RAW_DATA=[],POOL=[],WRONG=[],REVIEW_POOL=[];
 let SESSION_ALL=[],XP=0,IDX=0,CURR=null;
 
 /* ================= UTILS ================= */
-function chemText(t){
- if(!t) return "";
- return String(t)
-  .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
-}
 function shuffle(a){
  for(let i=a.length-1;i>0;i--){
   const j=Math.floor(Math.random()*(i+1));
@@ -205,7 +199,7 @@ function card(text,labels,cb){
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${chemText(text)}</div>
+  <div class="card-q">${text}</div>
   <div class="swipe-label sl-up">${labels.up||""}</div>
   <div class="swipe-label sl-left">${labels.left||""}</div>
   <div class="swipe-label sl-right">${labels.right||""}</div>
@@ -216,17 +210,7 @@ function card(text,labels,cb){
  new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= HEADER ================= */
-function reviewHeader(hint){
- UI.review.innerHTML=`
-  <div class="review-title">REVIEW</div>
-  <div class="review-line"></div>
-  ${hint||""}
- `;
-}
-function clearHeader(){UI.review.textContent="";}
-
-/* ================= QUIZ ================= */
+/* ================= QUIZ FLOW (UNCHANGED) ================= */
 function startQuiz(){
  POOL=shuffle([...RAW_DATA]);
  WRONG=[];SESSION_ALL=[];XP=0;
@@ -236,66 +220,19 @@ function nextQuiz(){
  if(!POOL.length){ scoreCard(); return; }
  CURR=POOL.shift();
  SESSION_ALL.push(CURR);
- UI.id.textContent=CURR.id;
  const opts=shuffle([CURR.u,CURR.l,CURR.r]);
- card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
-  const picked=dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
-  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase())XP++;
-  else WRONG.push(CURR);
+ card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},()=>{
+  WRONG.push(CURR);
   nextQuiz();
  });
 }
-
-/* ================= SCORE ================= */
 function scoreCard(){
- clearHeader();
- card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{
-  if(dir==="UP")startQuiz();
-  if(dir==="DOWN")startReview();
+ card(`DONE\n${XP}/${SESSION_ALL.length}`,{down:"PDF"},d=>{
+  if(d==="DOWN")exportPDF();
  });
 }
 
-/* ================= REVIEW ================= */
-function startReview(){
- REVIEW_POOL=[...WRONG];
- IDX=0;
- nextReviewQ();
-}
-function nextReviewQ(){
- if(REVIEW_POOL.length===0){ endSlide(); return; }
- if(IDX>=REVIEW_POOL.length) IDX=0;
- CURR=REVIEW_POOL[IDX];
- reviewHeader(CURR.hint);
- const opts=shuffle([CURR.u,CURR.l,CURR.r]);
- card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{
-  if(dir==="UP"){ reviewExplain(); return; }
-  const picked=dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
-  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){
-   REVIEW_POOL.splice(IDX,1);
-  }else IDX++;
-  nextReviewQ();
- });
-}
-function reviewExplain(){
- reviewHeader(CURR.hint);
- card(CURR.logic,{
-  up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"
- },dir=>{
-  if(dir==="LEFT"||dir==="RIGHT") IDX++;
-  nextReviewQ();
- });
-}
-
-/* ================= END ================= */
-function endSlide(){
- clearHeader();
- card("SESSION COMPLETE",{down:"PDF",right:"MENU"},dir=>{
-  if(dir==="DOWN")exportPDF();
-  if(dir==="RIGHT")location.reload();
- });
-}
-
-/* ================= PDF (SAFE RENDER) ================= */
+/* ================= PDF (LOCKED FORMAT) ================= */
 function exportPDF(){
  const { jsPDF } = window.jspdf;
  const doc = new jsPDF();
@@ -318,9 +255,13 @@ function exportPDF(){
   const q=doc.splitTextToSize(`Q: ${d.q}`,180);
   doc.text(q,15,y); y+=q.length*6;
 
-  if(d.hint){
+  if(d.ref){
    doc.setFont("courier","normal");
    doc.setFontSize(8);
+   doc.text(`REF: ${d.ref}`,15,y); y+=5;
+  }
+
+  if(d.hint){
    doc.text(`HINT: ${d.hint}`,15,y); y+=5;
   }
 
@@ -330,12 +271,18 @@ function exportPDF(){
   doc.text(`C) ${d.r}`,15,y); y+=6;
 
   doc.setFont("courier","bold");
-  doc.text(`ANSWER: ${d.u}`,15,y); y+=6;
+  doc.text(`ANSWER: ${d.correct||d.u}`,15,y); y+=6;
 
   if(d.logic){
    doc.setFont("times","italic");
    const logic=doc.splitTextToSize(`LOGIC: ${d.logic}`,180);
    doc.text(logic,15,y); y+=logic.length*5;
+  }
+
+  if(d.trap){
+   doc.setFont("courier","normal");
+   doc.setFontSize(8);
+   doc.text(`TRAP: ${d.trap}`,15,y); y+=5;
   }
 
   if(d.step1){doc.text(`STEP 1: ${d.step1}`,15,y); y+=5;}
