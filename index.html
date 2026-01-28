@@ -2,211 +2,209 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>Alchemist | Operator v136.36</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#000; --card:#121212; --border:#333;
-  --gold:#d4af37; 
-  --text-grey: #cccccc;
-  
-  --font-serif: 'Crimson Text', serif;
-  --font-sans: 'Inter', sans-serif;
-  --font-code: 'JetBrains Mono', monospace;
+ --bg:#000;--card:#121212;--border:#333;
+ --gold:#d4af37;--text:#ccc;
+ --font-serif:'Crimson Text',serif;
+ --font-sans:'Inter',sans-serif;
+ --font-code:'JetBrains Mono',monospace;
 }
-
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
-  margin:0; height:100vh; background:var(--bg);
-  color:#e0e0e0; font-family:var(--font-sans);
-  overflow:hidden; display:flex; flex-direction:column;
+ margin:0;height:100vh;background:var(--bg);
+ color:var(--text);font-family:var(--font-sans);
+ overflow:hidden;display:flex;flex-direction:column;
 }
-
-/* HEADER */
-#header{ width:90%; margin:25px auto 0; z-index:100; }
+#header{width:90%;margin:25px auto 0}
 .header-meta{
-  display:flex; justify-content:space-between;
-  font-family:var(--font-code); font-size:0.75rem; 
-  color:#666; letter-spacing:1.5px; text-transform:uppercase;
+ display:flex;justify-content:space-between;
+ font-family:var(--font-code);font-size:.75rem;color:#666;
 }
-
-/* REVIEW HEADER (HINT) */
 #review-text{
-  margin-top:20px;
-  font-family:var(--font-serif);
-  font-size:1.3rem; line-height:1.4;
-  font-style:italic; text-align:center;
-  color:var(--gold); 
-  min-height:3.5em;
-  display:flex; align-items:flex-end; justify-content:center;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.9);
+ margin-top:20px;font-family:var(--font-serif);
+ font-size:1.3rem;font-style:italic;
+ color:var(--gold);min-height:3.5em;
+ text-align:center;
 }
-
-.progress-track{ width:100%; height:3px; background:#222; margin-top:15px; border-radius:2px; }
-#progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
-
-/* STACK ENGINE */
+.progress-track{width:100%;height:3px;background:#222;margin-top:15px}
+#progress-bar{height:100%;background:var(--gold);width:0%}
 #stack{
-  position:relative; width:90%; max-width:420px; height:62vh;
-  margin:auto; perspective:1500px;
-  display:flex; align-items:center; justify-content:center;
+ position:relative;width:90%;max-width:420px;height:62vh;
+ margin:auto;perspective:1500px;
+ display:flex;align-items:center;justify-content:center;
 }
-
 .card{
-  position:absolute; width:100%; height:95%;
-  background:var(--card); border-radius:12px; 
-  border:1px solid var(--border);
-  padding:35px; 
-  display:flex; flex-direction:column; justify-content:center;
-  box-shadow:0 20px 60px rgba(0,0,0,0.95);
-  will-change:transform; transform-style:preserve-3d;
-  overflow: hidden; 
+ position:absolute;width:100%;height:95%;
+ background:var(--card);border-radius:12px;
+ border:1px solid var(--border);
+ padding:35px;display:flex;justify-content:center;
+ box-shadow:0 20px 60px rgba(0,0,0,.9);
 }
-
-/* MAIN TEXT - SCROLLABLE & FITTED */
 .card-q{
-  font-family:var(--font-serif);
-  font-size: clamp(1.1rem, 4vw, 1.7rem); 
-  line-height:1.5;
-  font-weight:600; text-align:center;
-  color: var(--text-grey);
-  
-  width: 100%;
-  max-height: 100%;
-  overflow-y: auto; 
-  padding-right: 5px; 
-  pointer-events: auto;
+ font-family:var(--font-serif);
+ font-size:clamp(1.1rem,4vw,1.7rem);
+ line-height:1.5;font-weight:600;text-align:center;
+ max-height:100%;overflow-y:auto;
 }
-
-/* CUSTOM SCROLLBAR */
-.card-q::-webkit-scrollbar { width: 4px; }
-.card-q::-webkit-scrollbar-track { background: transparent; }
-.card-q::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-
-.card-error { color: #e74c3c; font-family: var(--font-code); font-size: 0.9rem; text-align: left; }
-
-.card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
-.card-q sup{ font-size:0.7em; vertical-align:0.5em; }
-
-/* SWIPE LABELS */
 .swipe-label{
-  position:absolute; inset:0; display:flex;
-  align-items:center; justify-content:center;
-  background:#000; 
-  font-family:var(--font-sans); font-weight:800; font-size:1.4rem;
-  text-transform:uppercase; letter-spacing:1px;
-  opacity:0; pointer-events:none; padding:40px;
-  text-align:center; z-index:10; transition:opacity 0.1s ease;
-  border-radius:12px;
-  color: #fff; 
-  border: 1px solid #333;
+ position:absolute;inset:0;display:flex;
+ align-items:center;justify-content:center;
+ opacity:0;pointer-events:none;
+ font-weight:800;font-size:1.4rem;
+ border-radius:12px;
 }
-
-/* Option Colors in Swipe Mode */
-.sl-up{ color: var(--green); } 
-.sl-left{ color: var(--text-grey); } 
-.sl-right{ color: var(--text-grey); }
-.sl-down{ color: var(--blue); }
-
+.sl-up{color:#00e676}
+.sl-left,.sl-right{color:#ccc}
+.sl-down{color:#2979ff}
+.card-error{color:#ff4757;font-family:var(--font-code)}
 </style>
 </head>
+
 <body>
 
 <div id="header">
-  <div class="header-meta">
-    <span id="id-ui">BOOT</span>
-    <span id="xp-ui">0 XP</span>
-  </div>
-  <div id="review-text"></div>
-  <div class="progress-track"><div id="progress-bar"></div></div>
+ <div class="header-meta">
+  <span id="id-ui">BOOT</span>
+  <span id="xp-ui">0 XP</span>
+ </div>
+ <div id="review-text"></div>
+ <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="stack">
-  <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | V136.36<br>CONNECTING BRIDGE...
-    </div>
+ <div class="card">
+  <div class="card-q" style="font-family:var(--font-code);font-size:.9rem;color:#666">
+   VIA.STACK | V136.36<br>CONNECTING BRIDGE…
   </div>
+ </div>
 </div>
 
-("";
-  
-  let content = chemText(text).replace(/\n/g,"<br>");
-  if(isError) content = `<div class="card-error">SYSTEM ERROR:\n${text}</div>`;
-  
-  el.innerHTML=`
-    <div class="card-q">${content}</div>
-    <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
-    <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
-    <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
-    <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>
-  `;
-  
-  );
-}
 <script>
-/* ================= FINAL INIT — LOCAL FIRST, HARD STOP ================= */
-async function init(){
+/* ================= CONFIG ================= */
+const MASTER_URL="https://raw.githubusercontent.com/dharamdaxini/swipe.survey/main/master.json";
+const MASTER_KEY="ALCHEMIST_MASTER_V1";
 
-  let sourceData = null;
+/* ================= STATE ================= */
+let RAW_DATA=[],SET_CURSOR=0,ACTIVE_SET=null;
+let POOL=[],WRONG=[],SESSION_ALL=[],XP=0;
+let VOLUME_LIMIT=null,ATTEMPTED=new Set();
 
-  // 1. LOCAL FIRST — HARD STOP
-  if (localStorage.getItem(MASTER_KEY) !== null) {
-    try {
-      sourceData = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-      console.log("INIT: Local master detected. Remote disabled.");
-    } catch (e) {
-      card(
-        `CRITICAL ERROR\nLocal master is corrupted.\n\n${e.message}`,
-        { down: "RESET" },
-        () => {
-          localStorage.removeItem(MASTER_KEY);
-          location.reload();
-        },
-        true
-      );
-      return;
-    }
-  }
-
-  // 2. REMOTE BOOTSTRAP (FIRST INSTALL ONLY)
-  if (sourceData === null) {
-    try {
-      const res = await fetch(
-        MASTER_URL + "?t=" + Date.now(),
-        { cache: "no-store" }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      sourceData = await res.json();
-      localStorage.setItem(MASTER_KEY, JSON.stringify(sourceData));
-    } catch (e) {
-      card(
-        `BOOTSTRAP FAILURE\nNo local data and remote fetch failed.\n\n${e.message}`,
-        { down: "RETRY" },
-        () => location.reload(),
-        true
-      );
-      return;
-    }
-  }
-
-  // 3. NORMALIZE
-  RAW_DATA = Array.isArray(sourceData)
-    ? sourceData.map(normalize).filter(Boolean)
-    : [];
-
-  // 4. START
-  begin();
+/* ================= UTILS ================= */
+const UI={
+ stack:document.getElementById("stack"),
+ id:document.getElementById("id-ui"),
+ xp:document.getElementById("xp-ui"),
+ bar:document.getElementById("progress-bar"),
+ review:document.getElementById("review-text")
+};
+function chemText(t){
+ if(!t)return"";
+ return String(t)
+  .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
+}
+function shuffle(a){
+ for(let i=a.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [a[i],a[j]]=[a[j],a[i]];
+ }
+ return a;
 }
 
-// EXECUTE ONCE
+/* ================= CARD ================= */
+function card(text,labels,cb,isError=false){
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ let content=chemText(text).replace(/\n/g,"<br>");
+ if(isError)content=`<div class="card-error">${text}</div>`;
+ el.innerHTML=`
+  <div class="card-q">${content}</div>
+  <div class="swipe-label sl-up">${labels.up||""}</div>
+  <div class="swipe-label sl-left">${labels.left||""}</div>
+  <div class="swipe-label sl-right">${labels.right||""}</div>
+  <div class="swipe-label sl-down">${labels.down||""}</div>`;
+ UI.stack.appendChild(el);
+ el.addEventListener("click",()=>cb("UP"));
+}
+
+/* ================= NORMALIZE ================= */
+function normalize(d){
+ if(!d||!d.id||!d.q)return null;
+ return{
+  id:String(d.id),
+  set:d.set||"SET_A",
+  q:d.q,u:d.u,l:d.l,r:d.r,
+  correct:d.correct||d.u
+ };
+}
+
+/* ================= FLOW ================= */
+function begin(){
+ card(
+  `SESSION READY\n${RAW_DATA.length} Questions Loaded`,
+  {up:"START"},
+  ()=>setPick()
+ );
+}
+function setPick(){
+ const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ ACTIVE_SET=sets[SET_CURSOR];
+ card(ACTIVE_SET,{up:"SELECT"},()=>startQuiz());
+}
+function startQuiz(){
+ POOL=shuffle(RAW_DATA.filter(d=>d.set===ACTIVE_SET));
+ WRONG=[];SESSION_ALL=[];XP=0;ATTEMPTED.clear();
+ nextQ();
+}
+function nextQ(){
+ if(!POOL.length)return begin();
+ const d=POOL.shift();
+ SESSION_ALL.push(d);
+ UI.id.textContent=d.id;
+ const opts=shuffle([d.u,d.l,d.r]);
+ card(d.q,{up:opts[0]},()=>{
+  XP++;UI.xp.textContent=XP+" XP";
+  nextQ();
+ });
+}
+
+/* ================= FINAL INIT — LOCAL FIRST ================= */
+async function init(){
+ let source=null;
+
+ if(localStorage.getItem(MASTER_KEY)){
+  try{
+   source=JSON.parse(localStorage.getItem(MASTER_KEY));
+  }catch(e){
+   localStorage.removeItem(MASTER_KEY);
+  }
+ }
+
+ if(!source){
+  try{
+   const r=await fetch(MASTER_URL,{cache:"no-store"});
+   source=await r.json();
+   localStorage.setItem(MASTER_KEY,JSON.stringify(source));
+  }catch(e){
+   card("NO DATA AVAILABLE",{up:"RETRY"},()=>location.reload(),true);
+   return;
+  }
+ }
+
+ RAW_DATA=Array.isArray(source)?source.map(normalize).filter(Boolean):[];
+ begin();
+}
+
 init();
 </script>
-  
+
 </body>
 </html>
