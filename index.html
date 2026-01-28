@@ -3,16 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | User Runtime v136.40</title>
+<title>Alchemist | Diamond v136.45</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#000; --card:#121212; --border:#333;
-  --gold:#d4af37; 
-  --text-grey: #cccccc;
+  --bg:#000000; 
+  --card:#0a0a0a; 
+  --border:#222;
+  --gold:#ffd600; 
+  --text-white: #ffffff;
+  --text-grey: #888888;
   
   --font-serif: 'Crimson Text', serif;
   --font-sans: 'Inter', sans-serif;
@@ -23,7 +26,7 @@
 
 body{
   margin:0; height:100vh; background:var(--bg);
-  color:#e0e0e0; font-family:var(--font-sans);
+  color:var(--text-white); font-family:var(--font-sans);
   overflow:hidden; display:flex; flex-direction:column;
 }
 
@@ -34,6 +37,10 @@ body{
   font-family:var(--font-code); font-size:0.75rem; 
   color:#666; letter-spacing:1.5px; text-transform:uppercase;
 }
+
+/* LOGGER (ID-UI) & XP STYLING */
+#id-ui { color: var(--gold); font-weight: 700; transition: color 0.3s; }
+#xp-ui { color: #666; }
 
 /* REVIEW HEADER (HINT) */
 #review-text{
@@ -50,10 +57,9 @@ body{
 .progress-track{ width:100%; height:3px; background:#222; margin-top:15px; border-radius:2px; }
 #progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
 
-/* FLUID STACK ENGINE (Device Agnostic) */
+/* FLUID STACK ENGINE */
 #stack{
   position:relative; width:90%; max-width:420px; 
-  /* FLUID HEIGHT: 100vh - Header Space - Safe Area */
   height: calc(100vh - 160px - env(safe-area-inset-bottom)); 
   margin: 20px auto; 
   perspective:1500px;
@@ -62,7 +68,8 @@ body{
 
 .card{
   position:absolute; width:100%; height:100%;
-  background:var(--card); border-radius:12px; 
+  background:var(--card); 
+  border-radius:14px; 
   border:1px solid var(--border);
   padding:35px; 
   display:flex; flex-direction:column; justify-content:center; align-items:center;
@@ -71,17 +78,17 @@ body{
   overflow: hidden; 
 }
 
-/* MAIN TEXT - SCROLLABLE & FITTED */
+/* MAIN TEXT - WHITE & CENTERED */
 .card-q{
   font-family:var(--font-serif);
-  font-size: clamp(1.1rem, 4vw, 1.7rem); /* Responsive Font */
-  line-height:1.5;
+  font-size: clamp(1.4rem, 5vw, 1.9rem); 
+  line-height:1.4;
   font-weight:600; text-align:center;
-  color: var(--text-grey);
+  color: var(--text-white); 
   
   width: 100%;
   max-height: 100%;
-  overflow-y: auto; /* Internal Scroll */
+  overflow-y: auto; 
   word-wrap: break-word;
   padding: 0 5px; 
   
@@ -90,33 +97,29 @@ body{
   justify-content: center;
 }
 
-/* SCROLLBAR */
-.card-q::-webkit-scrollbar { width: 4px; }
-.card-q::-webkit-scrollbar-track { background: transparent; }
-.card-q::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+/* SCROLLBAR HIDDEN */
+.card-q::-webkit-scrollbar { width: 0px; }
 
 .card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
 .card-q sup{ font-size:0.7em; vertical-align:0.5em; }
 
-/* SWIPE LABELS */
+/* OG SWIPE LABELS - CENTERED OVERLAY */
 .swipe-label{
-  position:absolute; inset:0; display:flex;
-  align-items:center; justify-content:center;
+  position:absolute; inset:0; 
+  display:flex; align-items:center; justify-content:center;
   background:#000; 
-  font-family:var(--font-sans); font-weight:800; font-size:1.6rem;
-  text-transform:uppercase; letter-spacing:1px;
-  opacity:0; pointer-events:none; padding:40px;
-  text-align:center; z-index:10; transition:opacity 0.1s ease;
-  border-radius:12px;
-  color: #fff; 
+  font-family:var(--font-sans); 
+  font-weight:900; 
+  font-size:1.8rem; 
+  text-transform:uppercase; 
+  letter-spacing:1px;
+  text-align:center; padding:40px;
+  opacity:0; pointer-events:none; 
+  transition:opacity 0.15s ease;
+  border-radius:14px;
+  color: var(--text-grey); 
   border: 1px solid #333;
 }
-
-/* Option Colors */
-.sl-up{ color: #2ecc71; } /* Green */
-.sl-left{ color: var(--text-grey); } 
-.sl-right{ color: var(--text-grey); }
-.sl-down{ color: #3498db; } /* Blue */
 
 </style>
 </head>
@@ -124,7 +127,7 @@ body{
 
 <div id="header">
   <div class="header-meta">
-    <span id="id-ui">BOOT</span>
+    <span id="id-ui">SYSTEM BOOT</span> 
     <span id="xp-ui">0 XP</span>
   </div>
   <div id="review-text"></div>
@@ -134,13 +137,13 @@ body{
 <div id="stack">
   <div class="card">
     <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | FINAL<br>INITIALIZING SYSTEM...
+      VIA.STACK | DIAMOND<br>INITIALIZING SYSTEM...
     </div>
   </div>
 </div>
 
 <script>
-/* ================= BRIDGE CONFIG ================= */
+/* ================= CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
 /* ================= STATE ================= */
@@ -176,6 +179,11 @@ function shuffle(array) {
   return array;
 }
 
+const logger = (msg) => {
+    const el = document.getElementById("id-ui");
+    if(el) el.textContent = msg.toUpperCase();
+};
+
 /* ================= UI ================= */
 const UI = {
   stack: document.getElementById("stack"),
@@ -185,7 +193,7 @@ const UI = {
   review: document.getElementById("review-text")
 };
 
-/* ================= PHYSICS ENGINE ================= */
+/* ================= PHYSICS ENGINE (OG Style) ================= */
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
@@ -251,14 +259,16 @@ function card(text,labels,cb){
 
 /* ================= APP FLOW ================= */
 function begin(){
+ logger("SYSTEM READY");
  UI.review.textContent=""; 
- card(`BEGIN SESSION\n${RAW_DATA.length} Questions Loaded`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
+ card(`SESSION READY\n${RAW_DATA.length} Questions`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP") setPick();
   if(dir==="DOWN") exportSessionPDF();
  });
 }
 
 function setPick(){
+ logger("SELECT SET");
  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
  if(sets.length===0) { 
     card("NO DATA FOUND", {down:"RETRY"}, () => location.reload());
@@ -273,6 +283,7 @@ function setPick(){
 }
 
 function volumePick(){
+ logger("SELECT VOLUME");
  card(
   `QUESTION VOLUME`,
   {up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},
@@ -302,10 +313,9 @@ function nextQ(){
     report(); return;
  }
  const d=POOL.shift();
- UI.id.textContent=d.id;
+ logger(d.id); // LOGGER: SHOW QUESTION ID
  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
 
- // SHUFFLE OPTIONS A, B, C into UP, LEFT, RIGHT
  const opts = shuffle([d.u, d.l, d.r]);
  const map = { up: opts[0], left: opts[1], right: opts[2] };
 
@@ -336,24 +346,22 @@ function nextQ(){
  });
 }
 
-/* ================= REVIEW MODE (CLOSED LOOP) ================= */
+/* ================= REVIEW MODE ================= */
 function review(){
  if(!WRONG.length){ report(); return; } 
- const d=WRONG[0]; // Always take top of wrong pile
- 
- // HINT IN HEADER
+ const d=WRONG[0]; 
+ logger("REVIEW MODE");
  UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
  
- // LOGIC IN CARD
  card(
   `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
   {up:"RETRY", down:"SKIP"},
   dir=>{
     if(dir==="UP"){
         WRONG.shift();
-        POOL.unshift(d); // Push back to active pool
+        POOL.unshift(d);
     } else {
-        WRONG.shift(); // Skip removes it
+        WRONG.shift();
     }
     nextQ();
   }
@@ -361,15 +369,13 @@ function review(){
 }
 
 function report(){
+ logger("SESSION END");
  UI.review.textContent="SESSION COMPLETE"; 
  const total = SESSION_ALL.length;
  const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
- let feedback = "Review Recommended.";
- if(percent > 90) feedback = "Excellent Mastery.";
- else if(percent > 70) feedback = "Solid Performance.";
  
  card(
-  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\n${feedback}`,
+  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nReview Recommended`,
   {down:"EXPORT PDF", up:"RESTART", left:"MENU"},
   dir=>{
     if(dir==="DOWN") exportSessionPDF();
@@ -379,7 +385,7 @@ function report(){
  );
 }
 
-/* ================= ACADEMY PDF ENGINE v132.21 ================= */
+/* ================= PDF ENGINE ================= */
 function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
  const {jsPDF}=window.jspdf;
@@ -470,28 +476,26 @@ function exportSessionPDF(){
 
 /* ================= HYBRID BOOT ENGINE ================= */
 async function init(){
+  logger("BOOTING...");
   const localData = localStorage.getItem(MASTER_KEY);
   
-  // 1. Try Local Bridge (Dev/Admin Push)
   if(localData && localData.length > 10){
+    logger("BRIDGE CONNECTED");
     try { 
       RAW_DATA = JSON.parse(localData); 
-      console.log("Loaded from Bridge");
+      await new Promise(r => setTimeout(r, 500)); // Visual pause
     } catch(e) { RAW_DATA = []; }
   }
   
-  // 2. Try master.json (Production Fallback)
   if(!RAW_DATA.length){
+    logger("FETCHING MASTER...");
     try {
       const r = await fetch('master.json');
-      if(r.ok){
-        RAW_DATA = await r.json();
-        console.log("Loaded from master.json");
-      }
-    } catch(e) { console.warn("No master.json"); }
+      if(r.ok){ RAW_DATA = await r.json(); }
+    } catch(e) { }
   }
 
-  // 3. Normalization Update (Matches PDF Req)
+  // Normalization
   RAW_DATA = RAW_DATA.map(d => ({
       id: d.id,
       set: d.set || "DEFAULT",
@@ -507,9 +511,9 @@ async function init(){
       step2: d.s2 || d.step2 || ""
   })).filter(d => d.id && d.q && d.u);
 
-  // 4. Fallback UI
   if(!RAW_DATA.length){
-    card("NO DATA FOUND\n1. Push via Admin\n2. or Add master.json", {down:"RETRY"}, () => location.reload());
+    logger("DATA ERROR");
+    card("NO DATA FOUND\nPush via Admin", {down:"RETRY"}, () => location.reload());
     return;
   }
 
