@@ -1,200 +1,186 @@
-/* ALCHEMIST v130.2 | FINAL STABLE BUILD */
+<script>
+/* ============================================================
+   ALCHEMIST FINAL BACKEND ENGINE
+   - Hard resets stale data
+   - Version-gated storage
+   - Clean master.json ingestion
+   - Safe boot (never stuck)
+============================================================ */
 
-let db, VAULT = [], POOL = [], SCORE = 0, INDEX = 1, SEL_PATH = "UP", SEL_CORE = "";
-const STORE_NAME = "Vaults";
+/* ================= CONFIG ================= */
+const MASTER_URL =
+  "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
 
-/* =========================
-   CANONICAL TSV HEADER
-========================= */
-const CANONICAL_HEADER = [
-  "id","set","domain","subdomain","difficulty","question",
-  "opt_a","opt_b","opt_c","answer",
-  "logic","hint","context",
-  "field1","field2","field3","field4","field5",
-  "field6","field7","field8","field9","field10",
-  "field11","field12","field13","field14","field15"
-];
+const USER_KEY = "ALCHEMIST_DATA_V1";
+const VERSION_KEY = "ALCHEMIST_VERSION";
+const APP_VERSION = "v136.17";
 
-/* =========================
-   FORMATTER
-========================= */
-const format = t => t ? t.toString()
-.replace(/<=>/g,"⇌").replace(/->/g,"→")
-.replace(/\^([-+]?\d+)/g,"<sup>$1</sup>")
-.replace(/_(\d+)/g,"<sub>$1</sub>")
-.replace(/\n/g,"<br>") : "";
+/* ================= UI ================= */
+const UI = {
+  stack: document.getElementById("stack"),
+  id: document.getElementById("id-ui"),
+  xp: document.getElementById("xp-ui"),
+  bar: document.getElementById("progress-bar"),
+  review: document.getElementById("review-text")
+};
 
-/* =========================
-   DATABASE
-========================= */
-const request = indexedDB.open("AlchemistDB",1);
-request.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
-request.onsuccess = e => { db = e.target.result; };
+/* ================= STATE ================= */
+let RAW_DATA = [];
+let MASTER_DATA = [];
+let USER_DATA = [];
 
-/* =========================
-   IMPORT DATASET (FIXED)
-========================= */
-function importDataset(){
-    const raw = document.getElementById("data-input").value.trim();
-    if(!raw){ alert("Paste TSV first"); return; }
+let SET_CURSOR = 0;
+let ACTIVE_SET = null;
+let POOL = [];
+let WRONG = [];
+let REVIEW_INDEX = 0;
+let SESSION_ALL = [];
+let XP = 0;
+let VOLUME_LIMIT = null;
+let ATTEMPTED = new Set();
 
-    const lines = raw.split(/\n/).filter(Boolean);
-    let start = 0;
+/* ================= VERSION ENFORCEMENT ================= */
+(function enforceVersion(){
+  const v = localStorage.getItem(VERSION_KEY);
+  if(v !== APP_VERSION){
+    localStorage.removeItem(USER_KEY);
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
+  }
+})();
 
-    if(lines[0].split("\t")[0].toLowerCase()==="id") start = 1;
+/* ================= UTILS ================= */
+function chemText(t){
+  if(!t) return "";
+  return String(t)
+    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
+    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
+}
 
-    const parsed = [];
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
 
-    for(let i=start;i<lines.length;i++){
-        const cols = lines[i].split("\t");
-        if(cols.length < 6) continue;
+/* ================= DATA NORMALIZATION ================= */
+function normalize(d){
+  if(!d || !d.id || !d.q || !d.u || !d.l || !d.r) return null;
 
-        const row = {};
-        CANONICAL_HEADER.forEach((h,idx)=>{
-            row[h] = cols[idx] || "";
-        });
-        parsed.push(row);
+  let c = d.correct;
+  if(c==="UP"||c==="A") c=d.u;
+  else if(c==="LEFT"||c==="B") c=d.l;
+  else if(c==="RIGHT"||c==="C") c=d.r;
+
+  return {
+    id: String(d.id),
+    set: d.set || "SET_A",
+    dom: d.dom || "GENERAL",
+    topic: d.topic || "",
+    q: d.q,
+    u: d.u,
+    l: d.l,
+    r: d.r,
+    correct: c || d.u,
+    logic: d.logic || "",
+    hint: d.hint || "",
+    trap: d.trap || "",
+    step1: d.step1 || "",
+    step2: d.step2 || ""
+  };
+}
+
+/* ================= RENDER ================= */
+function card(text, labels, cb){
+  UI.stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+    <div class="swipe-label sl-up">${labels.up||""}</div>
+    <div class="swipe-label sl-left">${labels.left||""}</div>
+    <div class="swipe-label sl-right">${labels.right||""}</div>
+    <div class="swipe-label sl-down">${labels.down||""}</div>
+  `;
+  UI.stack.appendChild(el);
+  new PhysicsController(el,{onCommit:cb});
+}
+
+/* ================= FLOW ================= */
+function begin(){
+  UI.review.textContent="";
+  card(
+    "BEGIN SESSION",
+    {up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},
+    dir=>{ if(dir==="UP") setPick(); }
+  );
+}
+
+function setPick(){
+  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+  if(!sets.length){
+    card("NO DATA",{down:"RETRY"},begin);
+    return;
+  }
+  card(
+    sets[SET_CURSOR],
+    {up:"SELECT",down:"BACK"},
+    dir=>{
+      if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];startQuiz();}
+      if(dir==="DOWN") begin();
     }
-
-    if(!parsed.length){ alert("Invalid TSV"); return; }
-
-    const setName = parsed[0].set || "IMPORTED_SET";
-
-    const tx = db.transaction([STORE_NAME],"readwrite");
-    tx.objectStore(STORE_NAME).put(parsed,setName);
-    tx.oncomplete = ()=>{
-        VAULT = parsed;
-        document.getElementById("data-input").value =
-`IMPORTED ✔
-ROWS: ${parsed.length}
-SET: ${setName}`;
-    };
+  );
 }
 
-/* =========================
-   START SLIDES
-========================= */
-function startFromPortal(){
-    if(!VAULT.length){ alert("Import dataset first"); return; }
-    document.getElementById("portal").style.display="none";
-    document.getElementById("header").style.display="block";
-    document.getElementById("stack").style.display="flex";
-    start();
+function startQuiz(){
+  POOL=shuffle(RAW_DATA.filter(d=>d.set===ACTIVE_SET));
+  WRONG=[];
+  SESSION_ALL=[];
+  XP=0;
+  ATTEMPTED.clear();
+  nextQ();
 }
 
-/* =========================
-   SESSION
-========================= */
-function start(){
-    SCORE=0; INDEX=1;
-    POOL=[...VAULT].slice(0,20);
-    renderNext();
+function nextQ(){
+  UI.review.textContent="";
+  if(!POOL.length){ begin(); return; }
+
+  const d=POOL.shift();
+  UI.id.textContent=d.id;
+  SESSION_ALL.push(d);
+
+  const opts=shuffle([d.u,d.l,d.r]);
+  card(
+    d.q,
+    {up:opts[0],left:opts[1],right:opts[2]},
+    ()=>nextQ()
+  );
 }
 
-/* =========================
-   RENDER CARD (FIXED)
-========================= */
-function renderNext(){
-    const s=document.getElementById("stack");
-    s.innerHTML="";
-    if(!POOL.length){ renderEnd(); return; }
+/* ================= INIT ================= */
+async function init(){
+  try{
+    USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]");
+  }catch{
+    USER_DATA=[];
+  }
 
-    const q=POOL[0];
-    const c=document.createElement("div");
-    c.className="card";
+  try{
+    const r=await fetch(MASTER_URL,{cache:"no-store"});
+    MASTER_DATA=await r.json();
+  }catch{
+    MASTER_DATA=[];
+  }
 
-    c.innerHTML=`
-    <div class="card-q">
-        <b>${q.id}</b><br>
-        <span style="opacity:.6">${q.domain} • ${q.subdomain}</span><br><br>
-        ${format(q.question)}
-        <br><br>
-        A) ${q.opt_a}<br>
-        B) ${q.opt_b}<br>
-        C) ${q.opt_c}
-    </div>
+  RAW_DATA=[
+    ...MASTER_DATA.map(normalize).filter(Boolean),
+    ...USER_DATA.map(normalize).filter(Boolean)
+  ];
 
-    <div class="swipe-label sl-up">ANSWER</div>
-    <div class="swipe-label sl-left">${q.opt_a}</div>
-    <div class="swipe-label sl-right">${q.opt_b}</div>
-    <div class="swipe-label sl-down">HINT</div>
-    `;
-    bindPhysics(c,q);
-    s.appendChild(c);
-    updateHUD();
+  begin();
 }
 
-/* =========================
-   PHYSICS (UNCHANGED)
-========================= */
-function bindPhysics(el,data){
-    let sx,sy,dx=0,dy=0,active=false,dir="";
-    el.addEventListener("touchstart",e=>{
-        active=true;
-        sx=e.touches[0].clientX;
-        sy=e.touches[0].clientY;
-        el.style.transition="none";
-    },{passive:false});
-
-    el.addEventListener("touchmove",e=>{
-        if(!active) return;
-        e.preventDefault();
-        dx=e.touches[0].clientX-sx;
-        dy=e.touches[0].clientY-sy;
-        el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
-        const ang=Math.atan2(-dy,dx)*180/Math.PI;
-        dir=(ang>45&&ang<135)?"UP":(ang<-45&&ang>-135)?"DOWN":(ang>135||ang<-135)?"LEFT":"RIGHT";
-    },{passive:false});
-
-    el.addEventListener("touchend",()=>{
-        if(!active) return;
-        active=false;
-        if(Math.abs(dx)>60||Math.abs(dy)>60) route(el,data,dir);
-        else resetCard(el);
-    });
-}
-
-/* =========================
-   ROUTING
-========================= */
-function route(el,data,dir){
-    if(dir==="DOWN"){
-        openOverlay(data);
-        resetCard(el);
-        return;
-    }
-    if(dir==="UP" && data.answer==="OPT_A") SCORE+=10;
-    POOL.shift(); INDEX++;
-    renderNext();
-}
-
-function resetCard(el){
-    el.style.transition="0.4s";
-    el.style.transform="none";
-}
-
-/* =========================
-   OVERLAY
-========================= */
-function openOverlay(d){
-    document.getElementById("overlay-content").innerHTML=
-    `<b>LOGIC</b><br>${format(d.logic)}<br><br><b>HINT</b><br>${format(d.hint)}`;
-    document.getElementById("global-overlay").classList.add("active");
-}
-function closeOverlay(){
-    document.getElementById("global-overlay").classList.remove("active");
-}
-
-/* =========================
-   HUD
-========================= */
-function updateHUD(){
-    document.getElementById("p-text").innerText=`${INDEX}/20`;
-    document.getElementById("score-text").innerText=`${SCORE} XP`;
-    document.getElementById("progress-bar").style.width=`${INDEX/20*100}%`;
-}
-
-function renderEnd(){
-    document.getElementById("stack").innerHTML=
-    `<div class="card"><div class="card-q">COMPLETE</div></div>`;
-}
+init();
+</script>
