@@ -1,333 +1,377 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>Alchemist | Operator UI v136.32</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<style>
-:root{
- --bg:#000;
- --card:#121212;
- --border:#333;
- --text-main:#e6e6e6;
- --text-grey:#9a9a9a;
- --accent:#d4af37;
- --font-serif:'Crimson Text',serif;
- --font-sans:'Inter',sans-serif;
- --font-code:'JetBrains Mono',monospace;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{
- margin:0;height:100vh;background:var(--bg);
- color:var(--text-main);
- font-family:var(--font-sans);
- overflow:hidden;display:flex;flex-direction:column;
-}
-
-/* HEADER */
-#header{width:90%;margin:22px auto 0}
-.header-meta{
- display:flex;justify-content:space-between;
- font-family:var(--font-code);
- font-size:.75rem;color:#666;
- letter-spacing:1.5px;text-transform:uppercase;
-}
-#review-text{
- margin-top:14px;
- font-family:var(--font-serif);
- font-size:1.1rem;
- font-style:italic;
- text-align:center;
- color:#aaa;
- min-height:3.2em;
-}
-.review-title{
- font-size:1.8rem;
- letter-spacing:6px;
- color:#eee;
-}
-.review-line{
- width:60%;
- height:2px;
- background:var(--accent);
- margin:8px auto 6px;
-}
-
-/* PROGRESS */
-.progress-track{width:100%;height:3px;background:#222;margin-top:12px;border-radius:2px}
-#progress-bar{height:100%;background:#666;width:0%;transition:width .4s ease}
-
-/* STACK */
-#stack{
- position:relative;width:90%;max-width:420px;height:62vh;
- margin:auto;perspective:1500px;
- display:flex;align-items:center;justify-content:center;
-}
-.card{
- position:absolute;width:100%;height:95%;
- background:var(--card);
- border-radius:14px;border:1px solid var(--border);
- padding:36px;
- display:flex;justify-content:center;align-items:center;
- box-shadow:0 20px 60px rgba(0,0,0,.95);
- transform-style:preserve-3d;overflow:hidden;
-}
-.card-q{
- font-family:var(--font-serif);
- font-size:clamp(1.15rem,4vw,1.75rem);
- line-height:1.55;font-weight:600;
- text-align:center;color:var(--text-main);
- width:100%;max-height:100%;
- overflow-y:auto;padding:0 6px;
- opacity:0;transform:translateY(10px);
- transition:opacity .35s ease,transform .35s ease;
-}
-.card-q.show{opacity:1;transform:translateY(0)}
-.card-q::-webkit-scrollbar{width:4px}
-.card-q::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-
-/* SWIPE LABELS */
-.swipe-label{
- position:absolute;inset:0;
- display:flex;align-items:center;justify-content:center;
- background:#000;
- font-family:var(--font-sans);
- font-weight:700;font-size:1.5rem;
- letter-spacing:1px;text-transform:uppercase;
- color:var(--text-grey);
- opacity:0;pointer-events:none;
- padding:40px;text-align:center;
- border-radius:14px;border:1px solid #333;
- transition:opacity .18s ease,transform .18s ease;
- transform:scale(.98);
-}
-.swipe-label.active{opacity:1;transform:scale(1)}
-</style>
-</head>
-
-<body>
-
-<div id="header">
- <div class="header-meta">
-  <span id="id-ui">BOOT</span>
-  <span id="xp-ui">0 XP</span>
- </div>
- <div id="review-text"></div>
- <div class="progress-track"><div id="progress-bar"></div></div>
-</div>
-
-<div id="stack"></div>
-
-<script>
-/* ================= CONFIG ================= */
-const MASTER_KEY="ALCHEMIST_MASTER_V1";
-
-/* ================= STATE ================= */
-let RAW_DATA=[];
-let POOL=[];
-let WRONG=[];
-let REVIEW_POOL=[];
-let SESSION_ALL=[];
-let XP=0;
-let IDX=0;
-let CURR=null;
-
-/* ===== NEW STATE (VOLUME) ===== */
-let QUESTION_LIMIT = null;
-
-/* ================= UTILS ================= */
-function chemText(t){
- if(!t) return "";
- return String(t)
-  .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
-}
-function shuffle(a){
- for(let i=a.length-1;i>0;i--){
-  const j=Math.floor(Math.random()*(i+1));
-  [a[i],a[j]]=[a[j],a[i]];
- }
- return a;
-}
-
-/* ================= UI ================= */
-const UI={
- stack:document.getElementById("stack"),
- id:document.getElementById("id-ui"),
- xp:document.getElementById("xp-ui"),
- bar:document.getElementById("progress-bar"),
- review:document.getElementById("review-text")
-};
-
-/* ================= PHYSICS (UNCHANGED) ================= */
-class PhysicsController{
- constructor(el,cbs){
-  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
-  this.labels={
-   UP:el.querySelector(".sl-up"),
-   LEFT:el.querySelector(".sl-left"),
-   RIGHT:el.querySelector(".sl-right"),
-   DOWN:el.querySelector(".sl-down")
-  };
-  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
-  const m=e=>this.move(e.touches?e.touches[0]:e);
-  const e2=()=>this.end();
-  el.addEventListener("mousedown",s);
-  window.addEventListener("mousemove",m);
-  window.addEventListener("mouseup",e2);
-  el.addEventListener("touchstart",s,{passive:false});
-  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
-  el.addEventListener("touchend",e2);
- }
- startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
- move(p){
-  if(!this.active)return;
-  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
-  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
-  Object.values(this.labels).forEach(l=>l&&(l.classList.remove("active")));
-  if(Math.hypot(dx,dy)>20){
-   const dir=this.dir(dx,dy);
-   this.labels[dir]&&(this.labels[dir].classList.add("active"));
-  }
- }
- end(){
-  if(!this.active)return;
-  this.active=false;
-  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-  if(Math.hypot(m.m41,m.m42)>100)this.cbs.onCommit(this.dir(m.m41,m.m42));
-  else this.el.style.transform="translate(0,0)";
- }
- dir(dx,dy){
-  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
-  if(a>45&&a<135)return"UP";
-  if(a>135&&a<225)return"LEFT";
-  if(a>225&&a<315)return"DOWN";
-  return"RIGHT";
- }
-}
-
-/* ================= RENDER ================= */
-function card(text,labels,cb){
- UI.stack.innerHTML="";
- const el=document.createElement("div");
- el.className="card";
- el.innerHTML=`
-  <div class="card-q">${chemText(text)}</div>
-  <div class="swipe-label sl-up">${labels.up||""}</div>
-  <div class="swipe-label sl-left">${labels.left||""}</div>
-  <div class="swipe-label sl-right">${labels.right||""}</div>
-  <div class="swipe-label sl-down">${labels.down||""}</div>
- `;
- UI.stack.appendChild(el);
- requestAnimationFrame(()=>el.querySelector(".card-q").classList.add("show"));
- new PhysicsController(el,{onCommit:cb});
-}
-
-/* ================= QUESTION VOLUME LAYER ================= */
-function questionVolumeLayer(){
- card(
-  "QUESTION VOLUME",
-  {
-   up:"10 QUESTIONS",
-   left:"25 QUESTIONS",
-   right:"50 QUESTIONS",
-   down:"100 QUESTIONS"
-  },
-  dir=>{
-   if(dir==="UP") QUESTION_LIMIT=10;
-   if(dir==="LEFT") QUESTION_LIMIT=25;
-   if(dir==="RIGHT") QUESTION_LIMIT=50;
-   if(dir==="DOWN") QUESTION_LIMIT=100;
-   startQuiz();
-  }
- );
-}
-
-/* ================= QUIZ ================= */
-function startQuiz(){
- POOL = shuffle([...RAW_DATA]);
- if(QUESTION_LIMIT) POOL = POOL.slice(0, QUESTION_LIMIT);
- WRONG=[];SESSION_ALL=[];XP=0;IDX=0;
- nextQuiz();
-}
-function nextQuiz(){
- if(!POOL.length){ scoreCard(); return; }
- CURR=POOL.shift();
- SESSION_ALL.push(CURR);
- UI.id.textContent=CURR.id;
- const opts=shuffle([CURR.u,CURR.l,CURR.r]);
- card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
-  const picked=dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
-  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase())XP++;
-  else WRONG.push(CURR);
-  nextQuiz();
- });
-}
-
-/* ================= SCORE ================= */
-function scoreCard(){
- card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{
-  if(dir==="UP") questionVolumeLayer();
-  if(dir==="DOWN") startReview();
- });
-}
-
-/* ================= REVIEW ================= */
-function startReview(){
- REVIEW_POOL=[...WRONG];
- IDX=0;
- nextReviewQ();
-}
-function nextReviewQ(){
- if(REVIEW_POOL.length===0){ endSlide(); return; }
- if(IDX>=REVIEW_POOL.length) IDX=0;
- CURR=REVIEW_POOL[IDX];
- card(CURR.q,{up:"DEEP DIVE",left:CURR.l,right:CURR.r,down:CURR.u},dir=>{
-  if(dir==="UP"){ reviewExplain(); return; }
-  const picked=dir==="DOWN"?CURR.u:dir==="LEFT"?CURR.l:CURR.r;
-  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){
-   REVIEW_POOL.splice(IDX,1);
-  }else IDX++;
-  nextReviewQ();
- });
-}
-function reviewExplain(){
- card(CURR.logic||"",{up:"RETRY",down:"GOT IT"},()=>nextReviewQ());
-}
-
-/* ================= END ================= */
-function endSlide(){
- card("SESSION COMPLETE",{down:"PDF",right:"MENU"},dir=>{
-  if(dir==="DOWN") exportPDF();
-  if(dir==="RIGHT") location.reload();
- });
-}
-
-/* ================= PDF ================= */
-function exportPDF(){
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- let y=20;
- SESSION_ALL.forEach(d=>{
-  if(y>260){doc.addPage();y=20;}
-  doc.text(d.q,10,y);y+=8;
-  doc.text(d.logic||"",10,y);y+=10;
- });
- doc.save(`SESSION_${Date.now()}.pdf`);
- questionVolumeLayer();
-}
-
-/* ================= INIT ================= */
-(function(){
- const raw=localStorage.getItem(MASTER_KEY);
- RAW_DATA=raw?JSON.parse(raw):[];
- card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&questionVolumeLayer());
-})();
-</script>
-</body>
-</html>
+  
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">  
+<title>Alchemist | Operator UI v136.33</title>  
+  
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>  
+  
+<style>  
+:root{  
+ --bg:#000;  
+ --card:#121212;  
+ --border:#333;  
+ --text-main:#e6e6e6;  
+ --text-grey:#9a9a9a;  
+ --accent:#d4af37;  
+ --font-serif:'Crimson Text',serif;  
+ --font-sans:'Inter',sans-serif;  
+ --font-code:'JetBrains Mono',monospace;  
+}  
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}  
+body{  
+ margin:0;height:100vh;background:var(--bg);  
+ color:var(--text-main);  
+ font-family:var(--font-sans);  
+ overflow:hidden;display:flex;flex-direction:column;  
+}  
+  
+/* HEADER */  
+#header{width:90%;margin:22px auto 0}  
+.header-meta{  
+ display:flex;justify-content:space-between;  
+ font-family:var(--font-code);  
+ font-size:.75rem;color:#666;  
+ letter-spacing:1.5px;text-transform:uppercase;  
+}  
+#review-text{  
+ margin-top:14px;  
+ font-family:var(--font-serif);  
+ font-size:1.1rem;  
+ font-style:italic;  
+ text-align:center;  
+ color:#aaa;  
+ min-height:3.2em;  
+}  
+.review-title{  
+ font-size:1.8rem;  
+ letter-spacing:6px;  
+ color:#eee;  
+}  
+.review-line{  
+ width:60%;  
+ height:2px;  
+ background:var(--accent);  
+ margin:8px auto 6px;  
+}  
+  
+/* PROGRESS */  
+.progress-track{width:100%;height:3px;background:#222;margin-top:12px;border-radius:2px}  
+#progress-bar{height:100%;background:#666;width:0%;transition:width .4s ease}  
+  
+/* STACK */  
+#stack{  
+ position:relative;width:90%;max-width:420px;height:62vh;  
+ margin:auto;perspective:1500px;  
+ display:flex;align-items:center;justify-content:center;  
+}  
+.card{  
+ position:absolute;width:100%;height:95%;  
+ background:var(--card);  
+ border-radius:14px;border:1px solid var(--border);  
+ padding:36px;  
+ display:flex;justify-content:center;align-items:center;  
+ box-shadow:0 20px 60px rgba(0,0,0,.95);  
+ transform-style:preserve-3d;overflow:hidden;  
+}  
+.card-q{  
+ font-family:var(--font-serif);  
+ font-size:clamp(1.15rem,4vw,1.75rem);  
+ line-height:1.55;font-weight:600;  
+ text-align:center;color:var(--text-main);  
+ width:100%;max-height:100%;  
+ overflow-y:auto;padding:0 6px;  
+ opacity:0;transform:translateY(10px);  
+ transition:opacity .35s ease,transform .35s ease;  
+}  
+.card-q.show{opacity:1;transform:translateY(0)}  
+  
+/* SWIPE LABELS */  
+.swipe-label{  
+ position:absolute;inset:0;  
+ display:flex;align-items:center;justify-content:center;  
+ background:#000;  
+ font-family:var(--font-sans);  
+ font-weight:700;font-size:1.5rem;  
+ letter-spacing:1px;text-transform:uppercase;  
+ color:var(--text-grey);  
+ opacity:0;pointer-events:none;  
+ padding:40px;text-align:center;  
+ border-radius:14px;border:1px solid #333;  
+ transition:opacity .18s ease,transform .18s ease;  
+ transform:scale(.98);  
+}  
+.swipe-label.active{opacity:1;transform:scale(1)}  
+</style>  
+</head>  
+  
+<body>  
+  
+<div id="header">  
+ <div class="header-meta">  
+  <span id="id-ui">BOOT</span>  
+  <span id="xp-ui">0 XP</span>  
+ </div>  
+ <div id="review-text"></div>  
+ <div class="progress-track"><div id="progress-bar"></div></div>  
+</div>  
+  
+<div id="stack"></div>  
+  
+<script>  
+/* ================= CONFIG ================= */  
+const MASTER_KEY = "ALCHEMIST_MASTER_V1";  
+  
+/* ================= STATE ================= */  
+let RAW_DATA = [];  
+let POOL = [];  
+let WRONG = [];  
+let REVIEW_POOL = [];  
+let SESSION_ALL = [];  
+let XP = 0;  
+let IDX = 0;  
+let CURR = null;  
+  
+/* ================= UTILS ================= */  
+function chemText(t){  
+ if(!t) return "";  
+ return String(t)  
+  .replace(/_([0-9]+)/g,"<sub>$1</sub>")  
+  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");  
+}  
+function shuffle(a){  
+ for(let i=a.length-1;i>0;i--){  
+  const j=Math.floor(Math.random()*(i+1));  
+  [a[i],a[j]]=[a[j],a[i]];  
+ }  
+ return a;  
+}  
+  
+/* ================= UI ================= */  
+const UI={  
+ stack:document.getElementById("stack"),  
+ id:document.getElementById("id-ui"),  
+ xp:document.getElementById("xp-ui"),  
+ bar:document.getElementById("progress-bar"),  
+ review:document.getElementById("review-text")  
+};  
+  
+/* ================= PHYSICS (UNCHANGED) ================= */  
+class PhysicsController{  
+ constructor(el,cbs){  
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};  
+  this.labels={  
+   UP:el.querySelector(".sl-up"),  
+   LEFT:el.querySelector(".sl-left"),  
+   RIGHT:el.querySelector(".sl-right"),  
+   DOWN:el.querySelector(".sl-down")  
+  };  
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e);  
+  const m=e=>this.move(e.touches?e.touches[0]:e);  
+  const e2=()=>this.end();  
+  el.addEventListener("mousedown",s);  
+  window.addEventListener("mousemove",m);  
+  window.addEventListener("mouseup",e2);  
+  el.addEventListener("touchstart",s,{passive:false});  
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});  
+  el.addEventListener("touchend",e2);  
+ }  
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}  
+ move(p){  
+  if(!this.active)return;  
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;  
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;  
+  Object.values(this.labels).forEach(l=>l&&(l.classList.remove("active")));  
+  if(Math.hypot(dx,dy)>20){  
+   const dir=this.dir(dx,dy);  
+   this.labels[dir]&&(this.labels[dir].classList.add("active"));  
+  }  
+ }  
+ end(){  
+  if(!this.active)return;  
+  this.active=false;  
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);  
+  if(Math.hypot(m.m41,m.m42)>100)this.cbs.onCommit(this.dir(m.m41,m.m42));  
+  else this.el.style.transform="translate(0,0)";  
+ }  
+ dir(dx,dy){  
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;  
+  if(a>45&&a<135)return"UP";  
+  if(a>135&&a<225)return"LEFT";  
+  if(a>225&&a<315)return"DOWN";  
+  return"RIGHT";  
+ }  
+}  
+  
+/* ================= RENDER ================= */  
+function card(text,labels,cb){  
+ UI.stack.innerHTML="";  
+ const el=document.createElement("div");  
+ el.className="card";  
+ el.innerHTML=`  
+  <div class="card-q">${chemText(text)}</div>  
+  <div class="swipe-label sl-up">${labels.up||""}</div>  
+  <div class="swipe-label sl-left">${labels.left||""}</div>  
+  <div class="swipe-label sl-right">${labels.right||""}</div>  
+  <div class="swipe-label sl-down">${labels.down||""}</div>  
+ `;  
+ UI.stack.appendChild(el);  
+ requestAnimationFrame(()=>el.querySelector(".card-q").classList.add("show"));  
+ new PhysicsController(el,{onCommit:cb});  
+}  
+  
+/* ================= HEADER ================= */  
+function reviewHeader(hint){  
+ UI.review.innerHTML=`  
+  <div class="review-title">REVIEW</div>  
+  <div class="review-line"></div>  
+  ${hint||""}  
+ `;  
+}  
+function clearHeader(){UI.review.textContent="";}  
+  
+/* ================= QUIZ ================= */  
+function startQuiz(){  
+ POOL = shuffle([...RAW_DATA]);  
+ WRONG = [];  
+ SESSION_ALL = [];  
+ XP = 0;  
+ IDX = 0;  
+ nextQuiz();  
+}  
+function nextQuiz(){  
+ if(!POOL.length){ scoreCard(); return; }  
+ CURR = POOL.shift();  
+ SESSION_ALL.push(CURR);  
+ UI.id.textContent = CURR.id;  
+ UI.xp.textContent = `${XP}`;  
+ const opts = shuffle([CURR.u, CURR.l, CURR.r]);  
+ card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{  
+  const picked = dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];  
+  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()) XP++;  
+  else WRONG.push(CURR);  
+  UI.bar.style.width = `${(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100}%`;  
+  nextQuiz();  
+ });  
+}  
+  
+/* ================= SCORE ================= */  
+function scoreCard(){  
+ clearHeader();  
+ card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{  
+  if(dir==="UP") startQuiz();  
+  if(dir==="DOWN") startReview();  
+ });  
+}  
+  
+/* ================= REVIEW ================= */  
+function startReview(){  
+ REVIEW_POOL = [...WRONG];  
+ IDX = 0;  
+ if(REVIEW_POOL.length===0){ endSlide(); return; }  
+ nextReviewQ();  
+}  
+function nextReviewQ(){  
+ if(REVIEW_POOL.length===0){ endSlide(); return; }  
+ if(IDX >= REVIEW_POOL.length) IDX = 0;  
+ CURR = REVIEW_POOL[IDX];  
+ reviewHeader(CURR.hint || "");  
+ const opts = shuffle([CURR.u, CURR.l, CURR.r]);  
+ card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{  
+  if(dir==="UP"){ reviewExplain(); return; }  
+  const picked = dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];  
+  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){  
+   REVIEW_POOL.splice(IDX,1);  
+  }else{  
+   IDX++;  
+  }  
+  nextReviewQ();  
+ });  
+}  
+function reviewExplain(){  
+ reviewHeader(CURR.hint || "");  
+ card(CURR.logic || "",{  
+  up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"  
+ },dir=>{  
+  if(dir==="LEFT"||dir==="RIGHT") IDX++;  
+  nextReviewQ();  
+ });  
+}  
+  
+/* ================= END ================= */  
+function endSlide(){  
+ clearHeader();  
+ card("SESSION COMPLETE",{down:"PDF",right:"MENU"},dir=>{  
+  if(dir==="DOWN") exportPDF();  
+  if(dir==="RIGHT") location.reload();  
+ });  
+}  
+  
+/* ================= PDF ================= */  
+function exportPDF(){  
+ const { jsPDF } = window.jspdf;  
+ const doc = new jsPDF();  
+ let y = 20;  
+  
+ SESSION_ALL.forEach((d,i)=>{  
+  if(y>260){ doc.addPage(); y=20; }  
+  
+  doc.setFont("courier","bold");  
+  doc.setFontSize(11);  
+  doc.text(`Q${i+1} | SESSION QUESTION`,15,y); y+=8;  
+  
+  if(d.ctx){  
+   doc.setFontSize(8);  
+   doc.text(`CTX: ${d.ctx}`,15,y); y+=5;  
+  }  
+  
+  doc.setFont("times","normal");  
+  doc.setFontSize(11);  
+  const q = doc.splitTextToSize(`Q: ${d.q}`,180);  
+  doc.text(q,15,y); y+=q.length*6;  
+  
+  if(d.hint){  
+   doc.setFont("courier","normal");  
+   doc.setFontSize(8);  
+   doc.text(`HINT: ${d.hint}`,15,y); y+=5;  
+  }  
+  
+  doc.setFontSize(10);  
+  doc.text(`A) ${d.u}`,15,y); y+=5;  
+  doc.text(`B) ${d.l}`,15,y); y+=5;  
+  doc.text(`C) ${d.r}`,15,y); y+=6;  
+  
+  doc.setFont("courier","bold");  
+  doc.text(`ANSWER: ${d.u}`,15,y); y+=6;  
+  
+  if(d.logic){  
+   doc.setFont("times","italic");  
+   const logic = doc.splitTextToSize(`LOGIC: ${d.logic}`,180);  
+   doc.text(logic,15,y); y+=logic.length*5;  
+  }  
+  
+  if(d.step1){ doc.text(`STEP 1: ${d.step1}`,15,y); y+=5; }  
+  if(d.step2){ doc.text(`STEP 2: ${d.step2}`,15,y); y+=5; }  
+  
+  y+=10;  
+ });  
+  
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);  
+ startQuiz();  
+}  
+  
+/* ================= INIT ================= */  
+(function(){  
+ const raw = localStorage.getItem(MASTER_KEY);  
+ RAW_DATA = raw ? JSON.parse(raw) : [];  
+ card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP" && startQuiz());  
+})();  
+</script>  
+</body>  
+</html>  
+-----------------    
+    
