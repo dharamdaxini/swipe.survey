@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<title>Alchemist | Operator v136.32</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Alchemist | Final Grey v136.36</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
@@ -13,10 +14,8 @@
   --card:#121212;
   --border:#333;
   --gold:#d4af37;
-  --grey:#bdbdbd;
-  --green:#00e676;
-  --red:#ff5252;
-  --blue:#2979ff;
+  --grey:#888;
+
   --font-serif:'Crimson Text',serif;
   --font-sans:'Inter',sans-serif;
   --font-code:'JetBrains Mono',monospace;
@@ -25,116 +24,72 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 body{
-  margin:0;
-  height:100vh;
-  background:var(--bg);
-  color:#eee;
-  font-family:var(--font-sans);
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
+  margin:0;height:100vh;background:var(--bg);color:#e0e0e0;
+  font-family:var(--font-sans);overflow:hidden;
+  display:flex;flex-direction:column;
 }
 
-/* HEADER */
-#header{
-  width:90%;
-  margin:22px auto 0;
-}
+#header{width:90%;margin:24px auto 0}
 .header-meta{
-  display:flex;
-  justify-content:space-between;
+  display:flex;justify-content:space-between;
   font-family:var(--font-code);
-  font-size:.7rem;
-  letter-spacing:1.2px;
-  color:#666;
-  text-transform:uppercase;
+  font-size:.75rem;color:#666;letter-spacing:1.4px;
 }
 
-/* REVIEW / HINT */
 #review-text{
   margin-top:18px;
   min-height:3.2em;
-  text-align:center;
   font-family:var(--font-serif);
-  font-size:1.25rem;
+  font-size:1.2rem;
   font-style:italic;
-  color:var(--gold);
+  text-align:center;
+  color:#e0e0e0;
 }
 
-/* PROGRESS */
-.progress-track{
-  width:100%;
-  height:3px;
-  background:#222;
-  margin-top:14px;
-  border-radius:2px;
-}
-#progress-bar{
-  height:100%;
-  width:0%;
-  background:var(--gold);
-  transition:width .35s ease;
-}
+.progress-track{height:3px;background:#222;margin-top:12px}
+#progress-bar{height:100%;background:var(--gold);width:0%;transition:.3s}
 
-/* STACK */
 #stack{
   position:relative;
-  width:90%;
-  max-width:420px;
-  height:62vh;
-  margin:auto;
-  perspective:1500px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  width:90%;max-width:420px;height:62vh;
+  margin:auto;perspective:1200px;
+  display:flex;align-items:center;justify-content:center;
 }
 
 .card{
-  position:absolute;
-  width:100%;
-  height:95%;
+  position:absolute;width:100%;height:95%;
   background:var(--card);
-  border-radius:14px;
   border:1px solid var(--border);
+  border-radius:12px;
   padding:34px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  display:flex;align-items:center;justify-content:center;
   box-shadow:0 20px 60px rgba(0,0,0,.95);
-  will-change:transform;
 }
 
 .card-q{
   font-family:var(--font-serif);
-  font-size:clamp(1.1rem,4vw,1.65rem);
-  line-height:1.5;
+  font-size:1.6rem;
+  font-weight:600;
+  line-height:1.45;
   text-align:center;
-  color:var(--grey);
-  width:100%;
-  max-height:100%;
-  overflow-y:auto;
+  color:#d0d0d0;
+  pointer-events:none;
 }
 
-/* SWIPE LABELS */
-.swipe{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:1.4rem;
-  font-weight:800;
+.card-q sub{font-size:.7em;vertical-align:-.3em}
+.card-q sup{font-size:.7em;vertical-align:.5em}
+
+.swipe-label{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#000;
+  font-size:1.5rem;
+  font-weight:700;
   letter-spacing:1px;
+  color:var(--grey);
   opacity:0;
   pointer-events:none;
-  border-radius:14px;
 }
-
-.up{color:var(--green)}
-.left{color:#aaa}
-.right{color:#aaa}
-.down{color:var(--blue)}
-
 </style>
 </head>
 
@@ -142,8 +97,8 @@ body{
 
 <div id="header">
   <div class="header-meta">
-    <span id="ui-id">BOOT</span>
-    <span id="ui-xp">0 XP</span>
+    <span id="id-ui">BOOT</span>
+    <span id="xp-ui">0 XP</span>
   </div>
   <div id="review-text"></div>
   <div class="progress-track"><div id="progress-bar"></div></div>
@@ -155,192 +110,170 @@ body{
 /* ================= CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1";
 
+/* ================= UTILS ================= */
+const chem = t => String(t||"")
+ .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+ .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
+ .replace(/<->|↔️|\\rightleftharpoons/g,"⇌");
+
+const shuffle=a=>{
+ for(let i=a.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [a[i],a[j]]=[a[j],a[i]];
+ }
+ return a;
+};
+
 /* ================= STATE ================= */
-let DATA = [];
-let POOL = [];
-let WRONG = [];
-let REVIEW_MODE = false;
-let REVIEW_INDEX = 0;
-let XP = 0;
-let TOTAL = 0;
+let RAW=[];
+let SETS=[];
+let ACTIVE_SET=null;
+let POOL=[],WRONG=[],SESSION=[];
+let XP=0,VOLUME=null,REVIEW_I=0;
+let ATTEMPTED=new Set();
 
-/* ================= UTIL ================= */
-const $ = id => document.getElementById(id);
+/* ================= UI ================= */
+const UI={
+ stack:document.getElementById("stack"),
+ id:document.getElementById("id-ui"),
+ xp:document.getElementById("xp-ui"),
+ bar:document.getElementById("progress-bar"),
+ review:document.getElementById("review-text")
+};
 
-function shuffle(a){
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
-  return a;
+/* ================= NORMALIZE ================= */
+function normalize(d){
+ if(!d||!d.id||!d.q) return null;
+ let c=d.correct;
+ if(c==="UP"||c==="A")c=d.u;
+ if(c==="LEFT"||c==="B")c=d.l;
+ if(c==="RIGHT"||c==="C"||c==="R")c=d.r;
+ return {
+  id:String(d.id),
+  set:d.set||"SET_A",
+  q:d.q,u:d.u,l:d.l,r:d.r,
+  correct:c||d.u,
+  hint:d.hint||"",
+  logic:d.logic||"",
+  trap:d.trap||"",
+  step1:d.step1||"",
+  step2:d.step2||""
+ };
 }
 
+/* ================= SWIPE ENGINE (FIXED) ================= */
+class Swipe{
+ constructor(el,cb){
+  this.el=el;this.cb=cb;this.sx=0;this.sy=0;this.active=false;
+  el.addEventListener("touchstart",e=>this.start(e.touches[0]),{passive:false});
+  el.addEventListener("touchmove",e=>this.move(e.touches[0]),{passive:false});
+  el.addEventListener("touchend",()=>this.end());
+ }
+ start(p){this.active=true;this.sx=p.clientX;this.sy=p.clientY;this.el.style.transition="none"}
+ move(p){
+  if(!this.active)return;
+  const dx=p.clientX-this.sx,dy=p.clientY-this.sy;
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+ }
+ end(){
+  if(!this.active)return;this.active=false;
+  const r=this.el.getBoundingClientRect();
+  const dx=r.left+r.width/2-window.innerWidth/2;
+  const dy=r.top+r.height/2-window.innerHeight/2;
+  if(Math.hypot(dx,dy)>90)this.cb(dir(dx,dy));
+  this.el.style.transition=".3s";
+  this.el.style.transform="translate(0,0)";
+ }
+}
+const dir=(dx,dy)=>{
+ const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+ if(a>45&&a<135)return"UP";
+ if(a>135&&a<225)return"LEFT";
+ if(a>225&&a<315)return"DOWN";
+ return"RIGHT";
+};
+
 /* ================= CARD ================= */
-function renderCard(text, labels, onSwipe){
-  const stack = $("stack");
-  stack.innerHTML = "";
-
-  const card = document.createElement("div");
-  card.className="card";
-
-  card.innerHTML = `
-    <div class="card-q">${text.replace(/\n/g,"<br>")}</div>
-    <div class="swipe up">${labels.up||""}</div>
-    <div class="swipe left">${labels.left||""}</div>
-    <div class="swipe right">${labels.right||""}</div>
-    <div class="swipe down">${labels.down||""}</div>
-  `;
-
-  stack.appendChild(card);
-
-  let sx=0,sy=0,active=false;
-
-  card.onpointerdown=e=>{
-    active=true;
-    sx=e.clientX; sy=e.clientY;
-    card.setPointerCapture(e.pointerId);
-  };
-
-  card.onpointermove=e=>{
-    if(!active)return;
-    const dx=e.clientX-sx, dy=e.clientY-sy;
-    card.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
-    const d=Math.hypot(dx,dy);
-    const show = d>25;
-    card.querySelectorAll(".swipe").forEach(el=>el.style.opacity=0);
-    if(show){
-      const dir = Math.abs(dx)>Math.abs(dy)
-        ? dx>0?"right":"left"
-        : dy<0?"up":"down";
-      card.querySelector("."+dir).style.opacity=Math.min(d/60,1);
-    }
-  };
-
-  card.onpointerup=e=>{
-    active=false;
-    const m = new DOMMatrixReadOnly(getComputedStyle(card).transform);
-    const dx=m.m41, dy=m.m42;
-    if(Math.hypot(dx,dy)>110){
-      const dir = Math.abs(dx)>Math.abs(dy)
-        ? dx>0?"right":"left"
-        : dy<0?"up":"down";
-      onSwipe(dir);
-    } else {
-      card.style.transition=".35s";
-      card.style.transform="translate(0,0)";
-    }
-  };
+function card(text,labels,cb){
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${chem(text).replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label">${labels.up||""}</div>
+ `;
+ UI.stack.appendChild(el);
+ new Swipe(el,cb);
 }
 
 /* ================= FLOW ================= */
-function boot(){
-  let raw = null;
-  try{ raw = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]"); }
-  catch{ raw=[]; }
-
-  if(!Array.isArray(raw)||!raw.length){
-    renderCard("NO VALID DATA\n\nPush TSV from Admin",{},()=>{});
-    return;
-  }
-
-  DATA = raw.filter(d=>d.id&&d.q&&d.u&&d.l&&d.r);
-  startQuiz();
+function begin(){
+ card(`SESSION READY\n${RAW.length} Questions Loaded`,{up:"QUIZ"},d=>{
+  if(d==="UP")pickSet();
+ });
 }
 
-function startQuiz(){
-  XP=0;
-  WRONG=[];
-  REVIEW_MODE=false;
-  REVIEW_INDEX=0;
-  POOL=shuffle([...DATA]);
-  TOTAL=POOL.length;
-  nextQuestion();
+function pickSet(){
+ SETS=[...new Set(RAW.map(d=>d.set))];
+ let i=0;
+ card(SETS[i],{up:"SELECT"},d=>{
+  if(d==="UP"){ACTIVE_SET=SETS[i];pickVolume();}
+ });
 }
 
-function nextQuestion(){
-  $("review-text").textContent="";
-  if(!POOL.length){
-    if(WRONG.length){
-      REVIEW_MODE=true;
-      REVIEW_INDEX=0;
-      reviewQuestion();
-    } else {
-      summary();
-    }
-    return;
-  }
-
-  const d=POOL.shift();
-  $("ui-id").textContent=d.id;
-
-  const opts=shuffle([d.u,d.l,d.r]);
-  renderCard(
-    d.q,
-    {up:opts[0],left:opts[1],right:opts[2]},
-    dir=>{
-      const pick = dir==="up"?opts[0]:dir==="left"?opts[1]:opts[2];
-      if(pick.trim().toLowerCase()!==String(d.correct).trim().toLowerCase()){
-        WRONG.push(d);
-      } else {
-        XP++;
-      }
-      $("ui-xp").textContent=XP+" XP";
-      $("progress-bar").style.width=((TOTAL-POOL.length)/TOTAL*100)+"%";
-      nextQuestion();
-    }
-  );
+function pickVolume(){
+ card("QUESTION VOLUME",{up:"10",left:"25",right:"50",down:"ALL"},d=>{
+  if(d==="UP")VOLUME=10;
+  if(d==="LEFT")VOLUME=25;
+  if(d==="RIGHT")VOLUME=50;
+  if(d==="DOWN")VOLUME=null;
+  start();
+ });
 }
 
-function reviewQuestion(){
-  if(!WRONG.length){ summary(); return; }
-  const d=WRONG[REVIEW_INDEX];
-  $("review-text").textContent="REVIEW — "+(d.hint||"Recall fundamentals");
-
-  renderCard(
-    d.q,
-    {up:"EXPLAIN",left:d.l,right:d.r,down:d.u},
-    dir=>{
-      if(dir==="up"){ reviewExplain(d); }
-      else{
-        REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
-        reviewQuestion();
-      }
-    }
-  );
+function start(){
+ let base=shuffle(RAW.filter(d=>d.set===ACTIVE_SET));
+ if(VOLUME)base=base.slice(0,VOLUME);
+ POOL=base;WRONG=[];SESSION=[];XP=0;ATTEMPTED.clear();
+ next();
 }
 
-function reviewExplain(d){
-  $("review-text").textContent="REVIEW — Explanation";
-
-  renderCard(
-    d.logic||"No explanation provided",
-    {up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"},
-    dir=>{
-      if(dir==="up"||dir==="down"){
-        WRONG.splice(REVIEW_INDEX,1);
-        POOL.unshift(d);
-        REVIEW_INDEX=0;
-        nextQuestion();
-      } else {
-        REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
-        reviewQuestion();
-      }
-    }
-  );
+function next(){
+ UI.review.textContent="";
+ if(!POOL.length){WRONG.length?review():report();return;}
+ const d=POOL.shift();
+ SESSION.push(d);UI.id.textContent=d.id;
+ const opts=shuffle([d.u,d.l,d.r]);
+ card(d.q,{up:opts[0]},dir=>{
+  const pick=opts[dir==="UP"?0:1]||"";
+  if(pick.toLowerCase()!==d.correct.toLowerCase())WRONG.push(d);
+  else if(!ATTEMPTED.has(d.id))XP++;
+  ATTEMPTED.add(d.id);
+  UI.xp.textContent=`${XP} / ${SESSION.length}`;
+  UI.bar.style.width=(SESSION.length/(SESSION.length+POOL.length))*100+"%";
+  next();
+ });
 }
 
-function summary(){
-  renderCard(
-    `SESSION COMPLETE\n\n${XP} / ${TOTAL} Correct`,
-    {up:"RETRY",left:"MENU"},
-    dir=>{
-      if(dir==="up") startQuiz();
-    }
-  );
+function review(){
+ const d=WRONG[REVIEW_I];
+ UI.review.textContent=`HINT: ${d.hint||"Recall basics"}`;
+ card(`REVIEW\n\n${d.logic||""}`,{up:"RETRY"},dir=>{
+  if(dir==="UP"){WRONG.splice(REVIEW_I,1);POOL.unshift(d);next();}
+ });
 }
 
-/* ================= START ================= */
-boot();
+function report(){
+ card(`SUMMARY\n\n${XP}/${SESSION.length}`,{up:"RESTART"},()=>begin());
+}
+
+/* ================= INIT (LOCAL-FIRST HARD STOP) ================= */
+(function init(){
+ let raw;
+ try{raw=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");}catch{raw=[];}
+ RAW=raw.map(normalize).filter(Boolean);
+ begin();
+})();
 </script>
 </body>
 </html>
