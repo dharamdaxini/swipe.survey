@@ -3,279 +3,518 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Neural Backend</title>
+<title>Alchemist | Final v136.41</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#000;--card:#111;--border:#222;
-  --gold:#ffd600;--blue:#3498db;
-  --green:#2ecc71;--red:#e74c3c;
-  --font-chem:'Crimson Text',serif;
-  --font-ui:'Inter',sans-serif;
-  --font-code:'JetBrains Mono',monospace;
+  --bg:#000; --card:#121212; --border:#333;
+  --gold:#ffd600; 
+  --text-grey: #cccccc;
+  
+  --font-serif: 'Crimson Text', serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+
 body{
-  margin:0;height:100vh;background:var(--bg);
-  color:#fff;font-family:var(--font-ui);
-  overflow:hidden;display:flex;flex-direction:column;
+  margin:0; height:100vh; background:var(--bg);
+  color:#e0e0e0; font-family:var(--font-sans);
+  overflow:hidden; display:flex; flex-direction:column;
 }
-sub{font-size:.7em}sup{font-size:.7em}
 
-#header{width:90%;margin:25px auto 0;z-index:100}
+/* HEADER */
+#header{ width:90%; margin:25px auto 0; z-index:100; flex-shrink: 0; }
 .header-meta{
-  display:flex;justify-content:space-between;align-items:center;
-  font-family:var(--font-code);font-size:.7rem;color:#555;letter-spacing:2px
+  display:flex; justify-content:space-between;
+  font-family:var(--font-code); font-size:0.75rem; 
+  color:#666; letter-spacing:1.5px; text-transform:uppercase;
 }
-.progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
-#progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
 
+/* REVIEW HEADER (HINT) */
+#review-text{
+  margin-top:20px;
+  font-family:var(--font-serif);
+  font-size:1.3rem; line-height:1.4;
+  font-style:italic; text-align:center;
+  color:var(--gold); 
+  min-height:3.5em;
+  display:flex; align-items:flex-end; justify-content:center;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.9);
+}
+
+.progress-track{ width:100%; height:3px; background:#222; margin-top:15px; border-radius:2px; }
+#progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
+
+/* FLUID STACK ENGINE (Device Agnostic) */
 #stack{
-  position:relative;width:92%;max-width:400px;height:70vh;
-  margin:auto;perspective:1200px;
-  display:flex;align-items:center;justify-content:center
+  position:relative; width:90%; max-width:420px; 
+  /* FLUID HEIGHT: 100vh - Header Space - Safe Area */
+  height: calc(100vh - 160px - env(safe-area-inset-bottom)); 
+  margin: 20px auto; 
+  perspective:1500px;
+  display:flex; align-items:center; justify-content:center;
 }
+
 .card{
-  position:absolute;width:100%;height:95%;
-  background:var(--card);border-radius:40px;border:1px solid var(--border);
-  padding:40px;display:flex;flex-direction:column;justify-content:center;
-  box-shadow:0 30px 90px rgba(0,0,0,.9);
-  will-change:transform
+  position:absolute; width:100%; height:100%;
+  background:var(--card); border-radius:12px; 
+  border:1px solid var(--border);
+  padding:35px; 
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.95);
+  will-change:transform; transform-style:preserve-3d;
+  overflow: hidden; 
 }
-.card.study-active{
-  filter:blur(20px) brightness(.2);opacity:.5;
-  transform:scale(.85) translateY(40px)!important;
-  pointer-events:none
-}
+
+/* MAIN TEXT - SCROLLABLE & FITTED */
 .card-q{
-  font-family:var(--font-chem);
-  font-size:1.7rem;line-height:1.4;
-  font-style:italic;font-weight:600;
-  text-align:center
+  font-family:var(--font-serif);
+  font-size: clamp(1.1rem, 4vw, 1.7rem); /* Responsive Font */
+  line-height:1.5;
+  font-weight:600; text-align:center;
+  color: var(--text-grey);
+  
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto; /* Internal Scroll */
+  word-wrap: break-word;
+  padding: 0 5px; 
+  
+  display: flex; 
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* SCROLLBAR */
+.card-q::-webkit-scrollbar { width: 4px; }
+.card-q::-webkit-scrollbar-track { background: transparent; }
+.card-q::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+.card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
+.card-q sup{ font-size:0.7em; vertical-align:0.5em; }
+
+/* SWIPE LABELS */
 .swipe-label{
-  position:absolute;inset:0;display:flex;
-  align-items:center;justify-content:center;
-  background:#000;font-weight:900;
-  font-size:1.8rem;text-transform:uppercase;
-  border-radius:40px;opacity:0;pointer-events:none;
-  text-align:center;padding:20px
-}
-.sl-up{color:var(--green)}
-.sl-left,.sl-right{color:var(--red)}
-.sl-down{color:var(--blue)}
-
-.overlay{
-  position:absolute;inset:0;background:#0d0d0d;
-  border-radius:40px;padding:40px;
-  opacity:0;pointer-events:none;
-  transition:.3s;display:flex;
-  flex-direction:column;justify-content:center
-}
-.overlay.active{opacity:1;pointer-events:auto}
-.overlay-body{
-  font-family:var(--font-chem);
-  font-size:1.1rem;line-height:1.6;
-  color:#bbb;margin-bottom:30px
+  position:absolute; inset:0; display:flex;
+  align-items:center; justify-content:center;
+  background:#000; 
+  font-family:var(--font-sans); font-weight:800; font-size:1.6rem;
+  text-transform:uppercase; letter-spacing:1px;
+  opacity:0; pointer-events:none; padding:40px;
+  text-align:center; z-index:10; transition:opacity 0.1s ease;
+  border-radius:12px;
+  color: #fff; 
+  border: 1px solid #333;
 }
 
-.btn{
-  width:100%;padding:18px;border-radius:50px;
-  border:none;background:#fff;color:#000;
-  font-weight:900;text-transform:uppercase;
-  cursor:pointer;font-size:12px;letter-spacing:1px
-}
+/* Option Colors */
+.sl-up{ color: #2ecc71; } /* Green */
+.sl-left{ color: var(--text-grey); } 
+.sl-right{ color: var(--text-grey); }
+.sl-down{ color: #3498db; } /* Blue */
+
 </style>
 </head>
-
 <body>
 
 <div id="header">
   <div class="header-meta">
-    <span id="id-ui">ID: BOOT</span>
+    <span id="id-ui">BOOT</span>
     <span id="xp-ui">0 XP</span>
   </div>
+  <div id="review-text"></div>
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
-<div id="stack"></div>
+<div id="stack">
+  <div class="card">
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
+      VIA.STACK | FINAL<br>INITIALIZING SYSTEM...
+    </div>
+  </div>
+</div>
 
 <script>
-/* ---------------- DATA ---------------- */
-const RAW_DATA = [
-  {id:"A_0001",set:"SET_A",dom:"MASTER",q:"Calculate the standard cell potential for Mg | Mg2+ || Cu2+ | Cu",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"E°cell = 0.34 − (−2.37) = 2.71 V"},
-  {id:"B_0001",set:"SET_B",dom:"MASTER",q:"Which reagent converts alcohol to aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"PCC oxidizes primary alcohols to aldehydes."},
-  {id:"U_0001",set:"MY_SET_1",dom:"USER",q:"Sample user dataset question?",u:"Yes",l:"No",r:"Maybe",correct:"Yes",logic:"User demo"}
-];
+/* ================= BRIDGE CONFIG ================= */
+const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
-/* ---------------- STATE ---------------- */
-const UI={
-  stack:document.getElementById("stack"),
-  xp:document.getElementById("xp-ui"),
-  bar:document.getElementById("progress-bar"),
-  id:document.getElementById("id-ui")
+/* ================= STATE ================= */
+let RAW_DATA = [];
+let SET_CURSOR = 0; 
+let ACTIVE_SET = null;
+let POOL = [], WRONG = [], REVIEW_INDEX = 0;
+let SESSION_ALL = [], XP = 0;
+let VOLUME_LIMIT = null;
+let ATTEMPTED = new Set(); 
+
+/* ================= UTILS ================= */
+function chemText(t){
+  if(!t) return "";
+  return String(t)
+    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
+    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
+}
+
+function cleanPDF(t){
+  if(!t) return "";
+  return String(t).replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
+}
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
+/* ================= UI ================= */
+const UI = {
+  stack: document.getElementById("stack"),
+  id: document.getElementById("id-ui"),
+  xp: document.getElementById("xp-ui"),
+  bar: document.getElementById("progress-bar"),
+  review: document.getElementById("review-text")
 };
 
-let MODE="FRONT"; // FRONT | MANAGE | QUIZ
-let FILTER="MASTER"; // MASTER | USER
-let CURSOR=0;
-let STATE={pool:[],score:0};
-
-/* ---------------- HELPERS ---------------- */
-const F=t=>t?t.replace(/([A-Z][a-z]?)(\d+)/g,"$1<sub>$2</sub>").replace(/\^(\d+)/g,"<sup>$1</sup>"):"";
-
-function getSets(){
-  return [...new Set(RAW_DATA.filter(d=>FILTER==="MASTER"?d.dom==="MASTER":d.dom==="USER").map(d=>d.set))];
-}
-
-/* ---------------- PHYSICS ---------------- */
+/* ================= PHYSICS ENGINE ================= */
 class PhysicsController{
-  constructor(el,cbs){
-    this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
-    this.labels={
-      UP:el.querySelector(".sl-up"),
-      LEFT:el.querySelector(".sl-left"),
-      RIGHT:el.querySelector(".sl-right"),
-      DOWN:el.querySelector(".sl-down")
-    };
-    this.bind();
+ constructor(el,cbs){
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={
+    UP:el.querySelector(".sl-up"),
+    LEFT:el.querySelector(".sl-left"),
+    RIGHT:el.querySelector(".sl-right"),
+    DOWN:el.querySelector(".sl-down")
+  };
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+  const m=e=>this.move(e.touches?e.touches[0]:e);
+  const e2=()=>this.end();
+  el.addEventListener("mousedown",s);
+  window.addEventListener("mousemove",m);
+  window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false});
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  el.addEventListener("touchend",e2);
+ }
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+ move(p){
+  if(!this.active)return;
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const d=Math.hypot(dx,dy);
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d>20){
+    const dir=this.dir(dx,dy);
+    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
   }
-  bind(){
-    const s=e=>this.startDrag(e.touches?e.touches[0]:e);
-    const m=e=>this.move(e.touches?e.touches[0]:e);
-    const e=()=>this.end();
-    this.el.addEventListener("mousedown",s);
-    window.addEventListener("mousemove",m);
-    window.addEventListener("mouseup",e);
-    this.el.addEventListener("touchstart",s,{passive:false});
-    this.el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
-    this.el.addEventListener("touchend",e);
-  }
-  startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
-  move(p){
-    if(!this.active)return;
-    const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
-    const d=Math.hypot(dx,dy);
-    this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
-    Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
-    if(d>20){
-      const dir=this.dir(dx,dy);
-      this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
-    }
-  }
-  end(){
-    if(!this.active)return;this.active=false;
-    const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-    const dx=m.m41,dy=m.m42;
-    if(Math.hypot(dx,dy)>100){
-      this.cbs.onCommit(this.dir(dx,dy));
-    }else{
-      this.el.style.transition=".4s";
-      this.el.style.transform="translate(0,0)";
-    }
-  }
-  dir(dx,dy){
-    const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
-    if(a>45&&a<135)return"UP";
-    if(a>135&&a<225)return"LEFT";
-    if(a>225&&a<315)return"DOWN";
-    return"RIGHT";
-  }
+ }
+ end(){
+  if(!this.active)return;this.active=false;
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+  const dx=m.m41,dy=m.m42;
+  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  else{this.el.style.transition=".4s cubic-bezier(0.2, 0.8, 0.2, 1)";this.el.style.transform="translate(0,0)"}
+ }
+ dir(dx,dy){
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+  if(a>45&&a<135)return"UP";
+  if(a>135&&a<225)return"LEFT";
+  if(a>225&&a<315)return"DOWN";
+  return"RIGHT";
+ }
 }
 
-/* ---------------- FRONT SLIDE ---------------- */
-function renderFront(){
-  MODE="FRONT";
-  const sets=getSets();
-  const left=sets[CURSOR%sets.length]||"—";
-  const right=sets[(CURSOR+1)%sets.length]||"—";
+/* ================= RENDER LOGIC ================= */
+function card(text,labels,cb){
+ const safeText=chemText(text);
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
+  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
+  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
+  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
+ UI.stack.appendChild(el);
+ new PhysicsController(el,{onCommit:cb});
+}
 
-  UI.stack.innerHTML="";
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">SELECT SET</div>
-    <div class="swipe-label sl-up">MANAGE</div>
-    <div class="swipe-label sl-left">${left}</div>
-    <div class="swipe-label sl-right">${right}</div>
-    <div class="swipe-label sl-down">REFRESH</div>`;
-  UI.stack.appendChild(el);
+/* ================= APP FLOW ================= */
+function begin(){
+ UI.review.textContent=""; 
+ card(`BEGIN SESSION\n${RAW_DATA.length} Questions Loaded`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
+  if(dir==="UP") setPick();
+  if(dir==="DOWN") exportSessionPDF();
+ });
+}
 
-  new PhysicsController(el,{
-    onCommit:dir=>{
-      if(dir==="DOWN"){CURSOR+=2;renderFront();return;}
-      if(dir==="UP"){renderManage();return;}
-      if(dir==="LEFT"){startQuiz(left);return;}
-      if(dir==="RIGHT"){startQuiz(right);return;}
+function setPick(){
+ const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ if(sets.length===0) { 
+    card("NO DATA FOUND", {down:"RETRY"}, () => location.reload());
+    return; 
+ }
+ card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
+  if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
+  if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
+  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
+  if(dir==="DOWN") begin();
+ });
+}
+
+function volumePick(){
+ card(
+  `QUESTION VOLUME`,
+  {up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},
+  dir=>{
+    if(dir==="UP") VOLUME_LIMIT=10;
+    if(dir==="LEFT") VOLUME_LIMIT=25;
+    if(dir==="RIGHT") VOLUME_LIMIT=50;
+    if(dir==="DOWN") VOLUME_LIMIT=null;
+    startQuiz();
+  }
+ );
+}
+
+function startQuiz(){
+ let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+ base = shuffle(base); 
+ if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
+ POOL=base;
+ WRONG=[]; SESSION_ALL=[]; REVIEW_INDEX=0; XP=0; ATTEMPTED = new Set();
+ nextQ();
+}
+
+function nextQ(){
+ UI.review.textContent=""; 
+ if(!POOL.length){
+    if(WRONG.length){ review(); return; } 
+    report(); return;
+ }
+ const d=POOL.shift();
+ UI.id.textContent=d.id;
+ if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+
+ // SHUFFLE OPTIONS A, B, C into UP, LEFT, RIGHT
+ const opts = shuffle([d.u, d.l, d.r]);
+ const map = { up: opts[0], left: opts[1], right: opts[2] };
+
+ card(d.q, map, dir=>{
+  let picked = null;
+  if(dir==="UP") picked = map.up;
+  if(dir==="LEFT") picked = map.left;
+  if(dir==="RIGHT") picked = map.right;
+
+  let c = d.correct;
+  if(c==="UP"||c==="A") c=d.u;
+  else if(c==="LEFT"||c==="B") c=d.l;
+  else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+
+  const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
+
+  if(!isCorrect){
+    WRONG.push(d); 
+  } else {
+    if(!ATTEMPTED.has(d.id)){ XP+=1; }
+  }
+  
+  ATTEMPTED.add(d.id);
+  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
+  UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
+  
+  nextQ();
+ });
+}
+
+/* ================= REVIEW MODE (CLOSED LOOP) ================= */
+function review(){
+ if(!WRONG.length){ report(); return; } 
+ const d=WRONG[0]; 
+ 
+ // HINT IN HEADER
+ UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
+ 
+ // LOGIC IN CARD
+ card(
+  `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
+  {up:"RETRY", down:"SKIP"},
+  dir=>{
+    if(dir==="UP"){
+        WRONG.shift();
+        POOL.unshift(d); // Push back to active pool
+    } else {
+        WRONG.shift(); // Skip removes it
     }
-  });
+    nextQ();
+  }
+ );
 }
 
-/* ---------------- MANAGE VAULT ---------------- */
-function renderManage(){
-  MODE="MANAGE";
-  UI.stack.innerHTML="";
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">MANAGE VAULT</div>
-    <div class="swipe-label sl-up">MASTER</div>
-    <div class="swipe-label sl-down">MY SETS</div>`;
-  UI.stack.appendChild(el);
-
-  new PhysicsController(el,{
-    onCommit:dir=>{
-      if(dir==="UP"){FILTER="MASTER";renderFront();}
-      if(dir==="DOWN"){FILTER="USER";renderFront();}
-    }
-  });
+function report(){
+ UI.review.textContent="SESSION COMPLETE"; 
+ const total = SESSION_ALL.length;
+ const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
+ 
+ card(
+  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nReview Recommended`,
+  {down:"EXPORT PDF", up:"RESTART"},
+  dir=>{
+    if(dir==="DOWN") exportSessionPDF();
+    if(dir==="UP") begin();
+  }
+ );
 }
 
-/* ---------------- QUIZ ---------------- */
-function startQuiz(set){
-  STATE.pool=RAW_DATA.filter(d=>d.set===set).sort(()=>Math.random()-.5);
-  STATE.score=0;UI.bar.style.width="0%";UI.xp.textContent="0 XP";
-  next();
+/* ================= PRECISE PDF ENGINE (YOUR FONT SPECS) ================= */
+function exportSessionPDF(){
+ if(!SESSION_ALL.length){alert("No session data");return;}
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+ let y = 20;
+
+ SESSION_ALL.forEach((d, i)=>{
+  if(y > 260){
+    doc.addPage();
+    y = 20;
+  }
+
+  // Header
+  doc.setFont("courier","bold");
+  doc.setFontSize(11);
+  doc.text(`Q${i+1} | SESSION QUESTION`, 15, y);
+  y += 8;
+
+  // Context
+  if(d.ctx){
+    doc.setFontSize(8);
+    doc.text(`CTX: ${d.ctx}`, 15, y);
+    y += 5;
+  }
+
+  // Question
+  doc.setFont("times","normal");
+  doc.setFontSize(11);
+  const q = doc.splitTextToSize(`Q: ${cleanPDF(d.q)}`, 180);
+  doc.text(q, 15, y);
+  y += q.length * 6;
+
+  // Reference
+  if(d.ref){
+    doc.setFont("courier","normal");
+    doc.setFontSize(8);
+    doc.text(`REF: ${d.ref}`, 15, y);
+    y += 5;
+  }
+
+  // Hint
+  if(d.hint){
+    doc.text(`HINT: ${cleanPDF(d.hint)}`, 15, y);
+    y += 5;
+  }
+
+  // Options
+  doc.setFont("times","normal");
+  doc.setFontSize(10);
+  doc.text(`A) ${cleanPDF(d.u)}`, 15, y); y += 5;
+  doc.text(`B) ${cleanPDF(d.l)}`, 15, y); y += 5;
+  doc.text(`C) ${cleanPDF(d.r)}`, 15, y); y += 6;
+
+  // Answer
+  doc.setFont("courier","bold");
+  doc.text(`ANSWER: ${cleanPDF(d.correct)}`, 15, y);
+  y += 6;
+
+  // Logic
+  doc.setFont("times","italic");
+  const logic = doc.splitTextToSize(`LOGIC: ${cleanPDF(d.logic)}`, 180);
+  doc.text(logic, 15, y);
+  y += logic.length * 5;
+
+  // Trap
+  if(d.trap){
+    doc.setFont("courier","normal");
+    doc.setFontSize(8);
+    doc.text(`TRAP: ${cleanPDF(d.trap)}`, 15, y);
+    y += 5;
+  }
+
+  // Steps
+  doc.setFont("courier","bold");
+  if(d.step1){
+    doc.text(`STEP 1: ${cleanPDF(d.step1)}`, 15, y);
+    y += 5;
+  }
+  if(d.step2){
+    doc.text(`STEP 2: ${cleanPDF(d.step2)}`, 15, y);
+    y += 5;
+  }
+
+  y += 10;
+ });
+
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
+ setTimeout(begin,500);
 }
 
-function next(){
-  if(!STATE.pool.length){renderFront();return;}
-  const d=STATE.pool.shift();
-  UI.id.textContent=d.id;
-
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">${F(d.q)}</div>
-    <div class="swipe-label sl-up">${F(d.u)}</div>
-    <div class="swipe-label sl-left">${F(d.l)}</div>
-    <div class="swipe-label sl-right">${F(d.r)}</div>
-    <div class="swipe-label sl-down">HINT</div>
-    <div class="overlay">
-      <div class="overlay-body">${F(d.logic)}</div>
-      <button class="btn" onclick="this.parentElement.classList.remove('active')">RESUME</button>
-    </div>`;
-  UI.stack.innerHTML="";UI.stack.appendChild(el);
-
-  new PhysicsController(el,{
-    onCommit:dir=>{
-      if(dir==="DOWN"){el.querySelector(".overlay").classList.add("active");return;}
-      if((dir==="UP"&&d.u===d.correct)||(dir==="LEFT"&&d.l===d.correct)||(dir==="RIGHT"&&d.r===d.correct)){
-        STATE.score+=10;UI.xp.textContent=`${STATE.score} XP`;
-        UI.bar.style.width=(STATE.score%100)+"%";
+/* ================= HYBRID BOOT ENGINE ================= */
+async function init(){
+  const localData = localStorage.getItem(MASTER_KEY);
+  
+  // 1. Try Local Bridge (Dev/Admin Push)
+  if(localData && localData.length > 10){
+    try { 
+      RAW_DATA = JSON.parse(localData); 
+      console.log("Loaded from Bridge");
+    } catch(e) { RAW_DATA = []; }
+  }
+  
+  // 2. Try master.json (Production Fallback)
+  if(!RAW_DATA.length){
+    try {
+      const r = await fetch('master.json');
+      if(r.ok){
+        RAW_DATA = await r.json();
+        console.log("Loaded from master.json");
       }
-      el.style.transition=".4s";el.style.opacity=0;
-      setTimeout(next,300);
-    }
-  });
+    } catch(e) { console.warn("No master.json"); }
+  }
+
+  // 3. Normalization Update (Matches PDF Req)
+  RAW_DATA = RAW_DATA.map(d => ({
+      id: d.id,
+      set: d.set || "DEFAULT",
+      ctx: d.dom || d.ctx || "General", // Maps DOM to CTX for PDF
+      q: d.q,
+      u: d.u, l: d.l, r: d.r,
+      correct: d.correct,
+      logic: d.logic || "",
+      hint: d.hint || "",
+      trap: d.trap || "",
+      ref: d.ref || "",
+      step1: d.s1 || d.step1 || "",
+      step2: d.s2 || d.step2 || ""
+  })).filter(d => d.id && d.q && d.u);
+
+  // 4. Fallback UI
+  if(!RAW_DATA.length){
+    card("NO DATA FOUND\n1. Push via Admin\n2. or Add master.json", {down:"RETRY"}, () => location.reload());
+    return;
+  }
+
+  begin();
 }
 
-/* ---------------- INIT ---------------- */
-renderFront();
+init();
 </script>
-
 </body>
 </html>
