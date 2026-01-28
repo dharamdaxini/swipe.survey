@@ -10,11 +10,8 @@
 
 <style>
 :root{
- --bg:#000;
- --card:#121212;
- --border:#333;
- --text-main:#e6e6e6;
- --text-grey:#9a9a9a;
+ --bg:#000;--card:#121212;--border:#333;
+ --text-main:#e6e6e6;--text-grey:#9a9a9a;
  --accent:#d4af37;
  --font-serif:'Crimson Text',serif;
  --font-sans:'Inter',sans-serif;
@@ -23,8 +20,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
  margin:0;height:100vh;background:var(--bg);
- color:var(--text-main);
- font-family:var(--font-sans);
+ color:var(--text-main);font-family:var(--font-sans);
  overflow:hidden;display:flex;flex-direction:column;
 }
 
@@ -37,13 +33,14 @@ body{
  letter-spacing:1.5px;text-transform:uppercase;
 }
 #review-text{
- margin-top:14px;
- font-family:var(--font-serif);
- font-size:1.1rem;
- font-style:italic;
- text-align:center;
- color:#aaa;
- min-height:3.2em;
+ margin-top:14px;font-family:var(--font-serif);
+ font-size:1.1rem;font-style:italic;
+ text-align:center;color:#aaa;min-height:3.2em;
+}
+.review-title{font-size:1.8rem;letter-spacing:6px;color:#eee}
+.review-line{
+ width:60%;height:2px;background:var(--accent);
+ margin:8px auto 6px;
 }
 
 /* PROGRESS */
@@ -58,19 +55,16 @@ body{
 }
 .card{
  position:absolute;width:100%;height:95%;
- background:var(--card);
- border-radius:14px;border:1px solid var(--border);
- padding:36px;
- display:flex;justify-content:center;align-items:center;
+ background:var(--card);border-radius:14px;border:1px solid var(--border);
+ padding:36px;display:flex;justify-content:center;align-items:center;
  box-shadow:0 20px 60px rgba(0,0,0,.95);
  transform-style:preserve-3d;overflow:hidden;
 }
 .card-q{
  font-family:var(--font-serif);
  font-size:clamp(1.15rem,4vw,1.75rem);
- line-height:1.55;font-weight:600;
- text-align:center;color:var(--text-main);
- width:100%;max-height:100%;
+ line-height:1.55;font-weight:600;text-align:center;
+ color:var(--text-main);width:100%;max-height:100%;
  overflow-y:auto;padding:0 6px;
  opacity:0;transform:translateY(10px);
  transition:opacity .35s ease,transform .35s ease;
@@ -79,14 +73,12 @@ body{
 
 /* SWIPE LABELS */
 .swipe-label{
- position:absolute;inset:0;
- display:flex;align-items:center;justify-content:center;
- background:#000;
- font-family:var(--font-sans);
+ position:absolute;inset:0;display:flex;
+ align-items:center;justify-content:center;
+ background:#000;font-family:var(--font-sans);
  font-weight:700;font-size:1.5rem;
  letter-spacing:1px;text-transform:uppercase;
- color:var(--text-grey);
- opacity:0;pointer-events:none;
+ color:var(--text-grey);opacity:0;pointer-events:none;
  padding:40px;text-align:center;
  border-radius:14px;border:1px solid #333;
  transition:opacity .18s ease,transform .18s ease;
@@ -116,24 +108,13 @@ const MASTER_KEY="ALCHEMIST_MASTER_V1";
 /* ================= STATE ================= */
 let RAW_DATA=[],POOL=[],WRONG=[],REVIEW_POOL=[],SESSION_ALL=[];
 let XP=0,IDX=0,CURR=null;
-
-/* 🔒 ADDITIVE STATE (ONLY NEW) */
 let VOLUME_LIMIT=10;
 
 /* ================= UTILS ================= */
-function chemText(t){
- if(!t) return "";
- return String(t)
-  .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
-}
-function shuffle(a){
- for(let i=a.length-1;i>0;i--){
-  const j=Math.floor(Math.random()*(i+1));
-  [a[i],a[j]]=[a[j],a[i]];
- }
- return a;
-}
+const chemText=t=>!t?"":String(t)
+ .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+ .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
 /* ================= UI ================= */
 const UI={
@@ -148,12 +129,7 @@ const UI={
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
-  this.labels={
-   UP:el.querySelector(".sl-up"),
-   LEFT:el.querySelector(".sl-left"),
-   RIGHT:el.querySelector(".sl-right"),
-   DOWN:el.querySelector(".sl-down")
-  };
+  this.labels={UP:el.querySelector(".sl-up"),LEFT:el.querySelector(".sl-left"),RIGHT:el.querySelector(".sl-right"),DOWN:el.querySelector(".sl-down")};
   const s=e=>this.startDrag(e.touches?e.touches[0]:e);
   const m=e=>this.move(e.touches?e.touches[0]:e);
   const e2=()=>this.end();
@@ -170,10 +146,7 @@ class PhysicsController{
   const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
   this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
   Object.values(this.labels).forEach(l=>l&&(l.classList.remove("active")));
-  if(Math.hypot(dx,dy)>20){
-   const dir=this.dir(dx,dy);
-   this.labels[dir]&&(this.labels[dir].classList.add("active"));
-  }
+  if(Math.hypot(dx,dy)>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].classList.add("active"));}
  }
  end(){
   if(!this.active)return;
@@ -201,25 +174,16 @@ function card(text,labels,cb){
   <div class="swipe-label sl-up">${labels.up||""}</div>
   <div class="swipe-label sl-left">${labels.left||""}</div>
   <div class="swipe-label sl-right">${labels.right||""}</div>
-  <div class="swipe-label sl-down">${labels.down||""}</div>
- `;
+  <div class="swipe-label sl-down">${labels.down||""}</div>`;
  UI.stack.appendChild(el);
  requestAnimationFrame(()=>el.querySelector(".card-q").classList.add("show"));
  new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= NEW: QUESTION VOLUME LAYER ================= */
+/* ================= QUESTION VOLUME ================= */
 function questionVolume(){
- card("QUESTION VOLUME",{
-  up:"10 QUESTIONS",
-  left:"25 QUESTIONS",
-  right:"50 QUESTIONS",
-  down:"100 QUESTIONS"
- },dir=>{
-  if(dir==="UP") VOLUME_LIMIT=10;
-  if(dir==="LEFT") VOLUME_LIMIT=25;
-  if(dir==="RIGHT") VOLUME_LIMIT=50;
-  if(dir==="DOWN") VOLUME_LIMIT=100;
+ card("QUESTION VOLUME",{up:"10",left:"25",right:"50",down:"100"},dir=>{
+  VOLUME_LIMIT=dir==="UP"?10:dir==="LEFT"?25:dir==="RIGHT"?50:100;
   startQuiz();
  });
 }
@@ -232,15 +196,12 @@ function startQuiz(){
 }
 function nextQuiz(){
  if(!POOL.length){ scoreCard(); return; }
- CURR=POOL.shift();
- SESSION_ALL.push(CURR);
+ CURR=POOL.shift();SESSION_ALL.push(CURR);
  UI.id.textContent=CURR.id;
- UI.xp.textContent=`${XP}`;
  const opts=shuffle([CURR.u,CURR.l,CURR.r]);
  card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
   const picked=dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
-  if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase())XP++;
-  else WRONG.push(CURR);
+  picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()?XP++:WRONG.push(CURR);
   UI.bar.style.width=`${(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100}%`;
   nextQuiz();
  });
@@ -248,13 +209,50 @@ function nextQuiz(){
 
 /* ================= SCORE ================= */
 function scoreCard(){
- card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY"},()=>questionVolume());
+ card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{
+  if(dir==="UP")questionVolume();
+  if(dir==="DOWN")startReview();
+ });
+}
+
+/* ================= REVIEW LOOP-2 (RESTORED) ================= */
+function startReview(){
+ REVIEW_POOL=[...WRONG];IDX=0;
+ if(!REVIEW_POOL.length){endSlide();return;}
+ nextReviewQ();
+}
+function nextReviewQ(){
+ if(!REVIEW_POOL.length){endSlide();return;}
+ if(IDX>=REVIEW_POOL.length)IDX=0;
+ CURR=REVIEW_POOL[IDX];
+ UI.review.innerHTML=`<div class="review-title">REVIEW</div><div class="review-line"></div>${CURR.hint||""}`;
+ const opts=shuffle([CURR.u,CURR.l,CURR.r]);
+ card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{
+  if(dir==="UP"){reviewExplain();return;}
+  const picked=dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
+  picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()?REVIEW_POOL.splice(IDX,1):IDX++;
+  nextReviewQ();
+ });
+}
+function reviewExplain(){
+ UI.review.innerHTML=`<div class="review-title">REVIEW</div><div class="review-line"></div>${CURR.hint||""}`;
+ card(CURR.logic||"",{up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"},dir=>{
+  if(dir==="LEFT"||dir==="RIGHT")IDX++;
+  nextReviewQ();
+ });
+}
+
+/* ================= END ================= */
+function endSlide(){
+ UI.review.textContent="";
+ card("SESSION COMPLETE",{down:"PDF",right:"MENU"},dir=>{
+  if(dir==="RIGHT")location.reload();
+ });
 }
 
 /* ================= INIT ================= */
 (function(){
- const raw=localStorage.getItem(MASTER_KEY);
- RAW_DATA=raw?JSON.parse(raw):[];
+ RAW_DATA=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
  card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&questionVolume());
 })();
 </script>
