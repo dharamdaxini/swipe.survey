@@ -3,96 +3,122 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final Grey v136.36</title>
+<title>Alchemist | Operator v132.21</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#000;
-  --card:#121212;
-  --border:#333;
-  --gold:#d4af37;
-  --grey:#888;
-
-  --font-serif:'Crimson Text',serif;
-  --font-sans:'Inter',sans-serif;
-  --font-code:'JetBrains Mono',monospace;
+  --bg:#000; --card:#121212; --border:#333;
+  --gold:#d4af37; 
+  --text-grey: #cccccc;
+  
+  --font-serif: 'Crimson Text', serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
 }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 
 body{
-  margin:0;height:100vh;background:var(--bg);color:#e0e0e0;
-  font-family:var(--font-sans);overflow:hidden;
-  display:flex;flex-direction:column;
+  margin:0; height:100vh; background:var(--bg);
+  color:#e0e0e0; font-family:var(--font-sans);
+  overflow:hidden; display:flex; flex-direction:column;
 }
 
-#header{width:90%;margin:24px auto 0}
+/* HEADER */
+#header{ width:90%; margin:25px auto 0; z-index:100; flex-shrink: 0; }
 .header-meta{
-  display:flex;justify-content:space-between;
-  font-family:var(--font-code);
-  font-size:.75rem;color:#666;letter-spacing:1.4px;
+  display:flex; justify-content:space-between;
+  font-family:var(--font-code); font-size:0.75rem; 
+  color:#666; letter-spacing:1.5px; text-transform:uppercase;
 }
 
+/* REVIEW HEADER (HINT) */
 #review-text{
-  margin-top:18px;
-  min-height:3.2em;
+  margin-top:20px;
   font-family:var(--font-serif);
-  font-size:1.2rem;
-  font-style:italic;
-  text-align:center;
-  color:#e0e0e0;
+  font-size:1.3rem; line-height:1.4;
+  font-style:italic; text-align:center;
+  color:var(--gold); 
+  min-height:3.5em;
+  display:flex; align-items:flex-end; justify-content:center;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.9);
 }
 
-.progress-track{height:3px;background:#222;margin-top:12px}
-#progress-bar{height:100%;background:var(--gold);width:0%;transition:.3s}
+.progress-track{ width:100%; height:3px; background:#222; margin-top:15px; border-radius:2px; }
+#progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
 
+/* FLUID STACK ENGINE (Fixed for all devices) */
 #stack{
-  position:relative;
-  width:90%;max-width:420px;height:62vh;
-  margin:auto;perspective:1200px;
-  display:flex;align-items:center;justify-content:center;
+  position:relative; width:90%; max-width:420px; 
+  height: calc(100vh - 160px - env(safe-area-inset-bottom)); 
+  margin: 20px auto; 
+  perspective:1500px;
+  display:flex; align-items:center; justify-content:center;
 }
 
 .card{
-  position:absolute;width:100%;height:95%;
-  background:var(--card);
+  position:absolute; width:100%; height:100%;
+  background:var(--card); border-radius:12px; 
   border:1px solid var(--border);
-  border-radius:12px;
-  padding:34px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.95);
+  padding:35px; 
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.95);
+  will-change:transform; transform-style:preserve-3d;
+  overflow: hidden; 
 }
 
+/* MAIN TEXT - SCROLLABLE & FITTED */
 .card-q{
   font-family:var(--font-serif);
-  font-size:1.6rem;
-  font-weight:600;
-  line-height:1.45;
-  text-align:center;
-  color:#d0d0d0;
-  pointer-events:none;
+  font-size: clamp(1.1rem, 4vw, 1.7rem); 
+  line-height:1.5;
+  font-weight:600; text-align:center;
+  color: var(--text-grey);
+  
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto; 
+  word-wrap: break-word;
+  padding: 0 5px; 
+  
+  display: flex; 
+  flex-direction: column;
+  justify-content: center;
 }
 
-.card-q sub{font-size:.7em;vertical-align:-.3em}
-.card-q sup{font-size:.7em;vertical-align:.5em}
+/* SCROLLBAR */
+.card-q::-webkit-scrollbar { width: 4px; }
+.card-q::-webkit-scrollbar-track { background: transparent; }
+.card-q::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
+.card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
+.card-q sup{ font-size:0.7em; vertical-align:0.5em; }
+
+/* SWIPE LABELS */
 .swipe-label{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  background:#000;
-  font-size:1.5rem;
-  font-weight:700;
-  letter-spacing:1px;
-  color:var(--grey);
-  opacity:0;
-  pointer-events:none;
+  position:absolute; inset:0; display:flex;
+  align-items:center; justify-content:center;
+  background:#000; 
+  font-family:var(--font-sans); font-weight:800; font-size:1.6rem;
+  text-transform:uppercase; letter-spacing:1px;
+  opacity:0; pointer-events:none; padding:40px;
+  text-align:center; z-index:10; transition:opacity 0.1s ease;
+  border-radius:12px;
+  color: #fff; 
+  border: 1px solid #333;
 }
+
+/* Option Colors */
+.sl-up{ color: var(--green); } 
+.sl-left{ color: var(--text-grey); } 
+.sl-right{ color: var(--text-grey); }
+.sl-down{ color: var(--blue); }
+
 </style>
 </head>
-
 <body>
 
 <div id="header">
@@ -104,176 +130,359 @@ body{
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
-<div id="stack"></div>
+<div id="stack">
+  <div class="card">
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
+      VIA.STACK | v132.21<br>INITIALIZING SYSTEM...
+    </div>
+  </div>
+</div>
 
 <script>
-/* ================= CONFIG ================= */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1";
-
-/* ================= UTILS ================= */
-const chem = t => String(t||"")
- .replace(/_([0-9]+)/g,"<sub>$1</sub>")
- .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
- .replace(/<->|↔️|\\rightleftharpoons/g,"⇌");
-
-const shuffle=a=>{
- for(let i=a.length-1;i>0;i--){
-  const j=Math.floor(Math.random()*(i+1));
-  [a[i],a[j]]=[a[j],a[i]];
- }
- return a;
-};
+/* ================= BRIDGE CONFIG ================= */
+const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
 /* ================= STATE ================= */
-let RAW=[];
-let SETS=[];
-let ACTIVE_SET=null;
-let POOL=[],WRONG=[],SESSION=[];
-let XP=0,VOLUME=null,REVIEW_I=0;
-let ATTEMPTED=new Set();
+let RAW_DATA = [];
+let SET_CURSOR = 0; 
+let ACTIVE_SET = null;
+let POOL = [], WRONG = [], REVIEW_INDEX = 0;
+let SESSION_ALL = [], XP = 0;
+let VOLUME_LIMIT = null;
+let ATTEMPTED = new Set(); 
 
-/* ================= UI ================= */
-const UI={
- stack:document.getElementById("stack"),
- id:document.getElementById("id-ui"),
- xp:document.getElementById("xp-ui"),
- bar:document.getElementById("progress-bar"),
- review:document.getElementById("review-text")
-};
-
-/* ================= NORMALIZE ================= */
-function normalize(d){
- if(!d||!d.id||!d.q) return null;
- let c=d.correct;
- if(c==="UP"||c==="A")c=d.u;
- if(c==="LEFT"||c==="B")c=d.l;
- if(c==="RIGHT"||c==="C"||c==="R")c=d.r;
- return {
-  id:String(d.id),
-  set:d.set||"SET_A",
-  q:d.q,u:d.u,l:d.l,r:d.r,
-  correct:c||d.u,
-  hint:d.hint||"",
-  logic:d.logic||"",
-  trap:d.trap||"",
-  step1:d.step1||"",
-  step2:d.step2||""
- };
+/* ================= UTILS ================= */
+function chemText(t){
+  if(!t) return "";
+  return String(t)
+    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
+    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
 }
 
-/* ================= SWIPE ENGINE (FIXED) ================= */
-class Swipe{
- constructor(el,cb){
-  this.el=el;this.cb=cb;this.sx=0;this.sy=0;this.active=false;
-  el.addEventListener("touchstart",e=>this.start(e.touches[0]),{passive:false});
-  el.addEventListener("touchmove",e=>this.move(e.touches[0]),{passive:false});
-  el.addEventListener("touchend",()=>this.end());
+function cleanPDF(t){
+  if(!t) return "";
+  return String(t).replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
+}
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
+/* ================= PHYSICS ENGINE (UNCHANGED) ================= */
+class PhysicsController{
+ constructor(el,cbs){
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={
+    UP:el.querySelector(".sl-up"),
+    LEFT:el.querySelector(".sl-left"),
+    RIGHT:el.querySelector(".sl-right"),
+    DOWN:el.querySelector(".sl-down")
+  };
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+  const m=e=>this.move(e.touches?e.touches[0]:e);
+  const e2=()=>this.end();
+  el.addEventListener("mousedown",s);
+  window.addEventListener("mousemove",m);
+  window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false});
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  el.addEventListener("touchend",e2);
  }
- start(p){this.active=true;this.sx=p.clientX;this.sy=p.clientY;this.el.style.transition="none"}
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
  move(p){
   if(!this.active)return;
-  const dx=p.clientX-this.sx,dy=p.clientY-this.sy;
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const d=Math.hypot(dx,dy);
   this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d>20){
+    const dir=this.dir(dx,dy);
+    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+  }
  }
  end(){
   if(!this.active)return;this.active=false;
-  const r=this.el.getBoundingClientRect();
-  const dx=r.left+r.width/2-window.innerWidth/2;
-  const dy=r.top+r.height/2-window.innerHeight/2;
-  if(Math.hypot(dx,dy)>90)this.cb(dir(dx,dy));
-  this.el.style.transition=".3s";
-  this.el.style.transform="translate(0,0)";
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+  const dx=m.m41,dy=m.m42;
+  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  else{this.el.style.transition=".4s cubic-bezier(0.2, 0.8, 0.2, 1)";this.el.style.transform="translate(0,0)"}
+ }
+ dir(dx,dy){
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+  if(a>45&&a<135)return"UP";
+  if(a>135&&a<225)return"LEFT";
+  if(a>225&&a<315)return"DOWN";
+  return"RIGHT";
  }
 }
-const dir=(dx,dy)=>{
- const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
- if(a>45&&a<135)return"UP";
- if(a>135&&a<225)return"LEFT";
- if(a>225&&a<315)return"DOWN";
- return"RIGHT";
-};
 
-/* ================= CARD ================= */
+/* ================= RENDER LOGIC ================= */
 function card(text,labels,cb){
+ const safeText=chemText(text);
  UI.stack.innerHTML="";
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${chem(text).replace(/\n/g,"<br>")}</div>
-  <div class="swipe-label">${labels.up||""}</div>
- `;
+  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
+  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
+  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
+  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
  UI.stack.appendChild(el);
- new Swipe(el,cb);
+ new PhysicsController(el,{onCommit:cb});
 }
+
+/* ================= STATE & INIT ================= */
+const UI = {
+  stack: document.getElementById("stack"),
+  id: document.getElementById("id-ui"),
+  xp: document.getElementById("xp-ui"),
+  bar: document.getElementById("progress-bar"),
+  review: document.getElementById("review-text")
+};
+
+(function init(){
+  try {
+    RAW_DATA = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
+  } catch {
+    RAW_DATA = [];
+  }
+
+  if (!RAW_DATA.length) {
+    card("NO VALID DATA\nPush TSV from Admin",{down:"RELOAD"},()=>location.reload());
+    return;
+  }
+
+  begin();
+})();
 
 /* ================= FLOW ================= */
 function begin(){
- card(`SESSION READY\n${RAW.length} Questions Loaded`,{up:"QUIZ"},d=>{
-  if(d==="UP")pickSet();
- });
+  UI.review.textContent="";
+  card(
+    `SESSION READY\n${RAW_DATA.length} Questions Loaded`,
+    { up:"QUIZ" },
+    dir => { if(dir==="UP") pickSet(); }
+  );
 }
 
 function pickSet(){
- SETS=[...new Set(RAW.map(d=>d.set))];
- let i=0;
- card(SETS[i],{up:"SELECT"},d=>{
-  if(d==="UP"){ACTIVE_SET=SETS[i];pickVolume();}
- });
+  const sets = [...new Set(RAW_DATA.map(d=>d.set))];
+  if (!sets.length) return;
+
+  card(
+    sets[SET_CURSOR],
+    { up:"SELECT", left:"", right:"", down:"BACK" },
+    dir=>{
+      if(dir==="LEFT"){ SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length; pickSet(); }
+      if(dir==="RIGHT"){ SET_CURSOR=(SET_CURSOR+1)%sets.length; pickSet(); }
+      if(dir==="UP"){
+        ACTIVE_SET = sets[SET_CURSOR];
+        pickVolume(); 
+      }
+      if(dir==="DOWN") begin();
+    }
+  );
 }
 
 function pickVolume(){
- card("QUESTION VOLUME",{up:"10",left:"25",right:"50",down:"ALL"},d=>{
-  if(d==="UP")VOLUME=10;
-  if(d==="LEFT")VOLUME=25;
-  if(d==="RIGHT")VOLUME=50;
-  if(d==="DOWN")VOLUME=null;
-  start();
- });
+  card(
+    "QUESTION VOLUME",
+    { up:"10 Q", left:"25 Q", right:"50 Q", down:"ALL" },
+    dir=>{
+      if(dir==="UP") VOLUME_LIMIT = 10;
+      if(dir==="LEFT") VOLUME_LIMIT = 25;
+      if(dir==="RIGHT") VOLUME_LIMIT = 50;
+      if(dir==="DOWN") VOLUME_LIMIT = null;
+      startQuiz();
+    }
+  );
 }
 
-function start(){
- let base=shuffle(RAW.filter(d=>d.set===ACTIVE_SET));
- if(VOLUME)base=base.slice(0,VOLUME);
- POOL=base;WRONG=[];SESSION=[];XP=0;ATTEMPTED.clear();
- next();
+function startQuiz(){
+  let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+  base = shuffle(base);
+  if (VOLUME_LIMIT) base = base.slice(0, VOLUME_LIMIT);
+
+  POOL = base;
+  WRONG = [];
+  SESSION_ALL = [];
+  XP = 0;
+  ATTEMPTED.clear();
+
+  nextQ();
 }
 
-function next(){
- UI.review.textContent="";
- if(!POOL.length){WRONG.length?review():report();return;}
- const d=POOL.shift();
- SESSION.push(d);UI.id.textContent=d.id;
- const opts=shuffle([d.u,d.l,d.r]);
- card(d.q,{up:opts[0]},dir=>{
-  const pick=opts[dir==="UP"?0:1]||"";
-  if(pick.toLowerCase()!==d.correct.toLowerCase())WRONG.push(d);
-  else if(!ATTEMPTED.has(d.id))XP++;
-  ATTEMPTED.add(d.id);
-  UI.xp.textContent=`${XP} / ${SESSION.length}`;
-  UI.bar.style.width=(SESSION.length/(SESSION.length+POOL.length))*100+"%";
-  next();
- });
+function nextQ(){
+  UI.review.textContent=""; 
+  
+  if(!POOL.length){
+    WRONG.length ? review() : report();
+    return;
+  }
+
+  const d = POOL.shift();
+  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+  UI.id.textContent = d.id;
+
+  const opts = shuffle([d.u, d.l, d.r]);
+  const map = { up:opts[0], left:opts[1], right:opts[2] };
+
+  card(d.q, map, dir=>{
+    const picked =
+      dir==="UP" ? map.up :
+      dir==="LEFT" ? map.left :
+      map.right;
+
+    let c = d.correct;
+    if(c==="UP"||c==="A") c=d.u;
+    else if(c==="LEFT"||c==="B") c=d.l;
+    else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+
+    if (String(picked).trim().toLowerCase() !== String(c).trim().toLowerCase()) {
+      WRONG.push(d);
+    } else if(!ATTEMPTED.has(d.id)){
+      XP++;
+    }
+
+    ATTEMPTED.add(d.id);
+    UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
+    UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
+
+    nextQ();
+  });
 }
 
 function review(){
- const d=WRONG[REVIEW_I];
- UI.review.textContent=`HINT: ${d.hint||"Recall basics"}`;
- card(`REVIEW\n\n${d.logic||""}`,{up:"RETRY"},dir=>{
-  if(dir==="UP"){WRONG.splice(REVIEW_I,1);POOL.unshift(d);next();}
- });
+  const d = WRONG[0];
+  UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
+
+  card(
+    `REVIEW\n\n${d.logic || "Review the core principles."}`,
+    { up:"RETRY", down:"SKIP" },
+    dir=>{
+      if(dir==="UP"){
+        WRONG.shift(); 
+        POOL.unshift(d); 
+      } else {
+        WRONG.shift();
+      }
+      nextQ();
+    }
+  );
 }
 
 function report(){
- card(`SUMMARY\n\n${XP}/${SESSION.length}`,{up:"RESTART"},()=>begin());
+  UI.review.textContent="SESSION COMPLETE";
+  
+  const total = SESSION_ALL.length;
+  const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
+  
+  card(
+    `DONE\n${XP}/${total} Correct\n(${percent}%)`,
+    { up:"RESTART", down:"PDF" },
+    dir=>{
+        if(dir==="UP") begin();
+        if(dir==="DOWN") exportSessionPDF();
+    }
+  );
 }
 
-/* ================= INIT (LOCAL-FIRST HARD STOP) ================= */
-(function init(){
- let raw;
- try{raw=JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");}catch{raw=[];}
- RAW=raw.map(normalize).filter(Boolean);
- begin();
-})();
+/* ================= ACADEMY PDF ENGINE v132.21 ================= */
+function exportSessionPDF(){
+ if(!SESSION_ALL.length){alert("No session data");return;}
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ 
+ const seen=new Set();
+ const unique=SESSION_ALL.filter(q=>{
+  if(seen.has(q.id)) return false;
+  seen.add(q.id);return true;
+ });
+
+ let y=20;
+ const ML=15; const W=180;
+ const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
+ const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+
+ doc.setFont("times","bold"); doc.setFontSize(16);
+ doc.text("ACADEMY SESSION REPORT",105,y,{align:"center"});
+ doc.line(ML,y+2,195,y+2); doc.line(ML,y+3,195,y+3);
+ y+=15;
+
+ unique.forEach((d,i)=>{
+  if(y>240){doc.addPage();y=20;}
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+  doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||"CONCEPTS"}`,ML,y); y+=5;
+
+  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qText = cleanPDF(d.q);
+  const qLines = doc.splitTextToSize(qText,W);
+  doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+
+  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+
+  const startY=y;
+  
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("OPTIONS",ML,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); 
+  doc.setTextColor(80,80,80); 
+  
+  const optA = `(A) ${cleanPDF(d.u)}`;
+  const optB = `(B) ${cleanPDF(d.l)}`;
+  const optC = `(C) ${cleanPDF(d.r)}`;
+  
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  
+  let maxH = y; y=startY;
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("THEORY & LOGIC",COL_LOG_X,y); y+=4;
+  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT = doc.splitTextToSize(cleanPDF(d.logic||"No logic provided."),COL_LOG_W);
+  doc.text(logT,COL_LOG_X,y); 
+  const col2H = y+(logT.length*4);
+  if(col2H>maxH) maxH=col2H;
+  y=startY;
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("EXECUTION",COL_EXE_X,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  const s1 = `1. ${cleanPDF(d.s1||d.step1||"-")}`;
+  const s2 = `2. ${cleanPDF(d.s2||d.step2||"-")}`;
+  const s1L = doc.splitTextToSize(s1,COL_EXE_W);
+  doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
+  const s2L = doc.splitTextToSize(s2,COL_EXE_W);
+  doc.text(s2L,COL_EXE_X,y);
+  const col3H = y+(s2L.length*4);
+  if(col3H>maxH) maxH=col3H;
+
+  y=maxH+5;
+
+  if(d.trap||d.note){
+    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50);
+    doc.text("DISTRACTOR ANALYSIS:",ML,y);
+    doc.setFont("times","italic"); doc.setTextColor(80);
+    doc.text(cleanPDF(d.trap||d.note),ML+35,y); y+=8;
+  } else {y+=5;}
+  y+=5;
+ });
+
+ doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
+ setTimeout(begin,500);
+}
 </script>
 </body>
 </html>
