@@ -2,322 +2,279 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VIA.STACK | ADMIN VAULT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Alchemist | Neural Backend</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,600;1,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
 <style>
 :root{
- --bg:#050505;
- --card:#111;
- --border:#222;
- --gold:#ffd600;
- --red:#ff4d4d;
- --green:#00e676;
- --font-ui:'Inter',sans-serif;
- --font-code:'JetBrains Mono',monospace;
+  --bg:#000;--card:#111;--border:#222;
+  --gold:#ffd600;--blue:#3498db;
+  --green:#2ecc71;--red:#e74c3c;
+  --font-chem:'Crimson Text',serif;
+  --font-ui:'Inter',sans-serif;
+  --font-code:'JetBrains Mono',monospace;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
- margin:0;height:100vh;
- background:var(--bg);
- color:#eee;
- font-family:var(--font-ui);
- display:flex;
- flex-direction:column;
+  margin:0;height:100vh;background:var(--bg);
+  color:#fff;font-family:var(--font-ui);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+sub{font-size:.7em}sup{font-size:.7em}
+
+#header{width:90%;margin:25px auto 0;z-index:100}
+.header-meta{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--font-code);font-size:.7rem;color:#555;letter-spacing:2px
+}
+.progress-track{width:100%;height:2px;background:#1a1a1a;margin-top:10px}
+#progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
+
+#stack{
+  position:relative;width:92%;max-width:400px;height:70vh;
+  margin:auto;perspective:1200px;
+  display:flex;align-items:center;justify-content:center
+}
+.card{
+  position:absolute;width:100%;height:95%;
+  background:var(--card);border-radius:40px;border:1px solid var(--border);
+  padding:40px;display:flex;flex-direction:column;justify-content:center;
+  box-shadow:0 30px 90px rgba(0,0,0,.9);
+  will-change:transform
+}
+.card.study-active{
+  filter:blur(20px) brightness(.2);opacity:.5;
+  transform:scale(.85) translateY(40px)!important;
+  pointer-events:none
+}
+.card-q{
+  font-family:var(--font-chem);
+  font-size:1.7rem;line-height:1.4;
+  font-style:italic;font-weight:600;
+  text-align:center
 }
 
-/* HEADER */
-header{
- padding:16px 20px;
- background:#000;
- border-bottom:1px solid var(--border);
- display:flex;
- justify-content:space-between;
- align-items:center;
+.swipe-label{
+  position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;
+  background:#000;font-weight:900;
+  font-size:1.8rem;text-transform:uppercase;
+  border-radius:40px;opacity:0;pointer-events:none;
+  text-align:center;padding:20px
 }
-.brand{font-weight:900;letter-spacing:1px}
-.brand span{color:var(--gold)}
-.status{
- font-family:var(--font-code);
- font-size:11px;
- padding:4px 8px;
- background:#222;
- border-radius:4px;
- color:#888;
+.sl-up{color:var(--green)}
+.sl-left,.sl-right{color:var(--red)}
+.sl-down{color:var(--blue)}
+
+.overlay{
+  position:absolute;inset:0;background:#0d0d0d;
+  border-radius:40px;padding:40px;
+  opacity:0;pointer-events:none;
+  transition:.3s;display:flex;
+  flex-direction:column;justify-content:center
+}
+.overlay.active{opacity:1;pointer-events:auto}
+.overlay-body{
+  font-family:var(--font-chem);
+  font-size:1.1rem;line-height:1.6;
+  color:#bbb;margin-bottom:30px
 }
 
-/* LAYOUT */
-#layout{
- flex:1;
- display:grid;
- grid-template-columns:320px 1fr;
- overflow:hidden;
-}
-
-/* SIDEBAR */
-aside{
- padding:20px;
- border-right:1px solid var(--border);
- background:#080808;
- display:flex;
- flex-direction:column;
- gap:20px;
-}
-.label{
- font-family:var(--font-code);
- font-size:11px;
- color:#555;
- letter-spacing:1px;
-}
-
-/* BUTTONS */
 .btn{
- width:100%;
- padding:14px;
- background:#111;
- border:1px solid var(--border);
- color:#ccc;
- font-family:var(--font-code);
- font-size:11px;
- font-weight:700;
- border-radius:6px;
- cursor:pointer;
- display:flex;
- justify-content:space-between;
- align-items:center;
- transition:.2s;
+  width:100%;padding:18px;border-radius:50px;
+  border:none;background:#fff;color:#000;
+  font-weight:900;text-transform:uppercase;
+  cursor:pointer;font-size:12px;letter-spacing:1px
 }
-.btn:hover{border-color:var(--gold);color:#fff}
-.btn.primary{background:var(--gold);color:#000;border-color:var(--gold)}
-.btn.danger{background:#200;color:var(--red);border-color:#400}
-
-/* MAIN */
-main{
- padding:20px;
- overflow-y:auto;
-}
-.panel{
- background:var(--card);
- border:1px solid var(--border);
- border-radius:12px;
- padding:20px;
-}
-
-/* STATS */
-.stats{
- display:grid;
- grid-template-columns:repeat(2,1fr);
- gap:12px;
- margin-bottom:14px;
-}
-.stat{
- background:#000;
- border:1px solid #222;
- border-radius:6px;
- padding:10px;
-}
-.stat-val{font-size:18px;font-weight:900}
-.stat-lbl{
- font-size:10px;
- font-family:var(--font-code);
- color:#666;
-}
-
-/* TERMINAL */
-#terminal{
- background:#000;
- border:1px solid var(--border);
- border-radius:8px;
- padding:14px;
- height:220px;
- overflow-y:auto;
- font-family:var(--font-code);
- font-size:11px;
- color:#666;
- white-space:pre-wrap;
-}
-.log-ok{color:var(--green)}
-.log-warn{color:var(--gold)}
-.log-err{color:var(--red)}
 </style>
 </head>
 
 <body>
 
-<header>
- <div class="brand">VIA.<span>STACK</span> // ADMIN</div>
- <div class="status" id="vault-status">VAULT: EMPTY</div>
-</header>
-
-<div id="layout">
-
-<aside>
- <div>
-  <div class="label">01 // INGEST TSV</div>
-  <input type="file" id="fileInput" hidden accept=".tsv,.txt" onchange="loadTSV(this)">
-  <button class="btn" onclick="fileInput.click()">
-   <span>UPLOAD TSV</span><span>+</span>
-  </button>
- </div>
-
- <div>
-  <div class="label">02 // VAULT OPS</div>
-  <button class="btn primary" onclick="commitVault()">
-   <span>PUSH TO VAULT</span><span>→</span>
-  </button>
-  <div style="height:10px"></div>
-  <button class="btn" onclick="exportVault()">
-   <span>EXPORT JSON</span><span>↓</span>
-  </button>
- </div>
-
- <div style="margin-top:auto">
-  <div class="label" style="color:var(--red)">DANGER</div>
-  <button class="btn danger" onclick="purgeVault()">
-   <span>PURGE VAULT</span><span>×</span>
-  </button>
- </div>
-</aside>
-
-<main>
- <div class="panel">
-  <div class="stats">
-   <div class="stat">
-    <div class="stat-val" id="staged-count">0</div>
-    <div class="stat-lbl">STAGED ROWS</div>
-   </div>
-   <div class="stat">
-    <div class="stat-val" id="vault-count">0</div>
-    <div class="stat-lbl">VAULT ROWS</div>
-   </div>
+<div id="header">
+  <div class="header-meta">
+    <span id="id-ui">ID: BOOT</span>
+    <span id="xp-ui">0 XP</span>
   </div>
-  <div id="terminal">> ADMIN READY</div>
- </div>
-</main>
-
+  <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
+<div id="stack"></div>
+
 <script>
-/* ================= CONFIG ================= */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1";
-let STAGED = [];
+/* ---------------- DATA ---------------- */
+const RAW_DATA = [
+  {id:"A_0001",set:"SET_A",dom:"MASTER",q:"Calculate the standard cell potential for Mg | Mg2+ || Cu2+ | Cu",u:"2.71 V",l:"1.10 V",r:"2.03 V",correct:"2.71 V",logic:"E°cell = 0.34 − (−2.37) = 2.71 V"},
+  {id:"B_0001",set:"SET_B",dom:"MASTER",q:"Which reagent converts alcohol to aldehyde?",u:"PCC",l:"KMnO4",r:"H2SO4",correct:"PCC",logic:"PCC oxidizes primary alcohols to aldehydes."},
+  {id:"U_0001",set:"MY_SET_1",dom:"USER",q:"Sample user dataset question?",u:"Yes",l:"No",r:"Maybe",correct:"Yes",logic:"User demo"}
+];
 
-/* ================= TSV LOADER ================= */
-function loadTSV(input){
- const file = input.files[0];
- if(!file) return;
+/* ---------------- STATE ---------------- */
+const UI={
+  stack:document.getElementById("stack"),
+  xp:document.getElementById("xp-ui"),
+  bar:document.getElementById("progress-bar"),
+  id:document.getElementById("id-ui")
+};
 
- const reader = new FileReader();
- reader.onload = e => {
-  try{
-   const rows = e.target.result.trim().split(/\r?\n/);
-   
-   STAGED = rows.map(line=>{
-     // SPLIT BY TAB
-     const c = line.split("\t");
-     
-     // Minimum 9 columns required (ID, Set, ..., Q, U, L, R)
-     if(c.length < 9) return null;
+let MODE="FRONT"; // FRONT | MANAGE | QUIZ
+let FILTER="MASTER"; // MASTER | USER
+let CURSOR=0;
+let STATE={pool:[],score:0};
 
-     // Correct Answer Logic: Check if explicit OPT_X or default to U
-     let correctVal = c[6]; // Default to U
-     if(c[9] === "OPT_B") correctVal = c[7];
-     if(c[9] === "OPT_C") correctVal = c[8];
+/* ---------------- HELPERS ---------------- */
+const F=t=>t?t.replace(/([A-Z][a-z]?)(\d+)/g,"$1<sub>$2</sub>").replace(/\^(\d+)/g,"<sup>$1</sup>"):"";
 
-     return {
-       id: c[0].trim(),
-       set: c[1].trim() || "SET_A",
-       dom: "MASTER",
-       topic: c[2] || "",
-       sub: c[3] || "",
-       lvl: c[4] || "",
-       q: c[5],
-       u: c[6],
-       l: c[7],
-       r: c[8],
-       correct: correctVal, // Resolved value
-       logic: c[10] || "",
-       hint: c[18] || c[11] || "", // Check col 18 then 11
-       trap: c[17] || c[12] || "", // Check col 17 then 12
-       step1: c[23] || "",
-       step2: c[24] || ""
-     };
-   }).filter(Boolean);
+function getSets(){
+  return [...new Set(RAW_DATA.filter(d=>FILTER==="MASTER"?d.dom==="MASTER":d.dom==="USER").map(d=>d.set))];
+}
 
-   log(`TSV LOADED: ${STAGED.length} QUESTIONS`, "ok");
-   updateStats();
-  }catch(err){
-   log("TSV PARSE FAILED: " + err.message, "err");
+/* ---------------- PHYSICS ---------------- */
+class PhysicsController{
+  constructor(el,cbs){
+    this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+    this.labels={
+      UP:el.querySelector(".sl-up"),
+      LEFT:el.querySelector(".sl-left"),
+      RIGHT:el.querySelector(".sl-right"),
+      DOWN:el.querySelector(".sl-down")
+    };
+    this.bind();
   }
- };
- reader.readAsText(file);
- input.value="";
+  bind(){
+    const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+    const m=e=>this.move(e.touches?e.touches[0]:e);
+    const e=()=>this.end();
+    this.el.addEventListener("mousedown",s);
+    window.addEventListener("mousemove",m);
+    window.addEventListener("mouseup",e);
+    this.el.addEventListener("touchstart",s,{passive:false});
+    this.el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+    this.el.addEventListener("touchend",e);
+  }
+  startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+  move(p){
+    if(!this.active)return;
+    const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+    const d=Math.hypot(dx,dy);
+    this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
+    Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+    if(d>20){
+      const dir=this.dir(dx,dy);
+      this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+    }
+  }
+  end(){
+    if(!this.active)return;this.active=false;
+    const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+    const dx=m.m41,dy=m.m42;
+    if(Math.hypot(dx,dy)>100){
+      this.cbs.onCommit(this.dir(dx,dy));
+    }else{
+      this.el.style.transition=".4s";
+      this.el.style.transform="translate(0,0)";
+    }
+  }
+  dir(dx,dy){
+    const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+    if(a>45&&a<135)return"UP";
+    if(a>135&&a<225)return"LEFT";
+    if(a>225&&a<315)return"DOWN";
+    return"RIGHT";
+  }
 }
 
-/* ================= VAULT OPS ================= */
-function commitVault(){
- if(!STAGED.length) return log("NO DATA TO COMMIT", "warn");
+/* ---------------- FRONT SLIDE ---------------- */
+function renderFront(){
+  MODE="FRONT";
+  const sets=getSets();
+  const left=sets[CURSOR%sets.length]||"—";
+  const right=sets[(CURSOR+1)%sets.length]||"—";
 
- const existing = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
- const map = new Map(existing.map(x=>[x.id,x]));
- 
- // MERGE NEW DATA (Overwrite by ID)
- STAGED.forEach(q => map.set(q.id, q));
+  UI.stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">SELECT SET</div>
+    <div class="swipe-label sl-up">MANAGE</div>
+    <div class="swipe-label sl-left">${left}</div>
+    <div class="swipe-label sl-right">${right}</div>
+    <div class="swipe-label sl-down">REFRESH</div>`;
+  UI.stack.appendChild(el);
 
- localStorage.setItem(MASTER_KEY, JSON.stringify([...map.values()]));
- STAGED = [];
-
- log("VAULT COMMIT SUCCESS", "ok");
- updateStats();
+  new PhysicsController(el,{
+    onCommit:dir=>{
+      if(dir==="DOWN"){CURSOR+=2;renderFront();return;}
+      if(dir==="UP"){renderManage();return;}
+      if(dir==="LEFT"){startQuiz(left);return;}
+      if(dir==="RIGHT"){startQuiz(right);return;}
+    }
+  });
 }
 
-function purgeVault(){
- if(!confirm("THIS WILL DELETE ALL QUESTIONS")) return;
- localStorage.removeItem(MASTER_KEY);
- log("VAULT PURGED", "err");
- updateStats();
+/* ---------------- MANAGE VAULT ---------------- */
+function renderManage(){
+  MODE="MANAGE";
+  UI.stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">MANAGE VAULT</div>
+    <div class="swipe-label sl-up">MASTER</div>
+    <div class="swipe-label sl-down">MY SETS</div>`;
+  UI.stack.appendChild(el);
+
+  new PhysicsController(el,{
+    onCommit:dir=>{
+      if(dir==="UP"){FILTER="MASTER";renderFront();}
+      if(dir==="DOWN"){FILTER="USER";renderFront();}
+    }
+  });
 }
 
-function exportVault(){
- const data = localStorage.getItem(MASTER_KEY);
- if(!data) return log("VAULT EMPTY", "warn");
-
- const blob = new Blob([data], {type:"application/json"});
- const a = document.createElement("a");
- a.href = URL.createObjectURL(blob);
- a.download = "master.json";
- a.click();
- log("VAULT EXPORTED", "ok");
+/* ---------------- QUIZ ---------------- */
+function startQuiz(set){
+  STATE.pool=RAW_DATA.filter(d=>d.set===set).sort(()=>Math.random()-.5);
+  STATE.score=0;UI.bar.style.width="0%";UI.xp.textContent="0 XP";
+  next();
 }
 
-/* ================= UI ================= */
-function log(msg,type=""){
- const t=document.getElementById("terminal");
- const d=document.createElement("div");
- d.textContent="> "+msg;
- d.className = type==="ok"?"log-ok":type==="warn"?"log-warn":"log-err";
- t.appendChild(d);
- t.scrollTop=t.scrollHeight;
+function next(){
+  if(!STATE.pool.length){renderFront();return;}
+  const d=STATE.pool.shift();
+  UI.id.textContent=d.id;
+
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">${F(d.q)}</div>
+    <div class="swipe-label sl-up">${F(d.u)}</div>
+    <div class="swipe-label sl-left">${F(d.l)}</div>
+    <div class="swipe-label sl-right">${F(d.r)}</div>
+    <div class="swipe-label sl-down">HINT</div>
+    <div class="overlay">
+      <div class="overlay-body">${F(d.logic)}</div>
+      <button class="btn" onclick="this.parentElement.classList.remove('active')">RESUME</button>
+    </div>`;
+  UI.stack.innerHTML="";UI.stack.appendChild(el);
+
+  new PhysicsController(el,{
+    onCommit:dir=>{
+      if(dir==="DOWN"){el.querySelector(".overlay").classList.add("active");return;}
+      if((dir==="UP"&&d.u===d.correct)||(dir==="LEFT"&&d.l===d.correct)||(dir==="RIGHT"&&d.r===d.correct)){
+        STATE.score+=10;UI.xp.textContent=`${STATE.score} XP`;
+        UI.bar.style.width=(STATE.score%100)+"%";
+      }
+      el.style.transition=".4s";el.style.opacity=0;
+      setTimeout(next,300);
+    }
+  });
 }
 
-function updateStats(){
- const vault = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
- document.getElementById("staged-count").textContent = STAGED.length;
- document.getElementById("vault-count").textContent = vault.length;
- document.getElementById("vault-status").textContent =
-  vault.length ? "VAULT: READY" : "VAULT: EMPTY";
- 
- if(vault.length) {
-     document.getElementById("vault-status").style.color = "#00e676";
- } else {
-     document.getElementById("vault-status").style.color = "#888";
- }
-}
-
-/* ================= INIT ================= */
-updateStats();
+/* ---------------- INIT ---------------- */
+renderFront();
 </script>
 
 </body>
