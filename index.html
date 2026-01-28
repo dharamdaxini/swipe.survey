@@ -12,10 +12,10 @@
 :root{
   --bg:#000; --card:#121212; --border:#333;
   --gold:#d4af37;
-  --option-grey:#888;
-  --font-serif:'Crimson Text',serif;
-  --font-sans:'Inter',sans-serif;
-  --font-code:'JetBrains Mono',monospace;
+  --option-grey:#888888;
+  --font-serif:'Crimson Text', serif;
+  --font-sans:'Inter', sans-serif;
+  --font-code:'JetBrains Mono', monospace;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
@@ -26,14 +26,14 @@ body{
 #header{width:90%;margin:25px auto 0;z-index:100}
 .header-meta{
   display:flex;justify-content:space-between;
-  font-family:var(--font-code);font-size:.75rem;
+  font-family:var(--font-code);font-size:0.75rem;
   color:#666;letter-spacing:1.5px;text-transform:uppercase;
 }
 #review-text{
   margin-top:20px;font-family:var(--font-serif);
-  font-size:1.2rem;line-height:1.4;font-style:italic;
-  text-align:center;color:#e0e0e0;min-height:3.5em;
-  display:flex;align-items:flex-end;justify-content:center;
+  font-size:1.2rem;line-height:1.4;
+  font-style:italic;text-align:center;
+  min-height:3.5em;
 }
 .progress-track{width:100%;height:3px;background:#222;margin-top:15px}
 #progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
@@ -49,19 +49,25 @@ body{
   display:flex;flex-direction:column;justify-content:center;
 }
 .card-q{
-  font-family:var(--font-serif);font-size:1.7rem;
-  line-height:1.4;font-weight:600;text-align:center;
+  font-family:var(--font-serif);
+  font-size:1.7rem;line-height:1.4;
+  font-weight:600;text-align:center;
   color:#d0d0d0;
 }
+.card-q sub{font-size:.7em;vertical-align:-.3em}
+.card-q sup{font-size:.7em;vertical-align:.5em}
 .swipe-label{
   position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;
-  background:#000;font-weight:700;font-size:1.5rem;
+  background:#000;font-family:var(--font-sans);
+  font-weight:700;font-size:1.5rem;
   opacity:0;pointer-events:none;
-  color:var(--option-grey);border:1px solid #333;
+  color:var(--option-grey);
+  border:1px solid #333;
 }
 </style>
 </head>
+
 <body>
 
 <div id="header">
@@ -82,79 +88,131 @@ body{
 </div>
 
 <script>
-/* ================= CONFIG ================= */
+/* ================= HARD CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
 let RAW_DATA=[];
-let POOL=[],WRONG=[],SESSION_ALL=[];
-let ACTIVE_SET=null,SET_CURSOR=0,VOLUME_LIMIT=null;
-let XP=0,ATTEMPTED=new Set();
+let SET_CURSOR=0, ACTIVE_SET=null;
+let POOL=[], WRONG=[], REVIEW_INDEX=0;
+let SESSION_ALL=[], XP=0;
+let VOLUME_LIMIT=null;
+let ATTEMPTED=new Set();
 
 /* ================= UTILS ================= */
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function chemText(t){return t||""}
-
-/* ================= LOAD MASTER (FIXED) ================= */
-function loadMasterStrict(){
-  const local = localStorage.getItem(MASTER_KEY);
-  if(!local){
-    alert("MASTER VAULT EMPTY.\nUpload via Admin Panel first.");
-    return [];
+function chemText(t){
+  if(!t) return "";
+  return String(t)
+    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
+}
+function cleanPDF(t){
+  return String(t||"").replace(/<[^>]*>/g,"")
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
   }
-  try{
-    const parsed = JSON.parse(local);
-    return Array.isArray(parsed) ? parsed : [];
-  }catch{
-    alert("MASTER DATA CORRUPTED.");
-    return [];
-  }
+  return a;
 }
 
-/* ================= INIT ================= */
-function init(){
-  RAW_DATA = loadMasterStrict();   // 🔒 ONLY SOURCE
-  begin();
-}
-
-/* ================= UI CORE ================= */
+/* ================= UI ================= */
 const UI={
- stack:document.getElementById("stack"),
- id:document.getElementById("id-ui"),
- xp:document.getElementById("xp-ui"),
- bar:document.getElementById("progress-bar"),
- review:document.getElementById("review-text")
+  stack:document.getElementById("stack"),
+  id:document.getElementById("id-ui"),
+  xp:document.getElementById("xp-ui"),
+  bar:document.getElementById("progress-bar"),
+  review:document.getElementById("review-text")
 };
 
+/* ================= PHYSICS ENGINE (UNCHANGED) ================= */
+class PhysicsController{
+ constructor(el,cbs){
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={
+    UP:el.querySelector(".sl-up"),
+    LEFT:el.querySelector(".sl-left"),
+    RIGHT:el.querySelector(".sl-right"),
+    DOWN:el.querySelector(".sl-down")
+  };
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+  const m=e=>this.move(e.touches?e.touches[0]:e);
+  const e2=()=>this.end();
+  el.addEventListener("mousedown",s);
+  window.addEventListener("mousemove",m);
+  window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false});
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  el.addEventListener("touchend",e2);
+ }
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+ move(p){
+  if(!this.active)return;
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const d=Math.hypot(dx,dy);
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d>20){
+    const dir=this.dir(dx,dy);
+    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+  }
+ }
+ end(){
+  if(!this.active)return;this.active=false;
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+  const dx=m.m41,dy=m.m42;
+  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  else{
+    this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";
+    this.el.style.transform="translate(0,0)";
+  }
+ }
+ dir(dx,dy){
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+  if(a>45&&a<135)return"UP";
+  if(a>135&&a<225)return"LEFT";
+  if(a>225&&a<315)return"DOWN";
+  return"RIGHT";
+ }
+}
+
+/* ================= RENDER ================= */
 function card(text,labels,cb){
  UI.stack.innerHTML="";
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${chemText(text)}</div>
-  <div class="swipe-label sl-up">${labels.up||""}</div>
-  <div class="swipe-label sl-left">${labels.left||""}</div>
-  <div class="swipe-label sl-right">${labels.right||""}</div>
-  <div class="swipe-label sl-down">${labels.down||""}</div>`;
+  <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
+  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
+  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
+  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
  UI.stack.appendChild(el);
- el.onclick=()=>cb("UP");
+ new PhysicsController(el,{onCommit:cb});
 }
 
 /* ================= FLOW ================= */
 function begin(){
  UI.review.textContent="";
- card("BEGIN SESSION",{up:"QUIZ"},()=>setPick());
+ card("BEGIN SESSION",{up:"QUIZ"},dir=>{
+  if(dir==="UP") setPick();
+ });
 }
 
 function setPick(){
  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
- ACTIVE_SET=sets[0];
- volumePick();
+ if(!sets.length){
+  alert("MASTER VAULT EMPTY");
+  return;
+ }
+ card(sets[SET_CURSOR],{up:"SELECT"},dir=>{
+  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
+ });
 }
 
 function volumePick(){
- VOLUME_LIMIT=null;
- startQuiz();
+ card("QUESTION VOLUME",{up:"START"},()=>startQuiz());
 }
 
 function startQuiz(){
@@ -164,22 +222,45 @@ function startQuiz(){
 }
 
 function nextQ(){
- if(!POOL.length){report();return}
+ UI.review.textContent="";
+ if(!POOL.length){report();return;}
  const d=POOL.shift();
  SESSION_ALL.push(d);
  UI.id.textContent=d.id;
- card(d.q,{up:d.u,left:d.l,right:d.r},()=>{
-   XP++;
-   UI.xp.textContent=`${XP}`;
-   nextQ();
+ const opts=shuffle([d.u,d.l,d.r]);
+ card(d.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
+  XP++;
+  UI.xp.textContent=`${XP}`;
+  UI.bar.style.width=((SESSION_ALL.length/RAW_DATA.length)*100)+"%";
+  nextQ();
  });
 }
 
 function report(){
- card(`DONE\n${XP} / ${SESSION_ALL.length}`,{up:"RESTART"},begin);
+ card(`SESSION COMPLETE\n${XP} / ${SESSION_ALL.length}`,{up:"RESTART"},begin);
 }
 
-/* ================= START ================= */
+/* ================= MASTER LOAD (FINAL FIX) ================= */
+function loadMaster(){
+ const raw=localStorage.getItem(MASTER_KEY);
+ if(!raw){
+  alert("No MASTER data found.\nUpload via Admin Panel.");
+  return [];
+ }
+ try{
+  const parsed=JSON.parse(raw);
+  return Array.isArray(parsed)?parsed:[];
+ }catch{
+  alert("MASTER data corrupted.");
+  return [];
+ }
+}
+
+/* ================= INIT ================= */
+function init(){
+ RAW_DATA = loadMaster();
+ begin();
+}
 init();
 </script>
 </body>
