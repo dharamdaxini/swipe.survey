@@ -1,11 +1,9 @@
-
-  
 <!DOCTYPE html>  
 <html lang="en">  
 <head>  
 <meta charset="UTF-8">  
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">  
-<title>Alchemist | Operator UI v136.33</title>  
+<title>Alchemist | Operator UI v136.34</title>  
   
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>  
@@ -136,6 +134,11 @@ let XP = 0;
 let IDX = 0;  
 let CURR = null;  
   
+// NEW: Selection State  
+let SET_CURSOR = 0;  
+let ACTIVE_SET = null;  
+let VOLUME_LIMIT = null;  
+  
 /* ================= UTILS ================= */  
 function chemText(t){  
  if(!t) return "";  
@@ -234,15 +237,53 @@ function reviewHeader(hint){
 }  
 function clearHeader(){UI.review.textContent="";}  
   
+/* ================= FLOW: BEGIN -> SET -> VOLUME -> QUIZ ================= */  
+function begin(){  
+ clearHeader();  
+ card("BEGIN SESSION",{up:"START"},dir=>{  
+  if(dir==="UP") setPick();  
+ });  
+}  
+  
+function setPick(){  
+ const sets = [...new Set(RAW_DATA.map(d=>d.set))];  
+ if(!sets.length){ card("NO DATA",{down:"RETRY"},()=>location.reload()); return; }  
+   
+ card(sets[SET_CURSOR], {up:"SELECT",left:"PREV",right:"NEXT"}, dir=>{  
+  if(dir==="LEFT"){ SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length; setPick(); }  
+  if(dir==="RIGHT"){ SET_CURSOR=(SET_CURSOR+1)%sets.length; setPick(); }  
+  if(dir==="UP"){ ACTIVE_SET=sets[SET_CURSOR]; volumePick(); }  
+ });  
+}  
+  
+// === NEW: VOLUME SELECTION LAYER ===  
+function volumePick(){  
+ card("QUESTION VOLUME", {up:"10 Q", left:"25 Q", right:"50 Q", down:"ALL"}, dir=>{  
+  if(dir==="UP") VOLUME_LIMIT = 10;  
+  if(dir==="LEFT") VOLUME_LIMIT = 25;  
+  if(dir==="RIGHT") VOLUME_LIMIT = 50;  
+  if(dir==="DOWN") VOLUME_LIMIT = null;  
+  startQuiz();  
+ });  
+}  
+  
 /* ================= QUIZ ================= */  
 function startQuiz(){  
- POOL = shuffle([...RAW_DATA]);  
+ // Filter by Set and Shuffle  
+ let base = RAW_DATA.filter(d => d.set === ACTIVE_SET);  
+ base = shuffle(base);  
+   
+ // Apply Volume Limit  
+ if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);  
+   
+ POOL = base;  
  WRONG = [];  
  SESSION_ALL = [];  
  XP = 0;  
  IDX = 0;  
  nextQuiz();  
 }  
+  
 function nextQuiz(){  
  if(!POOL.length){ scoreCard(); return; }  
  CURR = POOL.shift();  
@@ -368,10 +409,8 @@ function exportPDF(){
 (function(){  
  const raw = localStorage.getItem(MASTER_KEY);  
  RAW_DATA = raw ? JSON.parse(raw) : [];  
- card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP" && startQuiz());  
+ begin(); // START AT BEGIN SLIDE  
 })();  
 </script>  
 </body>  
-</html>  
------------------    
-    
+</html>
