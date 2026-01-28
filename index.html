@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>Alchemist | Operator UI v136.31</title>
+<title>Alchemist | Operator UI v136.32</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -87,8 +87,6 @@ body{
  transition:opacity .35s ease,transform .35s ease;
 }
 .card-q.show{opacity:1;transform:translateY(0)}
-.card-q::-webkit-scrollbar{width:4px}
-.card-q::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
 
 /* SWIPE LABELS */
 .swipe-label{
@@ -127,14 +125,8 @@ body{
 const MASTER_KEY="ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA=[];
-let POOL=[];
-let WRONG=[];
-let REVIEW_POOL=[];
-let SESSION_ALL=[];
-let XP=0;
-let IDX=0;
-let CURR=null;
+let RAW_DATA=[],POOL=[],WRONG=[],REVIEW_POOL=[];
+let SESSION_ALL=[],XP=0,IDX=0,CURR=null;
 
 /* ================= UTILS ================= */
 function chemText(t){
@@ -229,7 +221,7 @@ function reviewHeader(hint){
  UI.review.innerHTML=`
   <div class="review-title">REVIEW</div>
   <div class="review-line"></div>
-  ${hint}
+  ${hint||""}
  `;
 }
 function clearHeader(){UI.review.textContent="";}
@@ -237,9 +229,7 @@ function clearHeader(){UI.review.textContent="";}
 /* ================= QUIZ ================= */
 function startQuiz(){
  POOL=shuffle([...RAW_DATA]);
- WRONG=[];
- SESSION_ALL=[];
- XP=0;
+ WRONG=[];SESSION_ALL=[];XP=0;
  nextQuiz();
 }
 function nextQuiz(){
@@ -265,7 +255,7 @@ function scoreCard(){
  });
 }
 
-/* ================= REVIEW LOOP (FIXED) ================= */
+/* ================= REVIEW ================= */
 function startReview(){
  REVIEW_POOL=[...WRONG];
  IDX=0;
@@ -275,26 +265,21 @@ function nextReviewQ(){
  if(REVIEW_POOL.length===0){ endSlide(); return; }
  if(IDX>=REVIEW_POOL.length) IDX=0;
  CURR=REVIEW_POOL[IDX];
- reviewHeader(CURR.hint || "Think carefully about the concept.");
+ reviewHeader(CURR.hint);
  const opts=shuffle([CURR.u,CURR.l,CURR.r]);
  card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{
   if(dir==="UP"){ reviewExplain(); return; }
   const picked=dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
   if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){
    REVIEW_POOL.splice(IDX,1);
-  }else{
-   IDX++;
-  }
+  }else IDX++;
   nextReviewQ();
  });
 }
 function reviewExplain(){
- reviewHeader(CURR.hint || "Think carefully about the concept.");
- card(CURR.logic || "Review this explanation.",{
-  up:"RETRY",
-  down:"GOT IT",
-  left:"SKIP",
-  right:"CONFUSED"
+ reviewHeader(CURR.hint);
+ card(CURR.logic,{
+  up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"
  },dir=>{
   if(dir==="LEFT"||dir==="RIGHT") IDX++;
   nextReviewQ();
@@ -310,22 +295,61 @@ function endSlide(){
  });
 }
 
-/* ================= PDF ================= */
+/* ================= PDF (SAFE RENDER) ================= */
 function exportPDF(){
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- let y=20;
- SESSION_ALL.forEach(d=>{
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+ let y = 20;
+
+ SESSION_ALL.forEach((d,i)=>{
   if(y>260){doc.addPage();y=20;}
-  doc.text(d.q,10,y);y+=8;
-  doc.text(d.logic||"",10,y);y+=10;
+
+  doc.setFont("courier","bold");
+  doc.setFontSize(11);
+  doc.text(`Q${i+1} | SESSION QUESTION`,15,y); y+=8;
+
+  if(d.ctx){
+   doc.setFontSize(8);
+   doc.text(`CTX: ${d.ctx}`,15,y); y+=5;
+  }
+
+  doc.setFont("times","normal");
+  doc.setFontSize(11);
+  const q=doc.splitTextToSize(`Q: ${d.q}`,180);
+  doc.text(q,15,y); y+=q.length*6;
+
+  if(d.hint){
+   doc.setFont("courier","normal");
+   doc.setFontSize(8);
+   doc.text(`HINT: ${d.hint}`,15,y); y+=5;
+  }
+
+  doc.setFontSize(10);
+  doc.text(`A) ${d.u}`,15,y); y+=5;
+  doc.text(`B) ${d.l}`,15,y); y+=5;
+  doc.text(`C) ${d.r}`,15,y); y+=6;
+
+  doc.setFont("courier","bold");
+  doc.text(`ANSWER: ${d.u}`,15,y); y+=6;
+
+  if(d.logic){
+   doc.setFont("times","italic");
+   const logic=doc.splitTextToSize(`LOGIC: ${d.logic}`,180);
+   doc.text(logic,15,y); y+=logic.length*5;
+  }
+
+  if(d.step1){doc.text(`STEP 1: ${d.step1}`,15,y); y+=5;}
+  if(d.step2){doc.text(`STEP 2: ${d.step2}`,15,y); y+=5;}
+
+  y+=10;
  });
- doc.save(`SESSION_${Date.now()}.pdf`);
+
+ doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
  startQuiz();
 }
 
 /* ================= INIT ================= */
-(function init(){
+(function(){
  const raw=localStorage.getItem(MASTER_KEY);
  RAW_DATA=raw?JSON.parse(raw):[];
  card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&startQuiz());
