@@ -1,71 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>Alchemist | Operator v136.36</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Alchemist | Operator v136.32</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
 <style>
 :root{
- --bg:#000;--card:#121212;--border:#333;
- --gold:#d4af37;--text:#ccc;
- --font-serif:'Crimson Text',serif;
- --font-sans:'Inter',sans-serif;
- --font-code:'JetBrains Mono',monospace;
+  --bg:#000;
+  --card:#121212;
+  --border:#333;
+  --gold:#d4af37;
+  --grey:#bdbdbd;
+  --green:#00e676;
+  --red:#ff5252;
+  --blue:#2979ff;
+  --font-serif:'Crimson Text',serif;
+  --font-sans:'Inter',sans-serif;
+  --font-code:'JetBrains Mono',monospace;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{
- margin:0;height:100vh;background:var(--bg);color:var(--text);
- font-family:var(--font-sans);overflow:hidden;display:flex;flex-direction:column
-}
-#header{width:90%;margin:25px auto 0}
-.header-meta{
- display:flex;justify-content:space-between;
- font-family:var(--font-code);font-size:.75rem;color:#666;letter-spacing:1.5px
-}
-#review-text{
- margin-top:20px;font-family:var(--font-serif);
- font-size:1.2rem;font-style:italic;text-align:center;
- color:var(--gold);min-height:3em
-}
-.progress-track{width:100%;height:3px;background:#222;margin-top:15px}
-#progress-bar{height:100%;background:var(--gold);width:0%;transition:.3s}
 
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+body{
+  margin:0;
+  height:100vh;
+  background:var(--bg);
+  color:#eee;
+  font-family:var(--font-sans);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER */
+#header{
+  width:90%;
+  margin:22px auto 0;
+}
+.header-meta{
+  display:flex;
+  justify-content:space-between;
+  font-family:var(--font-code);
+  font-size:.7rem;
+  letter-spacing:1.2px;
+  color:#666;
+  text-transform:uppercase;
+}
+
+/* REVIEW / HINT */
+#review-text{
+  margin-top:18px;
+  min-height:3.2em;
+  text-align:center;
+  font-family:var(--font-serif);
+  font-size:1.25rem;
+  font-style:italic;
+  color:var(--gold);
+}
+
+/* PROGRESS */
+.progress-track{
+  width:100%;
+  height:3px;
+  background:#222;
+  margin-top:14px;
+  border-radius:2px;
+}
+#progress-bar{
+  height:100%;
+  width:0%;
+  background:var(--gold);
+  transition:width .35s ease;
+}
+
+/* STACK */
 #stack{
- position:relative;width:90%;max-width:420px;height:62vh;
- margin:auto;display:flex;align-items:center;justify-content:center
+  position:relative;
+  width:90%;
+  max-width:420px;
+  height:62vh;
+  margin:auto;
+  perspective:1500px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
+
 .card{
- position:absolute;width:100%;height:95%;
- background:var(--card);border-radius:12px;border:1px solid var(--border);
- padding:35px;display:flex;justify-content:center;align-items:center;
- box-shadow:0 20px 60px rgba(0,0,0,.9);will-change:transform
+  position:absolute;
+  width:100%;
+  height:95%;
+  background:var(--card);
+  border-radius:14px;
+  border:1px solid var(--border);
+  padding:34px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.95);
+  will-change:transform;
 }
+
 .card-q{
- font-family:var(--font-serif);
- font-size:clamp(1.1rem,4vw,1.6rem);
- text-align:center;line-height:1.5;overflow-y:auto;width:100%
+  font-family:var(--font-serif);
+  font-size:clamp(1.1rem,4vw,1.65rem);
+  line-height:1.5;
+  text-align:center;
+  color:var(--grey);
+  width:100%;
+  max-height:100%;
+  overflow-y:auto;
 }
-.swipe-label{
- position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
- font-weight:800;font-size:1.4rem;opacity:0;pointer-events:none
+
+/* SWIPE LABELS */
+.swipe{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.4rem;
+  font-weight:800;
+  letter-spacing:1px;
+  opacity:0;
+  pointer-events:none;
+  border-radius:14px;
 }
-.sl-up{color:#2ecc71}.sl-left{color:#ccc}
-.sl-right{color:#ccc}.sl-down{color:#3498db}
+
+.up{color:var(--green)}
+.left{color:#aaa}
+.right{color:#aaa}
+.down{color:var(--blue)}
+
 </style>
 </head>
 
 <body>
 
 <div id="header">
- <div class="header-meta">
-  <span id="id-ui">BOOT</span>
-  <span id="xp-ui">0 XP</span>
- </div>
- <div id="review-text"></div>
- <div class="progress-track"><div id="progress-bar"></div></div>
+  <div class="header-meta">
+    <span id="ui-id">BOOT</span>
+    <span id="ui-xp">0 XP</span>
+  </div>
+  <div id="review-text"></div>
+  <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="stack"></div>
@@ -73,128 +154,193 @@ body{
 <script>
 /* ================= CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1";
-const VAULT_VERSION = "v136.36";
 
 /* ================= STATE ================= */
-let RAW_DATA=[],POOL=[],WRONG=[],XP=0;
-let SESSION_ALL=[],ATTEMPTED=new Set();
+let DATA = [];
+let POOL = [];
+let WRONG = [];
+let REVIEW_MODE = false;
+let REVIEW_INDEX = 0;
+let XP = 0;
+let TOTAL = 0;
 
-/* ================= UI ================= */
-const UI={
- stack:document.getElementById("stack"),
- id:document.getElementById("id-ui"),
- xp:document.getElementById("xp-ui"),
- bar:document.getElementById("progress-bar"),
- review:document.getElementById("review-text")
-};
+/* ================= UTIL ================= */
+const $ = id => document.getElementById(id);
 
-/* ================= UTILS ================= */
-const shuffle=a=>a.sort(()=>Math.random()-.5);
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
 
 /* ================= CARD ================= */
-function card(text,labels={},cb=()=>{}){
- UI.stack.innerHTML="";
- const el=document.createElement("div");
- el.className="card";
- el.innerHTML=`
-  <div class="card-q">${text.replace(/\n/g,"<br>")}</div>
-  <div class="swipe-label sl-up">${labels.up||""}</div>
-  <div class="swipe-label sl-left">${labels.left||""}</div>
-  <div class="swipe-label sl-right">${labels.right||""}</div>
-  <div class="swipe-label sl-down">${labels.down||""}</div>
- `;
- UI.stack.appendChild(el);
+function renderCard(text, labels, onSwipe){
+  const stack = $("stack");
+  stack.innerHTML = "";
 
- let sx,sy,dx,dy,drag=false;
- el.ontouchstart=e=>{drag=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY};
- el.ontouchmove=e=>{
-  if(!drag)return;
-  dx=e.touches[0].clientX-sx;dy=e.touches[0].clientY-sy;
-  el.style.transform=`translate(${dx}px,${dy}px)`;
- };
- el.ontouchend=()=>{
-  drag=false;
-  if(Math.hypot(dx,dy)>80){
-   const dir=Math.abs(dx)>Math.abs(dy)
-    ? dx>0?"RIGHT":"LEFT"
-    : dy>0?"DOWN":"UP";
-   cb(dir);
-  }
-  el.style.transform="";
- };
+  const card = document.createElement("div");
+  card.className="card";
+
+  card.innerHTML = `
+    <div class="card-q">${text.replace(/\n/g,"<br>")}</div>
+    <div class="swipe up">${labels.up||""}</div>
+    <div class="swipe left">${labels.left||""}</div>
+    <div class="swipe right">${labels.right||""}</div>
+    <div class="swipe down">${labels.down||""}</div>
+  `;
+
+  stack.appendChild(card);
+
+  let sx=0,sy=0,active=false;
+
+  card.onpointerdown=e=>{
+    active=true;
+    sx=e.clientX; sy=e.clientY;
+    card.setPointerCapture(e.pointerId);
+  };
+
+  card.onpointermove=e=>{
+    if(!active)return;
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    card.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+    const d=Math.hypot(dx,dy);
+    const show = d>25;
+    card.querySelectorAll(".swipe").forEach(el=>el.style.opacity=0);
+    if(show){
+      const dir = Math.abs(dx)>Math.abs(dy)
+        ? dx>0?"right":"left"
+        : dy<0?"up":"down";
+      card.querySelector("."+dir).style.opacity=Math.min(d/60,1);
+    }
+  };
+
+  card.onpointerup=e=>{
+    active=false;
+    const m = new DOMMatrixReadOnly(getComputedStyle(card).transform);
+    const dx=m.m41, dy=m.m42;
+    if(Math.hypot(dx,dy)>110){
+      const dir = Math.abs(dx)>Math.abs(dy)
+        ? dx>0?"right":"left"
+        : dy<0?"up":"down";
+      onSwipe(dir);
+    } else {
+      card.style.transition=".35s";
+      card.style.transform="translate(0,0)";
+    }
+  };
 }
 
 /* ================= FLOW ================= */
-function begin(){
- card(
-  `SESSION READY\n${RAW_DATA.length} Questions Loaded`,
-  {up:"START"},
-  d=>d==="UP"&&start()
- );
+function boot(){
+  let raw = null;
+  try{ raw = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]"); }
+  catch{ raw=[]; }
+
+  if(!Array.isArray(raw)||!raw.length){
+    renderCard("NO VALID DATA\n\nPush TSV from Admin",{},()=>{});
+    return;
+  }
+
+  DATA = raw.filter(d=>d.id&&d.q&&d.u&&d.l&&d.r);
+  startQuiz();
 }
 
-function start(){
- POOL=shuffle([...RAW_DATA]);
- XP=0;WRONG=[];SESSION_ALL=[];ATTEMPTED.clear();
- next();
+function startQuiz(){
+  XP=0;
+  WRONG=[];
+  REVIEW_MODE=false;
+  REVIEW_INDEX=0;
+  POOL=shuffle([...DATA]);
+  TOTAL=POOL.length;
+  nextQuestion();
 }
 
-function next(){
- UI.review.textContent="";
- if(!POOL.length){end();return;}
- const d=POOL.shift();
- UI.id.textContent=d.id;
- SESSION_ALL.push(d);
+function nextQuestion(){
+  $("review-text").textContent="";
+  if(!POOL.length){
+    if(WRONG.length){
+      REVIEW_MODE=true;
+      REVIEW_INDEX=0;
+      reviewQuestion();
+    } else {
+      summary();
+    }
+    return;
+  }
 
- const opts=shuffle([d.u,d.l,d.r]);
- const map={UP:opts[0],LEFT:opts[1],RIGHT:opts[2]};
+  const d=POOL.shift();
+  $("ui-id").textContent=d.id;
 
- card(d.q,{
-  up:map.UP,left:map.LEFT,right:map.RIGHT
- },dir=>{
-  const pick=map[dir];
-  if(pick!==d.correct)WRONG.push(d);
-  else if(!ATTEMPTED.has(d.id))XP++;
-  ATTEMPTED.add(d.id);
-  UI.xp.textContent=`${XP}/${SESSION_ALL.length}`;
-  UI.bar.style.width=(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100+"%";
-  next();
- });
-}
-
-function end(){
- card(
-  `DONE\n\n${XP}/${SESSION_ALL.length} Correct`,
-  {up:"RESTART"},
-  d=>d==="UP"&&begin()
- );
-}
-
-/* ================= FINAL INIT (LOCAL-ONLY, HARD STOP) ================= */
-(function init(){
- let vault;
- try{vault=JSON.parse(localStorage.getItem(MASTER_KEY)||"null");}
- catch{vault=null;}
-
- if(!vault||vault.__vault_version!==VAULT_VERSION||!Array.isArray(vault.data)){
-  card(
-   "NO VALID DATA\n\nPush TSV from Admin",
-   {}
+  const opts=shuffle([d.u,d.l,d.r]);
+  renderCard(
+    d.q,
+    {up:opts[0],left:opts[1],right:opts[2]},
+    dir=>{
+      const pick = dir==="up"?opts[0]:dir==="left"?opts[1]:opts[2];
+      if(pick.trim().toLowerCase()!==String(d.correct).trim().toLowerCase()){
+        WRONG.push(d);
+      } else {
+        XP++;
+      }
+      $("ui-xp").textContent=XP+" XP";
+      $("progress-bar").style.width=((TOTAL-POOL.length)/TOTAL*100)+"%";
+      nextQuestion();
+    }
   );
-  return;
- }
+}
 
- RAW_DATA=vault.data.map(d=>{
-  let c=d.correct;
-  if(c==="OPT_A")c=d.u;
-  if(c==="OPT_B")c=d.l;
-  if(c==="OPT_C")c=d.r;
-  return {...d,correct:c};
- }).filter(d=>d.id&&d.q&&d.u&&d.l&&d.r);
+function reviewQuestion(){
+  if(!WRONG.length){ summary(); return; }
+  const d=WRONG[REVIEW_INDEX];
+  $("review-text").textContent="REVIEW — "+(d.hint||"Recall fundamentals");
 
- begin();
-})();
+  renderCard(
+    d.q,
+    {up:"EXPLAIN",left:d.l,right:d.r,down:d.u},
+    dir=>{
+      if(dir==="up"){ reviewExplain(d); }
+      else{
+        REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
+        reviewQuestion();
+      }
+    }
+  );
+}
+
+function reviewExplain(d){
+  $("review-text").textContent="REVIEW — Explanation";
+
+  renderCard(
+    d.logic||"No explanation provided",
+    {up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"},
+    dir=>{
+      if(dir==="up"||dir==="down"){
+        WRONG.splice(REVIEW_INDEX,1);
+        POOL.unshift(d);
+        REVIEW_INDEX=0;
+        nextQuestion();
+      } else {
+        REVIEW_INDEX=(REVIEW_INDEX+1)%WRONG.length;
+        reviewQuestion();
+      }
+    }
+  );
+}
+
+function summary(){
+  renderCard(
+    `SESSION COMPLETE\n\n${XP} / ${TOTAL} Correct`,
+    {up:"RETRY",left:"MENU"},
+    dir=>{
+      if(dir==="up") startQuiz();
+    }
+  );
+}
+
+/* ================= START ================= */
+boot();
 </script>
-
 </body>
 </html>
