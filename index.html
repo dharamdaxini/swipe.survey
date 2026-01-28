@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Operator v136.24</title>
+<title>Alchemist | Diagnostic v136.25</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -75,13 +75,12 @@ body{
   line-height:1.5;
   font-weight:600; text-align:center;
   color: var(--text-grey);
-  
-  width: 100%;
-  max-height: 100%;
-  overflow-y: auto; 
-  padding-right: 5px; 
-  pointer-events: auto;
+  width: 100%; max-height: 100%; overflow-y: auto; 
+  padding-right: 5px; pointer-events: auto;
 }
+
+/* ERROR STATE TEXT */
+.card-error { color: #e74c3c; font-family: var(--font-code); font-size: 0.9rem; text-align: left; white-space: pre-wrap; }
 
 /* CUSTOM SCROLLBAR */
 .card-q::-webkit-scrollbar { width: 4px; }
@@ -127,49 +126,26 @@ body{
 <div id="stack">
   <div class="card">
     <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | V136.24<br>LOADING DATA...
+      VIA.STACK | DIAGNOSTIC<br>CONNECTING TO VAULT...
     </div>
   </div>
 </div>
 
 <script>
-/* ============================================================
-   ALCHEMIST FINAL BACKEND ENGINE
-   - Hard resets stale data
-   - Version-gated storage
-   - Clean master.json ingestion
-   - Safe boot (never stuck)
-============================================================ */
-
-/* ================= CONFIG ================= */
+/* ================= BRIDGE CONFIG ================= */
 const MASTER_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
-
-// 🔥 BRIDGE KEYS
-const USER_KEY = "ALCHEMIST_DATA_V1";
-const MASTER_KEY = "ALCHEMIST_MASTER_V1"; // Local Admin Bridge
+const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 const VERSION_KEY = "ALCHEMIST_VERSION";
-const APP_VERSION = "v136.24"; // Increment this to force reset
-
-/* ================= UI ================= */
-const UI = {
-  stack: document.getElementById("stack"),
-  id: document.getElementById("id-ui"),
-  xp: document.getElementById("xp-ui"),
-  bar: document.getElementById("progress-bar"),
-  review: document.getElementById("review-text")
-};
+const APP_VERSION = "v136.25"; // Forces Reset
 
 /* ================= STATE ================= */
 let RAW_DATA = [];
-let SET_CURSOR = 0;
+let SET_CURSOR = 0; 
 let ACTIVE_SET = null;
-let POOL = [];
-let WRONG = [];
-let REVIEW_INDEX = 0;
-let SESSION_ALL = [];
-let XP = 0;
+let POOL = [], WRONG = [], REVIEW_INDEX = 0;
+let SESSION_ALL = [], XP = 0;
 let VOLUME_LIMIT = null;
-let ATTEMPTED = new Set();
+let ATTEMPTED = new Set(); 
 
 /* ================= UTILS ================= */
 function chemText(t){
@@ -195,43 +171,25 @@ function shuffle(array) {
   return array;
 }
 
-/* ================= VERSION ENFORCEMENT ================= */
-(function enforceVersion(){
-  const v = localStorage.getItem(VERSION_KEY);
-  if(v !== APP_VERSION){
-    console.log("NEW VERSION DETECTED: Wiping old data...");
-    localStorage.removeItem(USER_KEY);
-    // Note: We DO NOT wipe MASTER_KEY here to preserve local admin uploads
-    localStorage.setItem(VERSION_KEY, APP_VERSION);
-  }
+/* ================= VERSION CONTROL ================= */
+(function checkVersion(){
+    const v = localStorage.getItem(VERSION_KEY);
+    if(v !== APP_VERSION){
+        console.log("VERSION UPDATE: Clearing old data caches...");
+        // We do NOT clear MASTER_KEY (Admin Push) to preserve local work
+        // But we DO clear any session data if you had it
+        localStorage.setItem(VERSION_KEY, APP_VERSION);
+    }
 })();
 
-/* ================= DATA NORMALIZATION ================= */
-function normalize(d){
-  if(!d || !d.id || !d.q || !d.u || !d.l || !d.r) return null;
-
-  let c = d.correct;
-  if(c==="UP"||c==="A") c=d.u;
-  else if(c==="LEFT"||c==="B") c=d.l;
-  else if(c==="RIGHT"||c==="C"||c==="R") c=d.r;
-
-  return {
-    id: String(d.id),
-    set: d.set || "SET_A",
-    dom: d.dom || "GENERAL",
-    topic: d.topic || "",
-    q: d.q,
-    u: d.u,
-    l: d.l,
-    r: d.r,
-    correct: c || d.u,
-    logic: d.logic || "",
-    hint: d.hint || "",
-    trap: d.trap || "",
-    step1: d.step1 || "",
-    step2: d.step2 || ""
-  };
-}
+/* ================= UI ================= */
+const UI = {
+  stack: document.getElementById("stack"),
+  id: document.getElementById("id-ui"),
+  xp: document.getElementById("xp-ui"),
+  bar: document.getElementById("progress-bar"),
+  review: document.getElementById("review-text")
+};
 
 /* ================= PHYSICS ENGINE ================= */
 class PhysicsController{
@@ -282,12 +240,16 @@ class PhysicsController{
 }
 
 /* ================= RENDER LOGIC ================= */
-function card(text,labels,cb){
+function card(text,labels,cb, isError=false){
   UI.stack.innerHTML="";
   const el=document.createElement("div");
   el.className="card";
+  
+  let content = chemText(text).replace(/\n/g,"<br>");
+  if(isError) content = `<div class="card-error">SYSTEM ERROR:\n${text}</div>`;
+  
   el.innerHTML=`
-    <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+    <div class="card-q">${content}</div>
     <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
     <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
     <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
@@ -297,11 +259,37 @@ function card(text,labels,cb){
   new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= FLOW ================= */
+/* ================= NORMALIZER ================= */
+function normalize(d){
+  if(!d || !d.id || !d.q) return null;
+  let c = d.correct;
+  if(c==="UP"||c==="A") c=d.u;
+  else if(c==="LEFT"||c==="B") c=d.l;
+  else if(c==="RIGHT"||c==="C"||c==="R") c=d.r;
+
+  return {
+    id: String(d.id),
+    set: d.set || "SET_A",
+    dom: d.dom || "GENERAL",
+    topic: d.topic || "",
+    q: d.q,
+    u: d.u,
+    l: d.l,
+    r: d.r,
+    correct: c || d.u,
+    logic: d.logic || "",
+    hint: d.hint || "",
+    trap: d.trap || "",
+    step1: d.step1 || "",
+    step2: d.step2 || ""
+  };
+}
+
+/* ================= APP FLOW ================= */
 function begin(){
   UI.review.textContent="";
   card(
-    "BEGIN SESSION",
+    `SESSION READY\n${RAW_DATA.length} Questions Loaded`,
     {up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},
     dir=>{ 
       if(dir==="UP") setPick(); 
@@ -312,13 +300,10 @@ function begin(){
 
 function setPick(){
   const sets=[...new Set(RAW_DATA.map(d=>d.set))];
-  
   if(!sets.length){
-    // Retry fetch if empty
-    card(`NO DATA FOUND\n(${RAW_DATA.length} Loaded)`,{down:"RETRY FETCH"},()=>location.reload());
+    card("NO DATA\n(0 Records)",{down:"RELOAD"},()=>location.reload());
     return;
   }
-  
   card(
     sets[SET_CURSOR],
     {left:"",right:"",up:"SELECT",down:"BACK"},
@@ -351,10 +336,7 @@ function startQuiz(){
   if(VOLUME_LIMIT) base = base.slice(0, VOLUME_LIMIT);
   
   POOL=base;
-  WRONG=[];
-  SESSION_ALL=[];
-  XP=0;
-  ATTEMPTED.clear();
+  WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED.clear();
   nextQ();
 }
 
@@ -381,7 +363,6 @@ function nextQ(){
       if(dir==="LEFT") picked = map.left;
       if(dir==="RIGHT") picked = map.right;
 
-      // Fuzzy check
       const isCorrect = String(picked).trim().toLowerCase() === String(d.correct).trim().toLowerCase();
 
       if(!isCorrect){
@@ -401,7 +382,6 @@ function nextQ(){
 function review(){
  if(!WRONG.length){ report(); return; } 
  const d=WRONG[REVIEW_INDEX];
- 
  UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
  
  card(
@@ -426,9 +406,7 @@ function report(){
  UI.review.textContent="SESSION COMPLETE"; 
  const total = SESSION_ALL.length;
  const percent = Math.round((XP / total) * 100);
- let feedback = "Review Recommended.";
- if(percent > 90) feedback = "Excellent Mastery.";
- else if(percent > 70) feedback = "Solid Performance.";
+ let feedback = percent > 90 ? "Excellent Mastery." : "Review Recommended.";
  
  card(
   `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\n${feedback}`,
@@ -457,11 +435,7 @@ function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
  const {jsPDF}=window.jspdf;
  const doc=new jsPDF();
- const seen=new Set();
- const unique=SESSION_ALL.filter(q=>{
-  if(seen.has(q.id)) return false;
-  seen.add(q.id);return true;
- });
+ const unique=SESSION_ALL.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
 
  let y=20;
  const ML=15; const W=180;
@@ -536,47 +510,46 @@ function exportSessionPDF(){
   y+=5;
  });
 
- doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
+ doc.save(`ACADEMY_v132_25_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
 
-/* ================= DATA INIT STRATEGY ================= */
+/* ================= DIAGNOSTIC DATA LOADER ================= */
 async function init(){
-  let combinedData = [];
+  let bridgeData = [];
+  let webData = [];
 
-  // 1. Try Local Storage Bridge (Admin Pushed Data)
+  // 1. Try Bridge
   try {
-    const bridgeData = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
-    if(bridgeData.length > 0) {
-        console.log("BRIDGE: Loaded", bridgeData.length, "rows from LocalStorage");
-        combinedData = [...combinedData, ...bridgeData];
-    }
+    const raw = localStorage.getItem(MASTER_KEY);
+    if(raw) bridgeData = JSON.parse(raw);
   } catch(e) {
-    console.warn("BRIDGE ERROR:", e);
+    console.warn("Bridge Error");
   }
 
-  // 2. Try Fetching from GitHub Master
+  // 2. Try Web (with timestamp to bust cache)
   try {
-    // Add random query param to bust GitHub cache
     const r = await fetch(MASTER_URL + "?t=" + Date.now(), {cache: "no-store"});
-    if(r.ok){
-        const webData = await r.json();
-        console.log("WEB: Loaded", webData.length, "rows from GitHub");
-        combinedData = [...combinedData, ...webData];
-    }
+    if(r.ok) webData = await r.json();
+    else card(`WEB FETCH FAILED\nHTTP ${r.status}`, {down:"RETRY"}, ()=>location.reload(), true);
   } catch(e) {
-    console.warn("WEB FETCH ERROR:", e);
+    // If Web fails, and we have no bridge data, Show Error
+    if(bridgeData.length === 0){
+        card(`CRITICAL FAILURE\nJSON Parse Error or Network\n\n${e.message}`, {down:"RETRY"}, ()=>location.reload(), true);
+        return;
+    }
   }
 
-  // 3. Deduplicate (Prefer Bridge over Web if ID collision)
+  // 3. Merge & Deduplicate
   const map = new Map();
-  combinedData.forEach(d => map.set(d.id, d));
-  
-  // 4. Normalize
+  [...webData, ...bridgeData].forEach(d => map.set(d.id, d));
   RAW_DATA = Array.from(map.values()).map(normalize).filter(Boolean);
-  
-  console.log("FINAL DATA COUNT:", RAW_DATA.length);
-  begin();
+
+  if(RAW_DATA.length === 0){
+    card("DATA EMPTY\nNo valid rows found.", {down:"RELOAD"}, ()=>location.reload(), true);
+  } else {
+    begin();
+  }
 }
 
 init();
