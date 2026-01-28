@@ -536,6 +536,7 @@ async function init(){
     if(r.ok) webData = await r.json();
     else card(`WEB FETCH FAILED\nHTTP ${r.status}`, {down:"RETRY"}, ()=>location.reload(), true);
   } catch(e) {
+    // If Web fails, and we have no bridge data, Show Error
     if(bridgeData.length === 0){
         card(`CRITICAL FAILURE\nJSON Parse Error or Network\n\n${e.message}`, {down:"RETRY"}, ()=>location.reload(), true);
         return;
