@@ -3,446 +3,222 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Performance v136.50</title>
+<title>Alchemist | Operator v132.21</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#000000; 
-  --card:#0a0a0a; 
-  --border:#222;
-  --gold:#ffd600; 
-  --green:#2ecc71;
-  --text-white: #ffffff;
-  --text-grey: #888888;
-  
-  --font-serif: 'Crimson Text', serif;
-  --font-sans: 'Inter', sans-serif;
-  --font-code: 'JetBrains Mono', monospace;
+  --bg:#000; --card:#121212; --border:#333;
+  --gold:#d4af37; --grey:#888;
+  --font-serif:'Crimson Text',serif;
+  --font-sans:'Inter',sans-serif;
+  --font-code:'JetBrains Mono',monospace;
 }
 
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 body{
-  margin:0; height:100vh; background:var(--bg);
-  color:var(--text-white); font-family:var(--font-sans);
-  overflow:hidden; display:flex; flex-direction:column;
+  margin:0;height:100vh;background:var(--bg);
+  color:#e0e0e0;font-family:var(--font-sans);
+  overflow:hidden;display:flex;flex-direction:column;
 }
 
-/* HEADER */
-#header{ width:90%; margin:25px auto 0; z-index:100; flex-shrink: 0; }
+#header{width:90%;margin:22px auto 0}
 .header-meta{
-  display:flex; justify-content:space-between;
-  font-family:var(--font-code); font-size:0.75rem; 
-  color:#666; letter-spacing:1.5px; text-transform:uppercase;
-  margin-bottom: 10px;
+  display:flex;justify-content:space-between;
+  font-family:var(--font-code);
+  font-size:.75rem;color:#666;letter-spacing:1.5px;
 }
 
-/* PROGRESS BAR */
-.progress-track{ width:100%; height:3px; background:#222; border-radius:2px; margin-top: 5px; }
-#progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
+.progress-track{width:100%;height:3px;background:#222;margin-top:12px}
+#progress-bar{height:100%;background:var(--gold);width:0%}
 
-/* KINETIC LOGGER */
-#kinetic-logger {
-  width: 90%; margin: 0 auto 10px;
-  font-family: var(--font-code); font-size: 0.75rem;
-  color: #444; line-height: 1.4;
-  text-transform: uppercase;
-  min-height: 50px; 
-  display: flex; flex-direction: column; justify-content: flex-end;
-  pointer-events: none;
-}
-.log-line { opacity: 0.4; transition: opacity 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.log-line.active { color: var(--green); opacity: 1; font-weight: 700; }
-.log-line.primary { color: var(--gold); opacity: 1; font-weight: 700; }
-.log-line.error { color: #ff4444; opacity: 1; font-weight: 700; }
-
-/* FLUID STACK ENGINE */
 #stack{
-  position:relative; width:90%; max-width:420px; 
-  height: calc(100vh - 180px - env(safe-area-inset-bottom)); 
-  margin: 10px auto 20px; 
-  perspective:1500px;
-  display:flex; align-items:center; justify-content:center;
+  position:relative;width:90%;max-width:420px;height:62vh;
+  margin:auto;perspective:1500px;
+  display:flex;align-items:center;justify-content:center;
 }
 
 .card{
-  position:absolute; width:100%; height:100%;
-  background:var(--card); 
-  border-radius:14px; 
+  position:absolute;width:100%;height:95%;
+  background:var(--card);border-radius:12px;
   border:1px solid var(--border);
-  padding:35px; 
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  box-shadow:0 20px 60px rgba(0,0,0,0.95);
-  will-change:transform; transform-style:preserve-3d;
-  overflow: hidden; 
+  padding:35px;
+  display:flex;justify-content:center;align-items:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.95);
 }
 
-/* MAIN TEXT */
 .card-q{
   font-family:var(--font-serif);
-  font-size: clamp(1.4rem, 5vw, 1.9rem); 
-  line-height:1.4;
-  font-weight:600; text-align:center;
-  color: var(--text-white); 
-  width: 100%; max-height: 100%; overflow-y: auto; 
-  word-wrap: break-word; padding: 0 5px; 
-  display: flex; flex-direction: column; justify-content: center;
+  font-size:1.7rem;
+  line-height:1.45;
+  font-weight:600;
+  text-align:center;
+  color:#d0d0d0;
 }
-.card-q::-webkit-scrollbar { width: 0px; }
-.card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
-.card-q sup{ font-size:0.7em; vertical-align:0.5em; }
 
-/* SWIPE LABELS */
 .swipe-label{
-  position:absolute; inset:0; 
-  display:flex; align-items:center; justify-content:center;
-  background:#000; 
-  font-family:var(--font-sans); 
-  font-weight:900; font-size:1.8rem; 
-  text-transform:uppercase; letter-spacing:1px;
-  text-align:center; padding:40px;
-  opacity:0; pointer-events:none; 
-  transition:opacity 0.15s ease;
-  border-radius:14px;
-  color: var(--text-grey); border: 1px solid #333;
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#000;
+  font-family:var(--font-sans);
+  font-weight:700;font-size:1.4rem;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  opacity:0;pointer-events:none;
+  color:var(--grey);
 }
 </style>
 </head>
+
 <body>
 
 <div id="header">
   <div class="header-meta">
-    <span style="color:#666; font-weight:700;">VIA.STACK</span> 
+    <span id="id-ui">BOOT</span>
     <span id="xp-ui">0 XP</span>
-  </div>
-  <div id="kinetic-logger">
-    <div class="log-line" id="log-1"></div>
-    <div class="log-line" id="log-2"></div>
-    <div class="log-line active" id="log-3">> SYSTEM BOOT</div>
   </div>
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      INITIALIZING...
+    <div class="card-q" style="font-family:var(--font-code);font-size:.9rem;color:#666">
+      ALCHEMIST v132.21<br>INITIALIZING…
     </div>
   </div>
 </div>
 
 <script>
 /* ================= CONFIG ================= */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+const MASTER_URL =
+  "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
 
 /* ================= STATE ================= */
 let RAW_DATA = [];
-let SET_CURSOR = 0; 
-let ACTIVE_SET = null;
-let POOL = [], WRONG = [], XP = 0;
-let SESSION_ALL = [], VOLUME_LIMIT = null;
-let ATTEMPTED = new Set(); 
-
-/* ================= LOGGER ENGINE ================= */
-function log(msg, type="normal") {
-    const l1 = document.getElementById("log-1");
-    const l2 = document.getElementById("log-2");
-    const l3 = document.getElementById("log-3");
-    l1.innerText = l2.innerText; l1.className = l2.className;
-    l2.innerText = l3.innerText; l2.className = "log-line"; 
-    l3.innerText = `> ${msg}`;
-    l3.className = `log-line ${type}`;
-}
+let POOL = [];
+let SESSION = [];
+let XP = 0;
 
 /* ================= UTILS ================= */
-const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔|\\rightleftharpoons/g,"⇌");
-const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
-const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
-
-/* ================= UI ================= */
-const UI = {
-  stack: document.getElementById("stack"),
-  xp: document.getElementById("xp-ui"),
-  bar: document.getElementById("progress-bar")
-};
-
-/* ================= PHYSICS ENGINE (Performance Optimized) ================= */
-class PhysicsController{
- constructor(el,cbs){
-  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
-  this.labels={
-    UP:el.querySelector(".sl-up"),
-    LEFT:el.querySelector(".sl-left"),
-    RIGHT:el.querySelector(".sl-right"),
-    DOWN:el.querySelector(".sl-down")
-  };
-  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
-  const m=e=>this.move(e.touches?e.touches[0]:e);
-  const e2=()=>this.end();
-  el.addEventListener("mousedown",s); 
-  window.addEventListener("mousemove",m); 
-  window.addEventListener("mouseup",e2);
-  
-  // UPGRADE 3: Passive Event Listener for smoother start
-  el.addEventListener("touchstart",s,{passive:true}); 
-  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); 
-  el.addEventListener("touchend",e2);
- }
- startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
- move(p){
-  if(!this.active)return;
-  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
-  const d=Math.hypot(dx,dy);
-  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
-  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
-  if(d>20){
-    const dir=this.dir(dx,dy);
-    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
   }
- }
- end(){
-  if(!this.active)return;this.active=false;
-  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-  const dx=m.m41,dy=m.m42;
-  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
-  else{this.el.style.transition=".4s cubic-bezier(0.2, 0.8, 0.2, 1)";this.el.style.transform="translate(0,0)"}
- }
- dir(dx,dy){
-  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
-  if(a>45&&a<135)return"UP";
-  if(a>135&&a<225)return"LEFT";
-  if(a>225&&a<315)return"DOWN";
-  return"RIGHT";
- }
+  return a;
 }
 
-/* ================= CORE LOOP PROTOCOL ================= */
-
-async function init() {
-    log("SYSTEM CHECK...", "primary");
-    const local = localStorage.getItem(MASTER_KEY);
-    if(local && local.length > 10){
-        try { 
-            const data = JSON.parse(local);
-            log("BRIDGE CONNECTED", "active");
-            RAW_DATA = normalize(data);
-            begin(); return;
-        } catch(e) { log("BRIDGE CORRUPT", "error"); }
-    }
-    
-    // UPGRADE 1: No-Cache Fetch
-    log("FETCHING MASTER...", "normal");
-    try {
-        const r = await fetch('master.json', {cache: "no-store"});
-        if(r.ok){ 
-            const data = await r.json();
-            RAW_DATA = normalize(data);
-            log("MASTER LOADED", "active");
-            begin(); 
-        } else { throw new Error(); }
-    } catch(e) { 
-        log("NO DATA SOURCE", "error");
-        card("NO DATA FOUND\nPush via Admin or Add master.json", {down:"RETRY"}, ()=>location.reload());
-    }
+function chemText(t){
+  return String(t||"")
+    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
 }
 
-function begin() {
-    UI.stack.innerHTML = "";
-    const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `
-        <div class="card-q">SESSION READY<br><br><span style="font-size:0.6em;opacity:0.7;">${RAW_DATA.length} QUESTIONS LOADED</span></div>
-        <div class="swipe-label sl-up">SELECT SET</div>
-        <div class="swipe-label sl-down">PDF EXPORT</div>
-    `;
-    UI.stack.appendChild(el);
-    new PhysicsController(el, {
-        onCommit: (dir) => {
-            if(dir==="UP") pickSet();
-            if(dir==="DOWN") exportSessionPDF();
-        }
+/* ================= RENDER ================= */
+function card(text,labels,cb){
+  const stack=document.getElementById("stack");
+  stack.innerHTML="";
+  const el=document.createElement("div");
+  el.className="card";
+  el.innerHTML=`
+    <div class="card-q">${chemText(text)}</div>
+    <div class="swipe-label sl-up">${labels.up||""}</div>
+    <div class="swipe-label sl-left">${labels.left||""}</div>
+    <div class="swipe-label sl-right">${labels.right||""}</div>
+  `;
+  stack.appendChild(el);
+  new Swipe(el,cb);
+}
+
+/* ================= SWIPE ENGINE (STABLE) ================= */
+class Swipe{
+  constructor(el,cb){
+    this.el=el;this.cb=cb;this.start=null;
+    el.addEventListener("touchstart",e=>{
+      this.start=e.touches[0];
+    },{passive:true});
+    el.addEventListener("touchend",e=>{
+      if(!this.start)return;
+      const t=e.changedTouches[0];
+      const dx=t.clientX-this.start.clientX;
+      const dy=t.clientY-this.start.clientY;
+      if(Math.hypot(dx,dy)>80){
+        this.cb(this.dir(dx,dy));
+      }
+      this.start=null;
     });
+  }
+  dir(dx,dy){
+    const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+    if(a>45&&a<135)return"UP";
+    if(a>135&&a<225)return"LEFT";
+    return"RIGHT";
+  }
 }
 
-function pickSet() {
-    const sets = [...new Set(RAW_DATA.map(d=>d.set))];
-    if(!sets.length) return;
-    log("SELECT DATASET", "primary");
-    renderSetCard(sets, 0);
+/* ================= FLOW ================= */
+function begin(){
+  card(
+    `SESSION READY\n${RAW_DATA.length} QUESTIONS`,
+    {up:"START"},
+    d=>d==="UP"&&startQuiz()
+  );
 }
 
-function renderSetCard(sets, idx) {
-    const s = sets[idx];
-    card(s, {up:"SELECT", left:"PREV", right:"NEXT", down:"BACK"}, dir => {
-        if(dir==="LEFT") renderSetCard(sets, (idx-1+sets.length)%sets.length);
-        if(dir==="RIGHT") renderSetCard(sets, (idx+1)%sets.length);
-        if(dir==="UP") { ACTIVE_SET = s; pickVolume(); }
-        if(dir==="DOWN") begin();
-    });
+function startQuiz(){
+  POOL=shuffle([...RAW_DATA]);
+  SESSION=[];
+  XP=0;
+  nextQ();
 }
 
-function pickVolume() {
-    log("SET VOLUME", "primary");
-    card("QUESTION VOLUME", {up:"10", left:"25", right:"50", down:"ALL"}, dir => {
-        if(dir==="UP") VOLUME_LIMIT=10;
-        if(dir==="LEFT") VOLUME_LIMIT=25;
-        if(dir==="RIGHT") VOLUME_LIMIT=50;
-        if(dir==="DOWN") VOLUME_LIMIT=null;
-        startQuiz();
-    });
-}
+function nextQ(){
+  if(!POOL.length){exportPDF();return;}
+  const d=POOL.shift();
+  SESSION.push(d);
+  document.getElementById("id-ui").textContent=d.id;
 
-function startQuiz() {
-    log("INITIALIZING POOL...", "active");
-    let base = RAW_DATA.filter(d => d.set === ACTIVE_SET);
-    base = shuffle(base);
-    if(VOLUME_LIMIT) base = base.slice(0, VOLUME_LIMIT);
-    
-    POOL = base;
-    WRONG = [];
-    SESSION_ALL = [];
-    XP = 0;
-    ATTEMPTED.clear();
+  const opts=shuffle([d.u,d.l,d.r]);
+  const map={UP:opts[0],LEFT:opts[1],RIGHT:opts[2]};
+
+  card(d.q,map,dir=>{
+    if(map[dir]===d.correct)XP++;
+    document.getElementById("xp-ui").textContent=`${XP} XP`;
+    document.getElementById("progress-bar").style.width=
+      (SESSION.length/RAW_DATA.length*100)+"%";
     nextQ();
+  });
 }
 
-function nextQ() {
-    if(!POOL.length) {
-        if(WRONG.length) review();
-        else report();
-        return;
-    }
+/* ================= PDF ================= */
+function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  let y=20;
 
-    const d = POOL.shift();
-    SESSION_ALL.push(d);
-    log(`ACTIVE: ${d.id}`, "normal");
+  SESSION.forEach((d,i)=>{
+    if(y>260){doc.addPage();y=20;}
+    doc.setFontSize(12);
+    doc.text(`Q${i+1}. ${d.q}`,15,y);y+=10;
+    doc.setFontSize(10);
+    doc.text(`A) ${d.u}`,20,y);y+=6;
+    doc.text(`B) ${d.l}`,20,y);y+=6;
+    doc.text(`C) ${d.r}`,20,y);y+=8;
+  });
 
-    const opts = shuffle([d.u, d.l, d.r]);
-    const map = { UP: opts[0], LEFT: opts[1], RIGHT: opts[2] };
-
-    card(d.q, {up:map.UP, left:map.LEFT, right:map.RIGHT}, dir => {
-        if(dir==="DOWN") { nextQ(); return; }
-        
-        const picked = map[dir];
-        const isCorrect = String(picked).trim().toLowerCase() === String(d.correct).trim().toLowerCase();
-        
-        if(isCorrect) {
-            if(!ATTEMPTED.has(d.id)) XP++;
-            log("OUTCOME: POSITIVE", "active");
-        } else {
-            WRONG.push(d);
-            log("OUTCOME: NEGATIVE", "error");
-        }
-        
-        ATTEMPTED.add(d.id);
-        updateHUD();
-        nextQ();
-    });
+  doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
 }
 
-function review() {
-    const d = WRONG.shift(); 
-    log("REVIEW MODE", "primary");
-    log(`HINT: ${d.hint || "NONE"}`, "normal"); 
-    
-    card(`REVIEW\n\n${d.logic || "No logic provided."}`, {up:"RETRY", down:"SKIP"}, dir => {
-        if(dir==="UP") {
-            POOL.unshift(d);
-            log("RE-INSERTING...", "active");
-            nextQ(); 
-        } else {
-            WRONG.push(d); // Cycle
-            log("SKIPPING...", "normal");
-            review();
-        }
-    });
-}
-
-function report() {
-    log("SESSION COMPLETE", "active");
-    const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
-    card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} (${percent}%)`, {down:"PDF", up:"RESTART"}, dir => {
-        if(dir==="DOWN") exportSessionPDF();
-        if(dir==="UP") begin();
-    });
-}
-
-/* ================= HELPERS ================= */
-function card(text, labels, cb) {
-    UI.stack.innerHTML = "";
-    const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `
-        <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
-        <div class="swipe-label sl-up">${chemText(labels.up||"")}</div>
-        <div class="swipe-label sl-left">${chemText(labels.left||"")}</div>
-        <div class="swipe-label sl-right">${chemText(labels.right||"")}</div>
-        <div class="swipe-label sl-down">${chemText(labels.down||"")}</div>
-    `;
-    UI.stack.appendChild(el);
-    new PhysicsController(el, {onCommit: cb});
-}
-
-// UPGRADE 2: Stable Progress Math
-function updateHUD() {
-    UI.xp.textContent = `${XP} XP`;
-    // Prevent div by zero if RAW_DATA is somehow empty, though init checks that.
-    const total = RAW_DATA.length || 1; 
-    // Show progress relative to TOTAL VAULT SIZE or SESSION?
-    // User requested "from this code" (v132.21).
-    // v132.21 logic: (SESSION.length/RAW_DATA.length*100)
-    // In strict loop, we might filter by set.
-    // If strict loop filters by set, RAW_DATA.length might be too large (global).
-    // However, user said "fetch improvements... don't over do".
-    // I will stick to SESSION_ALL.length / TOTAL_ACTIVE_SESSION_TARGET
-    // But since we don't know the exact target if user picks "ALL",
-    // logic suggests: SESSION_ALL.length + POOL.length + WRONG.length = Total for this run.
-    // The previous stable logic was:
-    const sessionTotal = SESSION_ALL.length + POOL.length + WRONG.length;
-    const progress = (SESSION_ALL.length / sessionTotal) * 100;
-    UI.bar.style.width = `${progress}%`;
-}
-
-function normalize(data) {
-    return data.map(d => ({
-        id: d.id, set: d.set || "DEFAULT",
-        q: d.q, u: d.u, l: d.l, r: d.r, correct: d.correct,
-        logic: d.logic || "", hint: d.hint || "", trap: d.trap || "",
-        dom: d.dom || "GENERAL", topic: d.topic || "",
-        ref: d.ref || "", s1: d.s1 || "", s2: d.s2 || ""
-    })).filter(d => d.q && d.u);
-}
-
-function exportSessionPDF(){
- if(!SESSION_ALL.length){alert("No data");return;}
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- let y=20;
- SESSION_ALL.forEach((d, i)=>{
-  if(y>260){doc.addPage();y=20;}
-  doc.setFont("courier","bold"); doc.setFontSize(11);
-  doc.text(`Q${i+1} | ${d.id}`, 15, y); y+=8;
-  doc.setFont("times","normal");
-  const q=doc.splitTextToSize(`Q: ${cleanPDF(d.q)}`, 180);
-  doc.text(q, 15, y); y+=q.length*6;
-  doc.setFontSize(10);
-  doc.text(`A) ${cleanPDF(d.u)}`, 15, y); y+=5;
-  doc.text(`B) ${cleanPDF(d.l)}`, 15, y); y+=5;
-  doc.text(`C) ${cleanPDF(d.r)}`, 15, y); y+=6;
-  doc.setFont("courier","bold");
-  doc.text(`ANSWER: ${cleanPDF(d.correct)}`, 15, y); y+=6;
-  doc.setFont("times","italic");
-  const l=doc.splitTextToSize(`LOGIC: ${cleanPDF(d.logic)}`, 180);
-  doc.text(l, 15, y); y+=l.length*5;
-  y+=10;
- });
- doc.save(`ALCHEMIST_${Date.now()}.pdf`);
-}
-
-init();
+/* ================= INIT ================= */
+(async function init(){
+  const r=await fetch(MASTER_URL,{cache:"no-store"});
+  RAW_DATA=await r.json();
+  begin();
+})();
 </script>
+
 </body>
 </html>
