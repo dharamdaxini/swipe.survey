@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>Alchemist | Operator UI v136.30</title>
+<title>Alchemist | Operator UI v136.31</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -89,8 +89,6 @@ body{
 .card-q.show{opacity:1;transform:translateY(0)}
 .card-q::-webkit-scrollbar{width:4px}
 .card-q::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-.card-q sub{font-size:.7em;vertical-align:-.3em}
-.card-q sup{font-size:.7em;vertical-align:.5em}
 
 /* SWIPE LABELS */
 .swipe-label{
@@ -129,16 +127,29 @@ body{
 const MASTER_KEY="ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA=[],POOL=[],WRONG=[],REVIEW_POOL=[];
-let SESSION_ALL=[],XP=0,IDX=0;
-let MODE="QUIZ"; // QUIZ | SCORE | REVIEW_Q | REVIEW_E | END
+let RAW_DATA=[];
+let POOL=[];
+let WRONG=[];
+let REVIEW_POOL=[];
+let SESSION_ALL=[];
+let XP=0;
+let IDX=0;
 let CURR=null;
 
 /* ================= UTILS ================= */
-const chemText=t=>!t?"":String(t)
- .replace(/_([0-9]+)/g,"<sub>$1</sub>")
- .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
-const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+function chemText(t){
+ if(!t) return "";
+ return String(t)
+  .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+  .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
+}
+function shuffle(a){
+ for(let i=a.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [a[i],a[j]]=[a[j],a[i]];
+ }
+ return a;
+}
 
 /* ================= UI ================= */
 const UI={
@@ -202,103 +213,98 @@ function card(text,labels,cb){
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+  <div class="card-q">${chemText(text)}</div>
   <div class="swipe-label sl-up">${labels.up||""}</div>
   <div class="swipe-label sl-left">${labels.left||""}</div>
   <div class="swipe-label sl-right">${labels.right||""}</div>
-  <div class="swipe-label sl-down">${labels.down||""}</div>`;
+  <div class="swipe-label sl-down">${labels.down||""}</div>
+ `;
  UI.stack.appendChild(el);
  requestAnimationFrame(()=>el.querySelector(".card-q").classList.add("show"));
  new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= HEADER HELPERS ================= */
-function reviewHeader(hint=""){
+/* ================= HEADER ================= */
+function reviewHeader(hint){
  UI.review.innerHTML=`
   <div class="review-title">REVIEW</div>
   <div class="review-line"></div>
-  ${hint||"[only hint text here]"}
+  ${hint}
  `;
 }
 function clearHeader(){UI.review.textContent="";}
 
-/* ================= QUIZ FLOW ================= */
+/* ================= QUIZ ================= */
 function startQuiz(){
- MODE="QUIZ";
  POOL=shuffle([...RAW_DATA]);
- WRONG=[];SESSION_ALL=[];XP=0;IDX=0;
+ WRONG=[];
+ SESSION_ALL=[];
+ XP=0;
  nextQuiz();
 }
 function nextQuiz(){
- if(!POOL.length)return scoreCard();
+ if(!POOL.length){ scoreCard(); return; }
  CURR=POOL.shift();
  SESSION_ALL.push(CURR);
  UI.id.textContent=CURR.id;
  const opts=shuffle([CURR.u,CURR.l,CURR.r]);
- const map={up:opts[0],left:opts[1],right:opts[2]};
- card(CURR.q,map,dir=>{
-  const picked=dir==="UP"?map.up:dir==="LEFT"?map.left:map.right;
+ card(CURR.q,{up:opts[0],left:opts[1],right:opts[2]},dir=>{
+  const picked=dir==="UP"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
   if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase())XP++;
   else WRONG.push(CURR);
-  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
-  UI.bar.style.width=`${(SESSION_ALL.length/(SESSION_ALL.length+POOL.length))*100}%`;
   nextQuiz();
  });
 }
 
-/* ================= SCORE CARD ================= */
+/* ================= SCORE ================= */
 function scoreCard(){
- MODE="SCORE";
  clearHeader();
- card(`DONE\n${XP} / ${SESSION_ALL.length}`,{
-  up:"RETRY",down:"REVIEW"
- },dir=>{
+ card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RETRY",down:"REVIEW"},dir=>{
   if(dir==="UP")startQuiz();
   if(dir==="DOWN")startReview();
  });
 }
 
-/* ================= REVIEW LOOP ================= */
+/* ================= REVIEW LOOP (FIXED) ================= */
 function startReview(){
- MODE="REVIEW_Q";
  REVIEW_POOL=[...WRONG];
  IDX=0;
  nextReviewQ();
 }
 function nextReviewQ(){
- if(!REVIEW_POOL.length)return endSlide();
+ if(REVIEW_POOL.length===0){ endSlide(); return; }
+ if(IDX>=REVIEW_POOL.length) IDX=0;
  CURR=REVIEW_POOL[IDX];
- reviewHeader(CURR.hint);
+ reviewHeader(CURR.hint || "Think carefully about the concept.");
  const opts=shuffle([CURR.u,CURR.l,CURR.r]);
- const map={up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]};
- card(CURR.q,map,dir=>{
-  if(dir==="UP")return reviewExplain();
-  const picked=dir==="DOWN"?map.down:dir==="LEFT"?map.left:map.right;
+ card(CURR.q,{up:"DEEP DIVE",left:opts[1],right:opts[2],down:opts[0]},dir=>{
+  if(dir==="UP"){ reviewExplain(); return; }
+  const picked=dir==="DOWN"?opts[0]:dir==="LEFT"?opts[1]:opts[2];
   if(picked.trim().toLowerCase()===CURR.u.trim().toLowerCase()){
    REVIEW_POOL.splice(IDX,1);
-  }else IDX=(IDX+1)%REVIEW_POOL.length;
+  }else{
+   IDX++;
+  }
   nextReviewQ();
  });
 }
 function reviewExplain(){
- MODE="REVIEW_E";
- reviewHeader(CURR.hint);
- card(CURR.logic||"Review the core concept carefully.",{
-  up:"RETRY",down:"GOT IT",left:"SKIP",right:"CONFUSED"
+ reviewHeader(CURR.hint || "Think carefully about the concept.");
+ card(CURR.logic || "Review this explanation.",{
+  up:"RETRY",
+  down:"GOT IT",
+  left:"SKIP",
+  right:"CONFUSED"
  },dir=>{
-  if(dir==="LEFT"){IDX=(IDX+1)%REVIEW_POOL.length;}
-  if(dir==="DOWN"||dir==="UP"){/* stay */}
+  if(dir==="LEFT"||dir==="RIGHT") IDX++;
   nextReviewQ();
  });
 }
 
-/* ================= END SLIDE ================= */
+/* ================= END ================= */
 function endSlide(){
- MODE="END";
  clearHeader();
- card("SESSION COMPLETE",{
-  down:"PDF",up:"SUGGEST",left:"NEXT",right:"MENU"
- },dir=>{
+ card("SESSION COMPLETE",{down:"PDF",right:"MENU"},dir=>{
   if(dir==="DOWN")exportPDF();
   if(dir==="RIGHT")location.reload();
  });
@@ -310,28 +316,20 @@ function exportPDF(){
  const doc=new jsPDF();
  let y=20;
  SESSION_ALL.forEach(d=>{
-  if(y>250){doc.addPage();y=20;}
-  doc.setFont("times","bold");doc.text(d.q,10,y);y+=8;
-  doc.setFont("helvetica","normal");
-  doc.text(`A) ${d.u}`,10,y);y+=5;
-  doc.text(`B) ${d.l}`,10,y);y+=5;
-  doc.text(`C) ${d.r}`,10,y);y+=5;
-  doc.setFont("times","italic");
-  doc.text(d.logic||"",10,y);y+=8;
-  doc.text(`1. ${d.s1||"-"}`,10,y);y+=5;
-  doc.text(`2. ${d.s2||"-"}`,10,y);y+=8;
+  if(y>260){doc.addPage();y=20;}
+  doc.text(d.q,10,y);y+=8;
+  doc.text(d.logic||"",10,y);y+=10;
  });
  doc.save(`SESSION_${Date.now()}.pdf`);
  startQuiz();
 }
 
 /* ================= INIT ================= */
-function init(){
+(function init(){
  const raw=localStorage.getItem(MASTER_KEY);
  RAW_DATA=raw?JSON.parse(raw):[];
  card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&startQuiz());
-}
-init();
+})();
 </script>
 </body>
 </html>
