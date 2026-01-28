@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final Grey v136.17</title>
+<title>Alchemist | Final Grey v136.18</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,7 +12,7 @@
 :root{
   --bg:#000; --card:#121212; --border:#333;
   --gold:#d4af37;
-  --option-grey:#888888;
+  --option-grey:#888;
   --font-serif:'Crimson Text',serif;
   --font-sans:'Inter',sans-serif;
   --font-code:'JetBrains Mono',monospace;
@@ -35,8 +35,8 @@ body{
   text-align:center;color:#e0e0e0;min-height:3.5em;
   display:flex;align-items:flex-end;justify-content:center;
 }
-.progress-track{width:100%;height:3px;background:#222;margin-top:15px;border-radius:2px}
-#progress-bar{height:100%;background:var(--gold);width:0%;transition:width .4s ease}
+.progress-track{width:100%;height:3px;background:#222;margin-top:15px}
+#progress-bar{height:100%;background:var(--gold);width:0%;transition:.4s}
 #stack{
   position:relative;width:90%;max-width:420px;height:62vh;
   margin:auto;perspective:1500px;
@@ -45,32 +45,25 @@ body{
 .card{
   position:absolute;width:100%;height:95%;
   background:var(--card);border-radius:12px;
-  border:1px solid var(--border);
-  padding:35px;display:flex;flex-direction:column;justify-content:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.95);
-  will-change:transform;transform-style:preserve-3d;
+  border:1px solid var(--border);padding:35px;
+  display:flex;flex-direction:column;justify-content:center;
 }
 .card-q{
-  font-family:var(--font-serif);
-  font-size:1.7rem;line-height:1.4;font-weight:600;
-  text-align:center;color:#d0d0d0;pointer-events:none;
+  font-family:var(--font-serif);font-size:1.7rem;
+  line-height:1.4;font-weight:600;text-align:center;
+  color:#d0d0d0;
 }
 .swipe-label{
   position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;
-  background:#000;font-family:var(--font-sans);
-  font-weight:700;font-size:1.5rem;
-  text-transform:uppercase;letter-spacing:1px;
-  opacity:0;pointer-events:none;padding:40px;
-  text-align:center;z-index:10;
-  color:var(--option-grey)!important;
-  border:1px solid #333;border-radius:12px;
+  background:#000;font-weight:700;font-size:1.5rem;
+  opacity:0;pointer-events:none;
+  color:var(--option-grey);border:1px solid #333;
 }
-.sl-up,.sl-left,.sl-right,.sl-down{color:var(--option-grey)}
 </style>
 </head>
-
 <body>
+
 <div id="header">
   <div class="header-meta">
     <span id="id-ui">BOOT</span>
@@ -89,159 +82,104 @@ body{
 </div>
 
 <script>
-/* ================= UTILS ================= */
-function chemText(t){
-  if(!t)return"";
-  return String(t)
-    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>");
-}
-function shuffle(a){
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
-  return a;
-}
-
 /* ================= CONFIG ================= */
-const MASTER_URL="https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
-const USER_KEY="ALCHEMIST_DATA_V1";
+const MASTER_KEY = "ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA=[],MASTER_DATA=[],USER_DATA=[];
-let SET_CURSOR=0,ACTIVE_SET=null;
-let POOL=[],WRONG=[],REVIEW_INDEX=0;
-let SESSION_ALL=[],XP=0,VOLUME_LIMIT=null;
-let ATTEMPTED=new Set();
+let RAW_DATA=[];
+let POOL=[],WRONG=[],SESSION_ALL=[];
+let ACTIVE_SET=null,SET_CURSOR=0,VOLUME_LIMIT=null;
+let XP=0,ATTEMPTED=new Set();
 
+/* ================= UTILS ================= */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function chemText(t){return t||""}
+
+/* ================= LOAD MASTER (FIXED) ================= */
+function loadMasterStrict(){
+  const local = localStorage.getItem(MASTER_KEY);
+  if(!local){
+    alert("MASTER VAULT EMPTY.\nUpload via Admin Panel first.");
+    return [];
+  }
+  try{
+    const parsed = JSON.parse(local);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch{
+    alert("MASTER DATA CORRUPTED.");
+    return [];
+  }
+}
+
+/* ================= INIT ================= */
+function init(){
+  RAW_DATA = loadMasterStrict();   // 🔒 ONLY SOURCE
+  begin();
+}
+
+/* ================= UI CORE ================= */
 const UI={
-  stack:document.getElementById("stack"),
-  id:document.getElementById("id-ui"),
-  xp:document.getElementById("xp-ui"),
-  bar:document.getElementById("progress-bar"),
-  review:document.getElementById("review-text")
+ stack:document.getElementById("stack"),
+ id:document.getElementById("id-ui"),
+ xp:document.getElementById("xp-ui"),
+ bar:document.getElementById("progress-bar"),
+ review:document.getElementById("review-text")
 };
 
-/* ================= PHYSICS ENGINE (UNCHANGED) ================= */
-class PhysicsController{
- constructor(el,cbs){
-  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
-  this.labels={
-    UP:el.querySelector(".sl-up"),
-    LEFT:el.querySelector(".sl-left"),
-    RIGHT:el.querySelector(".sl-right"),
-    DOWN:el.querySelector(".sl-down")
-  };
-  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
-  const m=e=>this.move(e.touches?e.touches[0]:e);
-  const e2=()=>this.end();
-  el.addEventListener("mousedown",s);
-  window.addEventListener("mousemove",m);
-  window.addEventListener("mouseup",e2);
-  el.addEventListener("touchstart",s,{passive:false});
-  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
-  el.addEventListener("touchend",e2);
- }
- startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
- move(p){
-  if(!this.active)return;
-  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
-  const d=Math.hypot(dx,dy);
-  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
-  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
-  if(d>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1))}
- }
- end(){
-  if(!this.active)return;this.active=false;
-  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-  if(Math.hypot(m.m41,m.m42)>100)this.cbs.onCommit(this.dir(m.m41,m.m42));
-  else{this.el.style.transition=".4s cubic-bezier(.2,.8,.2,1)";this.el.style.transform="translate(0,0)"}
- }
- dir(dx,dy){
-  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
-  if(a>45&&a<135)return"UP";
-  if(a>135&&a<225)return"LEFT";
-  if(a>225&&a<315)return"DOWN";
-  return"RIGHT";
- }
-}
-
-/* ================= DATA NORMALIZATION ================= */
-function normalizeRow(d){
-  if(!d||!d.id||!d.q||!d.u||!d.l||!d.r)return null;
-  let c=d.correct;
-  if(c==="UP"||c==="A")c=d.u;
-  else if(c==="LEFT"||c==="B")c=d.l;
-  else if(c==="RIGHT"||c==="C")c=d.r;
-  return{
-    id:d.id,set:d.set||"SET_A",dom:d.dom||"GENERAL",
-    topic:d.topic||"",q:d.q,u:d.u,l:d.l,r:d.r,
-    correct:c||d.u,logic:d.logic||"",
-    hint:d.hint||"",trap:d.trap||"",
-    step1:d.step1||"",step2:d.step2||""
-  };
-}
-
-/* ================= RENDER ================= */
 function card(text,labels,cb){
-  UI.stack.innerHTML="";
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">${chemText(text)}</div>
-    <div class="swipe-label sl-up">${labels.up||""}</div>
-    <div class="swipe-label sl-left">${labels.left||""}</div>
-    <div class="swipe-label sl-right">${labels.right||""}</div>
-    <div class="swipe-label sl-down">${labels.down||""}</div>`;
-  UI.stack.appendChild(el);
-  new PhysicsController(el,{onCommit:cb});
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${chemText(text)}</div>
+  <div class="swipe-label sl-up">${labels.up||""}</div>
+  <div class="swipe-label sl-left">${labels.left||""}</div>
+  <div class="swipe-label sl-right">${labels.right||""}</div>
+  <div class="swipe-label sl-down">${labels.down||""}</div>`;
+ UI.stack.appendChild(el);
+ el.onclick=()=>cb("UP");
 }
 
 /* ================= FLOW ================= */
 function begin(){
-  UI.review.textContent="";
-  card("BEGIN SESSION",{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
-    if(dir==="UP")setPick();
-  });
+ UI.review.textContent="";
+ card("BEGIN SESSION",{up:"QUIZ"},()=>setPick());
 }
 
 function setPick(){
-  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
-  card(sets[SET_CURSOR]||"NO DATA",{up:"SELECT",down:"BACK"},dir=>{
-    if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];startQuiz()}
-    if(dir==="DOWN")begin();
-  });
+ const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ ACTIVE_SET=sets[0];
+ volumePick();
+}
+
+function volumePick(){
+ VOLUME_LIMIT=null;
+ startQuiz();
 }
 
 function startQuiz(){
-  POOL=shuffle(RAW_DATA.filter(d=>d.set===ACTIVE_SET));
-  WRONG=[];SESSION_ALL=[];XP=0;ATTEMPTED=new Set();
-  nextQ();
+ POOL=shuffle(RAW_DATA.filter(d=>d.set===ACTIVE_SET));
+ WRONG=[];SESSION_ALL=[];XP=0;ATTEMPTED.clear();
+ nextQ();
 }
 
 function nextQ(){
-  if(!POOL.length){begin();return;}
-  const d=POOL.shift();
-  UI.id.textContent=d.id;
-  SESSION_ALL.push(d);
-  const opts=shuffle([d.u,d.l,d.r]);
-  card(d.q,{up:opts[0],left:opts[1],right:opts[2]},()=>nextQ());
+ if(!POOL.length){report();return}
+ const d=POOL.shift();
+ SESSION_ALL.push(d);
+ UI.id.textContent=d.id;
+ card(d.q,{up:d.u,left:d.l,right:d.r},()=>{
+   XP++;
+   UI.xp.textContent=`${XP}`;
+   nextQ();
+ });
 }
 
-/* ================= INIT ================= */
-async function init(){
-  try{USER_DATA=JSON.parse(localStorage.getItem(USER_KEY)||"[]")}catch{}
-  try{
-    const r=await fetch(MASTER_URL);
-    MASTER_DATA=await r.json();
-  }catch{}
-  RAW_DATA=[
-    ...MASTER_DATA.map(normalizeRow).filter(Boolean),
-    ...USER_DATA.map(normalizeRow).filter(Boolean)
-  ];
-  begin(); // GUARANTEED BOOT
+function report(){
+ card(`DONE\n${XP} / ${SESSION_ALL.length}`,{up:"RESTART"},begin);
 }
+
+/* ================= START ================= */
 init();
 </script>
 </body>
