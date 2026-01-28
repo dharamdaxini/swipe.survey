@@ -2,109 +2,102 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Operator UI v136.24</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>Alchemist | Operator UI v136.25</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{
-  --bg:#000;
-  --card:#121212;
-  --border:#333;
-  --text-main:#e6e6e6;      /* slight white */
-  --text-grey:#9a9a9a;      /* swipe labels */
-  --font-serif:'Crimson Text',serif;
-  --font-sans:'Inter',sans-serif;
-  --font-code:'JetBrains Mono',monospace;
+ --bg:#000;
+ --card:#121212;
+ --border:#333;
+ --text-main:#e6e6e6;
+ --text-grey:#9a9a9a;
+ --font-serif:'Crimson Text',serif;
+ --font-sans:'Inter',sans-serif;
+ --font-code:'JetBrains Mono',monospace;
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 body{
-  margin:0;height:100vh;background:var(--bg);
-  color:var(--text-main);
-  font-family:var(--font-sans);
-  overflow:hidden;display:flex;flex-direction:column;
+ margin:0;height:100vh;background:var(--bg);
+ color:var(--text-main);
+ font-family:var(--font-sans);
+ overflow:hidden;display:flex;flex-direction:column;
 }
 
 /* HEADER */
-#header{width:90%;margin:25px auto 0;z-index:100}
+#header{width:90%;margin:25px auto 0}
 .header-meta{
-  display:flex;justify-content:space-between;
-  font-family:var(--font-code);
-  font-size:.75rem;color:#666;
-  letter-spacing:1.5px;text-transform:uppercase;
+ display:flex;justify-content:space-between;
+ font-family:var(--font-code);
+ font-size:.75rem;color:#666;
+ letter-spacing:1.5px;text-transform:uppercase;
 }
 #review-text{
-  margin-top:18px;
-  font-family:var(--font-serif);
-  font-size:1.25rem;
-  font-style:italic;
-  text-align:center;
-  color:#777;
-  min-height:3em;
+ margin-top:18px;
+ font-family:var(--font-serif);
+ font-size:1.25rem;
+ font-style:italic;
+ text-align:center;
+ color:#777;
+ min-height:3em;
 }
 
 /* PROGRESS */
 .progress-track{width:100%;height:3px;background:#222;margin-top:14px;border-radius:2px}
-#progress-bar{height:100%;background:#666;width:0%;transition:width .4s ease;border-radius:2px}
+#progress-bar{height:100%;background:#666;width:0%;transition:width .4s ease}
 
 /* STACK */
 #stack{
-  position:relative;
-  width:90%;
-  max-width:420px;
-  height:62vh;
-  margin:auto;
-  perspective:1500px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+ position:relative;
+ width:90%;
+ max-width:420px;
+ height:62vh;
+ margin:auto;
+ perspective:1500px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
 }
 
 .card{
-  position:absolute;
-  width:100%;
-  height:95%;
-  background:var(--card);
-  border-radius:12px;
-  border:1px solid var(--border);
-  padding:36px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.95);
-  will-change:transform;
-  transform-style:preserve-3d;
-  overflow:hidden;
+ position:absolute;
+ width:100%;
+ height:95%;
+ background:var(--card);
+ border-radius:14px;
+ border:1px solid var(--border);
+ padding:36px;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ box-shadow:0 20px 60px rgba(0,0,0,.95);
+ transform-style:preserve-3d;
+ overflow:hidden;
 }
 
-/* MAIN QUESTION */
+/* MAIN TEXT */
 .card-q{
-  font-family:var(--font-serif);
-  font-size:clamp(1.15rem,4vw,1.75rem);
-  line-height:1.55;
-  font-weight:600;
-  text-align:center;
-  color:var(--text-main);
-  width:100%;
-  max-height:100%;
-  overflow-y:auto;
-  padding:0 6px;
-
-  /* animation */
-  opacity:0;
-  transform:translateY(10px);
-  transition:opacity .35s ease, transform .35s ease;
+ font-family:var(--font-serif);
+ font-size:clamp(1.15rem,4vw,1.75rem);
+ line-height:1.55;
+ font-weight:600;
+ text-align:center;
+ color:var(--text-main);
+ width:100%;
+ max-height:100%;
+ overflow-y:auto;
+ padding:0 6px;
+ opacity:0;
+ transform:translateY(10px);
+ transition:opacity .35s ease,transform .35s ease;
 }
-.card-q.show{
-  opacity:1;
-  transform:translateY(0);
-}
+.card-q.show{opacity:1;transform:translateY(0)}
 
-/* SCROLLBAR */
 .card-q::-webkit-scrollbar{width:4px}
 .card-q::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
 
@@ -113,53 +106,45 @@ body{
 
 /* SWIPE LABELS */
 .swipe-label{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#000;
-  font-family:var(--font-sans);
-  font-weight:700;
-  font-size:1.5rem;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  color:var(--text-grey);
-  opacity:0;
-  pointer-events:none;
-  padding:40px;
-  text-align:center;
-  border-radius:12px;
-  border:1px solid #333;
-
-  /* animation */
-  transition:opacity .18s ease, transform .18s ease;
-  transform:scale(.98);
+ position:absolute;inset:0;
+ display:flex;align-items:center;justify-content:center;
+ background:#000;
+ font-family:var(--font-sans);
+ font-weight:700;
+ font-size:1.5rem;
+ letter-spacing:1px;
+ text-transform:uppercase;
+ color:var(--text-grey);
+ opacity:0;
+ pointer-events:none;
+ padding:40px;
+ text-align:center;
+ border-radius:14px;
+ border:1px solid #333;
+ transition:opacity .18s ease,transform .18s ease;
+ transform:scale(.98);
 }
-
-.swipe-label.active{
-  opacity:1;
-  transform:scale(1);
-}
+.swipe-label.active{opacity:1;transform:scale(1)}
 </style>
 </head>
+
 <body>
 
 <div id="header">
-  <div class="header-meta">
-    <span id="id-ui">BOOT</span>
-    <span id="xp-ui">0 XP</span>
-  </div>
-  <div id="review-text"></div>
-  <div class="progress-track"><div id="progress-bar"></div></div>
+ <div class="header-meta">
+  <span id="id-ui">BOOT</span>
+  <span id="xp-ui">0 XP</span>
+ </div>
+ <div id="review-text"></div>
+ <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="stack">
-  <div class="card">
-    <div class="card-q show" style="font-family:var(--font-code);font-size:.9rem;color:#666">
-      VIA.STACK | OPERATOR<br>INITIALIZING…
-    </div>
+ <div class="card">
+  <div class="card-q show" style="font-family:var(--font-code);font-size:.9rem;color:#666">
+   VIA.STACK | OPERATOR<br>INITIALIZING…
   </div>
+ </div>
 </div>
 
 <script>
@@ -167,8 +152,7 @@ body{
 const MASTER_KEY="ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA=[],SET_CURSOR=0,ACTIVE_SET=null;
-let POOL=[],SESSION_ALL=[],XP=0,VOLUME_LIMIT=null;
+let RAW_DATA=[],POOL=[],SESSION_ALL=[],XP=0;
 
 /* ================= UTILS ================= */
 const chemText=t=>!t?"":String(t)
@@ -197,10 +181,10 @@ class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
   this.labels={
-    UP:el.querySelector(".sl-up"),
-    LEFT:el.querySelector(".sl-left"),
-    RIGHT:el.querySelector(".sl-right"),
-    DOWN:el.querySelector(".sl-down")
+   UP:el.querySelector(".sl-up"),
+   LEFT:el.querySelector(".sl-left"),
+   RIGHT:el.querySelector(".sl-right"),
+   DOWN:el.querySelector(".sl-down")
   };
   const s=e=>this.startDrag(e.touches?e.touches[0]:e);
   const m=e=>this.move(e.touches?e.touches[0]:e);
@@ -220,8 +204,8 @@ class PhysicsController{
   this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
   Object.values(this.labels).forEach(l=>l&&(l.classList.remove("active")));
   if(d>20){
-    const dir=this.dir(dx,dy);
-    this.labels[dir]&&(this.labels[dir].classList.add("active"));
+   const dir=this.dir(dx,dy);
+   this.labels[dir]&&(this.labels[dir].classList.add("active"));
   }
  }
  end(){
@@ -252,41 +236,23 @@ function card(text,labels,cb){
   <div class="swipe-label sl-right">${labels.right||""}</div>
   <div class="swipe-label sl-down">${labels.down||""}</div>`;
  UI.stack.appendChild(el);
-
- requestAnimationFrame(()=>{
-   el.querySelector(".card-q").classList.add("show");
- });
-
+ requestAnimationFrame(()=>el.querySelector(".card-q").classList.add("show"));
  new PhysicsController(el,{onCommit:cb});
 }
 
 /* ================= FLOW ================= */
 function begin(){
- card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&setPick());
-}
-
-function setPick(){
- const sets=[...new Set(RAW_DATA.map(d=>d.set))];
- if(!sets.length)return card("VAULT EMPTY",{down:"RELOAD"},()=>location.reload());
- card(sets[SET_CURSOR],{up:"SELECT"},d=>{
-  if(d==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
- });
-}
-
-function volumePick(){
- card("QUESTION VOLUME",{up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},()=>{
-  startQuiz();
- });
+ card("BEGIN SESSION",{up:"QUIZ"},d=>d==="UP"&&startQuiz());
 }
 
 function startQuiz(){
- let base=shuffle(RAW_DATA.filter(d=>d.set===ACTIVE_SET));
- POOL=base;XP=0;SESSION_ALL=[];
+ POOL=shuffle([...RAW_DATA]);
+ SESSION_ALL=[];XP=0;
  nextQ();
 }
 
 function nextQ(){
- if(!POOL.length)return card(`DONE\n${XP}/${SESSION_ALL.length}`,{up:"RESTART"},()=>begin());
+ if(!POOL.length)return exportPDF();
  const d=POOL.shift();
  SESSION_ALL.push(d);
  UI.id.textContent=d.id;
@@ -303,6 +269,36 @@ function nextQ(){
  });
 }
 
+/* ================= PDF (FIXED STEPS) ================= */
+function exportPDF(){
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ let y=20;
+
+ SESSION_ALL.forEach(d=>{
+  if(y>250){doc.addPage();y=20}
+  doc.setFont("times","bold");doc.setFontSize(12);
+  doc.text(d.q,10,y);y+=10;
+
+  doc.setFont("helvetica","normal");doc.setFontSize(10);
+  doc.text(`A) ${d.u}`,10,y);y+=6;
+  doc.text(`B) ${d.l}`,10,y);y+=6;
+  doc.text(`C) ${d.r}`,10,y);y+=6;
+
+  doc.setFont("times","italic");
+  doc.text(d.logic||"",10,y);y+=10;
+
+  const s1=d.s1||d.step1||d.exec1||"-";
+  const s2=d.s2||d.step2||d.exec2||"-";
+
+  doc.text(`1. ${s1}`,10,y);y+=6;
+  doc.text(`2. ${s2}`,10,y);y+=10;
+ });
+
+ doc.save(`SESSION_${Date.now()}.pdf`);
+ begin();
+}
+
 /* ================= INIT ================= */
 function init(){
  const raw=localStorage.getItem(MASTER_KEY);
@@ -311,5 +307,6 @@ function init(){
 }
 init();
 </script>
+
 </body>
 </html>
