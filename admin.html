@@ -2,301 +2,133 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VIA.STACK | ADMIN VAULT</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alchemist Admin Console</title>
 
 <style>
-:root{
- --bg:#050505;
- --card:#111;
- --border:#222;
- --gold:#ffd600;
- --red:#ff4d4d;
- --green:#00e676;
- --font-ui:'Inter',sans-serif;
- --font-code:'JetBrains Mono',monospace;
-}
-*{box-sizing:border-box}
 body{
- margin:0;height:100vh;
- background:var(--bg);
- color:#eee;
- font-family:var(--font-ui);
- display:flex;
- flex-direction:column;
+  background:#000;
+  color:#e0e0e0;
+  font-family:monospace;
+  padding:20px;
 }
-
-/* HEADER */
-header{
- padding:16px 20px;
- background:#000;
- border-bottom:1px solid var(--border);
- display:flex;
- justify-content:space-between;
- align-items:center;
+textarea{
+  width:100%;
+  height:240px;
+  background:#111;
+  color:#0f0;
+  border:1px solid #333;
+  padding:10px;
+  font-family:monospace;
 }
-.brand{font-weight:900;letter-spacing:1px}
-.brand span{color:var(--gold)}
-.status{
- font-family:var(--font-code);
- font-size:11px;
- padding:4px 8px;
- background:#222;
- border-radius:4px;
- color:#888;
+button{
+  margin-top:10px;
+  padding:10px 20px;
+  background:#222;
+  color:#fff;
+  border:1px solid #444;
+  cursor:pointer;
 }
-
-/* LAYOUT */
-#layout{
- flex:1;
- display:grid;
- grid-template-columns:320px 1fr;
- overflow:hidden;
+pre{
+  background:#111;
+  padding:10px;
+  overflow:auto;
+  border:1px solid #333;
 }
-
-/* SIDEBAR */
-aside{
- padding:20px;
- border-right:1px solid var(--border);
- background:#080808;
- display:flex;
- flex-direction:column;
- gap:20px;
-}
-.label{
- font-family:var(--font-code);
- font-size:11px;
- color:#555;
- letter-spacing:1px;
-}
-
-/* BUTTONS */
-.btn{
- width:100%;
- padding:14px;
- background:#111;
- border:1px solid var(--border);
- color:#ccc;
- font-family:var(--font-code);
- font-size:11px;
- font-weight:700;
- border-radius:6px;
- cursor:pointer;
- display:flex;
- justify-content:space-between;
- align-items:center;
- transition:.2s;
-}
-.btn:hover{border-color:var(--gold);color:#fff}
-.btn.primary{background:var(--gold);color:#000;border-color:var(--gold)}
-.btn.danger{background:#200;color:var(--red);border-color:#400}
-
-/* MAIN */
-main{
- padding:20px;
- overflow-y:auto;
-}
-.panel{
- background:var(--card);
- border:1px solid var(--border);
- border-radius:12px;
- padding:20px;
-}
-
-/* STATS */
-.stats{
- display:grid;
- grid-template-columns:repeat(2,1fr);
- gap:12px;
- margin-bottom:14px;
-}
-.stat{
- background:#000;
- border:1px solid #222;
- border-radius:6px;
- padding:10px;
-}
-.stat-val{font-size:18px;font-weight:900}
-.stat-lbl{
- font-size:10px;
- font-family:var(--font-code);
- color:#666;
-}
-
-/* TERMINAL */
-#terminal{
- background:#000;
- border:1px solid var(--border);
- border-radius:8px;
- padding:14px;
- height:220px;
- overflow-y:auto;
- font-family:var(--font-code);
- font-size:11px;
- color:#666;
- white-space:pre-wrap;
-}
-.log-ok{color:var(--green)}
-.log-warn{color:var(--gold)}
-.log-err{color:var(--red)}
 </style>
 </head>
 
 <body>
 
-<header>
- <div class="brand">VIA.<span>STACK</span> // ADMIN</div>
- <div class="status" id="vault-status">VAULT: EMPTY</div>
-</header>
+<h2>ALCHEMIST ADMIN — TSV INGEST</h2>
 
-<div id="layout">
+<textarea id="tsv" placeholder="Paste TSV here (TAB separated)"></textarea>
+<br>
+<button onclick="ingest()">INGEST TSV</button>
 
-<aside>
- <div>
-  <div class="label">01 // INGEST TSV</div>
-  <input type="file" id="fileInput" hidden accept=".tsv" onchange="loadTSV(this)">
-  <button class="btn" onclick="fileInput.click()">
-   <span>UPLOAD TSV</span><span>+</span>
-  </button>
- </div>
-
- <div>
-  <div class="label">02 // VAULT OPS</div>
-  <button class="btn primary" onclick="commitVault()">
-   <span>PUSH TO VAULT</span><span>→</span>
-  </button>
-  <div style="height:10px"></div>
-  <button class="btn" onclick="exportVault()">
-   <span>EXPORT JSON</span><span>↓</span>
-  </button>
- </div>
-
- <div style="margin-top:auto">
-  <div class="label" style="color:var(--red)">DANGER</div>
-  <button class="btn danger" onclick="purgeVault()">
-   <span>PURGE VAULT</span><span>×</span>
-  </button>
- </div>
-</aside>
-
-<main>
- <div class="panel">
-  <div class="stats">
-   <div class="stat">
-    <div class="stat-val" id="staged-count">0</div>
-    <div class="stat-lbl">STAGED ROWS</div>
-   </div>
-   <div class="stat">
-    <div class="stat-val" id="vault-count">0</div>
-    <div class="stat-lbl">VAULT ROWS</div>
-   </div>
-  </div>
-  <div id="terminal">> ADMIN READY</div>
- </div>
-</main>
-
-</div>
+<pre id="log"></pre>
 
 <script>
-/* ================= CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1";
-let STAGED = [];
 
-/* ================= TSV LOADER ================= */
-function loadTSV(input){
- const file = input.files[0];
- if(!file) return;
+function log(msg){
+  document.getElementById("log").textContent += msg + "\n";
+}
 
- const reader = new FileReader();
- reader.onload = e => {
-  try{
-   const rows = e.target.result.trim().split(/\r?\n/);
-   STAGED = rows.map(line=>{
-     const c = line.split("\t");
-     if(c.length < 9) return null;
+/* ================= NORMALIZER (MATCHES RUNTIME) ================= */
+function normalize(row){
+  if(!row || row.length < 10) return null;
 
-     return {
-       id: c[0].trim(),
-       set: c[1].trim() || "SET_A",
-       topic: c[2] || "",
-       sub: c[3] || "",
-       lvl: c[4] || "",
-       q: c[5],
-       u: c[6],            // ✅ UP IS TRUTH
-       l: c[7],
-       r: c[8],
-       correct: c[6],      // enforced
-       logic: c[10] || "",
-       hint: c[11] || "",
-       trap: c[12] || ""
-     };
-   }).filter(Boolean);
+  const [
+    id,set,dom,topic,sub,lvl,
+    q,u,l,r,
+    correctRaw,
+    logic,hint,trap,
+    step1,step2,
+    ref,link
+  ] = row;
 
-   log(`TSV LOADED: ${STAGED.length} QUESTIONS`, "ok");
-   updateStats();
-  }catch(err){
-   log("TSV PARSE FAILED", "err");
+  let correct = correctRaw;
+
+  // Direction / OPT → value resolution
+  if(correctRaw === "UP" || correctRaw === "A" || correctRaw === "OPT_A") correct = u;
+  if(correctRaw === "LEFT" || correctRaw === "B" || correctRaw === "OPT_B") correct = l;
+  if(correctRaw === "RIGHT" || correctRaw === "C" || correctRaw === "OPT_C") correct = r;
+
+  return {
+    id: String(id).trim(),
+    set: set || "SET_A",
+    dom: dom || "GENERAL",
+    topic: topic || "",
+    sub: sub || "",
+    lvl: lvl || "",
+    q, u, l, r,
+    correct,
+    logic: logic || "",
+    hint: hint || "",
+    trap: trap || "",
+    step1: step1 || "",
+    step2: step2 || "",
+    ref: ref || "",
+    link: link || ""
+  };
+}
+
+/* ================= INGEST ================= */
+function ingest(){
+  const raw = document.getElementById("tsv").value.trim();
+  if(!raw){
+    log("NO TSV DATA");
+    return;
   }
- };
- reader.readAsText(file);
- input.value="";
+
+  const rows = raw.split("\n").map(r=>r.split("\t"));
+  let parsed = rows.map(normalize).filter(Boolean);
+
+  if(parsed.length === 0){
+    log("NO VALID ROWS PARSED");
+    return;
+  }
+
+  // Load existing
+  let existing = [];
+  try{
+    const stored = localStorage.getItem(MASTER_KEY);
+    if(stored) existing = JSON.parse(stored);
+  }catch(e){}
+
+  // Merge by ID (new overwrites old)
+  const map = new Map();
+  existing.forEach(d=>map.set(d.id,d));
+  parsed.forEach(d=>map.set(d.id,d));
+
+  const merged = Array.from(map.values());
+  localStorage.setItem(MASTER_KEY, JSON.stringify(merged));
+
+  log(`INGEST COMPLETE`);
+  log(`Rows added: ${parsed.length}`);
+  log(`Total records: ${merged.length}`);
 }
-
-/* ================= VAULT OPS ================= */
-function commitVault(){
- if(!STAGED.length) return log("NO DATA TO COMMIT", "warn");
-
- const map = new Map();
- STAGED.forEach(q => map.set(q.id, q));
-
- localStorage.setItem(MASTER_KEY, JSON.stringify([...map.values()]));
- STAGED = [];
-
- log("VAULT COMMIT SUCCESS", "ok");
- updateStats();
-}
-
-function purgeVault(){
- if(!confirm("THIS WILL DELETE ALL QUESTIONS")) return;
- localStorage.removeItem(MASTER_KEY);
- log("VAULT PURGED", "err");
- updateStats();
-}
-
-function exportVault(){
- const data = localStorage.getItem(MASTER_KEY);
- if(!data) return log("VAULT EMPTY", "warn");
-
- const blob = new Blob([data], {type:"application/json"});
- const a = document.createElement("a");
- a.href = URL.createObjectURL(blob);
- a.download = "master.json";
- a.click();
- log("VAULT EXPORTED", "ok");
-}
-
-/* ================= UI ================= */
-function log(msg,type=""){
- const t=document.getElementById("terminal");
- const d=document.createElement("div");
- d.textContent="> "+msg;
- d.className = type==="ok"?"log-ok":type==="warn"?"log-warn":"log-err";
- t.appendChild(d);
- t.scrollTop=t.scrollHeight;
-}
-
-function updateStats(){
- const vault = JSON.parse(localStorage.getItem(MASTER_KEY)||"[]");
- document.getElementById("staged-count").textContent = STAGED.length;
- document.getElementById("vault-count").textContent = vault.length;
- document.getElementById("vault-status").textContent =
-  vault.length ? "VAULT: READY" : "VAULT: EMPTY";
-}
-
-/* ================= INIT ================= */
-updateStats();
 </script>
 
 </body>
