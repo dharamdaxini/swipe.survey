@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Operator v136.35</title>
+<title>Alchemist | Operator v136.36</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -83,13 +83,12 @@ body{
   pointer-events: auto;
 }
 
-/* ERROR STATE */
-.card-error { color: #e74c3c; font-family: var(--font-code); font-size: 0.9rem; text-align: left; white-space: pre-wrap; }
-
 /* CUSTOM SCROLLBAR */
 .card-q::-webkit-scrollbar { width: 4px; }
 .card-q::-webkit-scrollbar-track { background: transparent; }
 .card-q::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+.card-error { color: #e74c3c; font-family: var(--font-code); font-size: 0.9rem; text-align: left; }
 
 .card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
 .card-q sup{ font-size:0.7em; vertical-align:0.5em; }
@@ -99,7 +98,7 @@ body{
   position:absolute; inset:0; display:flex;
   align-items:center; justify-content:center;
   background:#000; 
-  font-family:var(--font-sans); font-weight:800; font-size:1.6rem;
+  font-family:var(--font-sans); font-weight:800; font-size:1.4rem;
   text-transform:uppercase; letter-spacing:1px;
   opacity:0; pointer-events:none; padding:40px;
   text-align:center; z-index:10; transition:opacity 0.1s ease;
@@ -130,7 +129,7 @@ body{
 <div id="stack">
   <div class="card">
     <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | V136.35<br>SYNCING VAULT...
+      VIA.STACK | V136.36<br>CONNECTING BRIDGE...
     </div>
   </div>
 </div>
@@ -140,7 +139,7 @@ body{
 const MASTER_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 const VERSION_KEY = "ALCHEMIST_VERSION";
-const APP_VERSION = "v136.35"; // Increment to force flush
+const APP_VERSION = "v136.36"; // Forces Reset
 
 /* ================= STATE ================= */
 let RAW_DATA = [];
@@ -180,7 +179,7 @@ function shuffle(array) {
     const v = localStorage.getItem(VERSION_KEY);
     if(v !== APP_VERSION){
         console.log("VERSION UPDATE: Clearing old caches...");
-        // Keeping MASTER_KEY intact so local work isn't lost
+        // Keeps MASTER_KEY intact so local Admin work isn't lost
         localStorage.setItem(VERSION_KEY, APP_VERSION);
     }
 })();
@@ -354,6 +353,7 @@ function nextQ(){
   UI.id.textContent=d.id;
   if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d);
 
+  // SHUFFLE & MAP 3 OPTIONS (Fixes "UP" label issue)
   const opts=shuffle([d.u,d.l,d.r]);
   const map = { up: opts[0], left: opts[1], right: opts[2] };
 
@@ -387,6 +387,7 @@ function review(){
  const d=WRONG[REVIEW_INDEX];
  UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
  
+ // LOGIC IN MAIN CARD (Scrollable)
  card(
   `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
   {up:"RETRY", down:"SKIP"},
@@ -433,7 +434,7 @@ function report(){
  );
 }
 
-/* ================= PDF EXPORT ================= */
+/* ================= PDF EXPORT (v132.21 Academy Layout) ================= */
 function exportSessionPDF(){
  if(!SESSION_ALL.length){alert("No session data");return;}
  const {jsPDF}=window.jspdf;
@@ -468,7 +469,7 @@ function exportSessionPDF(){
   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
   doc.text("OPTIONS",ML,y); y+=4;
   doc.setFont("helvetica","normal"); doc.setFontSize(9); 
-  doc.setTextColor(80,80,80); 
+  doc.setTextColor(80,80,80); // GREY LOCK
   
   const optA = `(A) ${cleanPDF(d.u)}`;
   const optB = `(B) ${cleanPDF(d.l)}`;
@@ -513,11 +514,11 @@ function exportSessionPDF(){
   y+=5;
  });
 
- doc.save(`ACADEMY_v132_25_${Date.now()}.pdf`);
+ doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
  setTimeout(begin,500);
 }
 
-/* ================= DIAGNOSTIC DATA LOADER ================= */
+/* ================= DATA LOADER (Merged Diagnostic) ================= */
 async function init(){
   let bridgeData = [];
   let webData = [];
@@ -526,24 +527,21 @@ async function init(){
   try {
     const raw = localStorage.getItem(MASTER_KEY);
     if(raw) bridgeData = JSON.parse(raw);
-  } catch(e) {
-    console.warn("Bridge Error");
-  }
+  } catch(e) { console.warn("Bridge Error"); }
 
-  // 2. Try Web (with timestamp to bust cache)
+  // 2. Try Web
   try {
     const r = await fetch(MASTER_URL + "?t=" + Date.now(), {cache: "no-store"});
     if(r.ok) webData = await r.json();
     else card(`WEB FETCH FAILED\nHTTP ${r.status}`, {down:"RETRY"}, ()=>location.reload(), true);
   } catch(e) {
-    // If Web fails, and we have no bridge data, Show Error
     if(bridgeData.length === 0){
         card(`CRITICAL FAILURE\nJSON Parse Error or Network\n\n${e.message}`, {down:"RETRY"}, ()=>location.reload(), true);
         return;
     }
   }
 
-  // 3. Merge & Deduplicate
+  // 3. Merge
   const map = new Map();
   [...webData, ...bridgeData].forEach(d => map.set(d.id, d));
   RAW_DATA = Array.from(map.values()).map(normalize).filter(Boolean);
