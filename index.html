@@ -1,488 +1,675 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Operator v132.21</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIA.STACK | MASTER LAB v133.27</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { 
+            --bg: #050505; --panel: #0a0a0a; --border: #222; 
+            --gold: #ffd600; --blue: #2979ff; --red: #ff4757; --green: #00e676;
+            --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
+        }
+        
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: #ccc; font-family: var(--font-ui); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        /* SCROLL CONTAINER */
+        #master-scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding-bottom: 80px; }
+        
+        /* HEADER */
+        header { 
+            position: sticky; top: 0; z-index: 100; background: rgba(5,5,5,0.98); 
+            border-bottom: 1px solid var(--border); padding: 15px 25px; 
+            display: flex; justify-content: space-between; align-items: center; 
+        }
+        .brand { font-size: 1.1rem; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+        .brand span { color: var(--gold); }
+        .status-pill { 
+            background: #111; border: 1px solid #333; padding: 6px 12px; 
+            border-radius: 4px; font-family: var(--font-code); font-size: 0.6rem; 
+            color: var(--green); display: flex; align-items: center; gap: 6px; cursor: pointer;
+        }
+        .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
+        .dot.off { background: var(--red); box-shadow: none; }
 
-<style>
-:root{
-  --bg:#000; --card:#121212; --border:#333;
-  --gold:#d4af37; 
-  --text-grey: #cccccc;
-  
-  --font-serif: 'Crimson Text', serif;
-  --font-sans: 'Inter', sans-serif;
-  --font-code: 'JetBrains Mono', monospace;
-}
+        /* ZONES */
+        .zone { padding: 30px; border-bottom: 1px dashed #222; position: relative; }
+        .zone-title { font-size: 0.7rem; font-weight: 900; color: #666; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* INGESTION INPUT */
+        .ingest-box {
+            width: 100%; height: 200px; background: #080808; border: 1px solid #333; 
+            border-radius: 12px; padding: 20px; font-family: var(--font-code); 
+            font-size: 0.7rem; color: var(--blue); resize: none; transition: 0.2s;
+            line-height: 1.5; white-space: pre; overflow: auto;
+        }
+        .ingest-box:focus { border-color: var(--gold); background: #0b0b0b; color: #fff; }
+        
+        /* BUTTONS */
+        .action-bar { display: flex; gap: 15px; margin-top: 20px; align-items: center; }
+        
+        .btn-pill { 
+            background: var(--gold); color: #000; border: none; padding: 12px 30px; 
+            border-radius: 50px; font-weight: 900; font-size: 0.8rem; cursor: pointer; 
+            text-transform: uppercase; transition: 0.2s; box-shadow: 0 5px 20px rgba(255, 214, 0, 0.2);
+        }
+        .btn-pill:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        
+        .btn-ghost { 
+            background: transparent; border: 1px solid #444; color: #888; 
+            padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 0.7rem; 
+            cursor: pointer; text-transform: uppercase; transition: 0.2s; 
+        }
+        .btn-ghost:hover { border-color: #fff; color: #fff; }
 
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+        /* PUSH BUTTON (ONE SCROLL ABOVE PURGE) */
+        .push-btn {
+            width: 100%; background: var(--green); color: #000; border: none;
+            padding: 20px; border-radius: 12px; font-weight: 900; font-size: 1rem;
+            text-transform: uppercase; letter-spacing: 1px; margin-top: 20px;
+            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 230, 118, 0.2);
+            transition: 0.2s;
+        }
+        .push-btn:hover { transform: scale(1.02); box-shadow: 0 15px 40px rgba(0, 230, 118, 0.3); }
 
-body{
-  margin:0; height:100vh; background:var(--bg);
-  color:#e0e0e0; font-family:var(--font-sans);
-  overflow:hidden; display:flex; flex-direction:column;
-}
+        /* TERMINAL */
+        .terminal { 
+            background: #000; border: 1px solid #222; border-radius: 8px; padding: 15px; 
+            font-family: var(--font-code); font-size: 0.7rem; color: #666; height: 120px; 
+            overflow-y: auto; margin-top: 15px; 
+        }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #111; padding-bottom: 4px; }
+        .log-success { color: var(--green); }
+        .log-warn { color: var(--gold); }
+        .log-err { color: var(--red); }
 
-/* HEADER */
-#header{ width:90%; margin:25px auto 0; z-index:100; flex-shrink: 0; }
-.header-meta{
-  display:flex; justify-content:space-between;
-  font-family:var(--font-code); font-size:0.75rem; 
-  color:#666; letter-spacing:1.5px; text-transform:uppercase;
-}
+        /* GRID TILES */
+        .grid-6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+        .tile { 
+            background: #0e0e0e; border: 1px solid #222; padding: 20px; border-radius: 8px; 
+            text-align: center; cursor: pointer; transition: 0.2s; 
+        }
+        .tile:hover { border-color: var(--blue); background: #151515; }
+        .tile-icon { font-size: 1.2rem; margin-bottom: 8px; display: block; opacity: 0.8; }
+        .tile-label { font-size: 0.65rem; font-weight: 800; color: #aaa; text-transform: uppercase; }
+        .tile.gold-border { border-color: var(--gold); background: rgba(255, 214, 0, 0.05); }
 
-/* REVIEW HEADER (HINT) */
-#review-text{
-  margin-top:20px;
-  font-family:var(--font-serif);
-  font-size:1.3rem; line-height:1.4;
-  font-style:italic; text-align:center;
-  color:var(--gold); 
-  min-height:3.5em;
-  display:flex; align-items:flex-end; justify-content:center;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.9);
-}
+        /* MODALS */
+        .modal-overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; 
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .modal-box { 
+            width: 90%; max-width: 500px; background: #111; border: 1px solid #333; padding: 25px; 
+            border-radius: 12px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        .modal-header { font-size: 0.9rem; font-weight: 900; color: #fff; text-transform: uppercase; }
+        .modal-desc { font-family: var(--font-code); font-size: 0.7rem; color: #888; line-height: 1.4; }
+        .surgeon-input { 
+            width: 100%; height: 120px; background: #000; border: 1px solid var(--red); 
+            color: #fff; padding: 15px; font-family: var(--font-code); font-size: 0.75rem; resize: none;
+            line-height: 1.4;
+        }
 
-.progress-track{ width:100%; height:3px; background:#222; margin-top:15px; border-radius:2px; }
-#progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
-
-/* FLUID STACK ENGINE (Fixed for all devices) */
-#stack{
-  position:relative; width:90%; max-width:420px; 
-  height: calc(100vh - 160px - env(safe-area-inset-bottom)); 
-  margin: 20px auto; 
-  perspective:1500px;
-  display:flex; align-items:center; justify-content:center;
-}
-
-.card{
-  position:absolute; width:100%; height:100%;
-  background:var(--card); border-radius:12px; 
-  border:1px solid var(--border);
-  padding:35px; 
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  box-shadow:0 20px 60px rgba(0,0,0,0.95);
-  will-change:transform; transform-style:preserve-3d;
-  overflow: hidden; 
-}
-
-/* MAIN TEXT - SCROLLABLE & FITTED */
-.card-q{
-  font-family:var(--font-serif);
-  font-size: clamp(1.1rem, 4vw, 1.7rem); 
-  line-height:1.5;
-  font-weight:600; text-align:center;
-  color: var(--text-grey);
-  
-  width: 100%;
-  max-height: 100%;
-  overflow-y: auto; 
-  word-wrap: break-word;
-  padding: 0 5px; 
-  
-  display: flex; 
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* SCROLLBAR */
-.card-q::-webkit-scrollbar { width: 4px; }
-.card-q::-webkit-scrollbar-track { background: transparent; }
-.card-q::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-
-.card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
-.card-q sup{ font-size:0.7em; vertical-align:0.5em; }
-
-/* SWIPE LABELS */
-.swipe-label{
-  position:absolute; inset:0; display:flex;
-  align-items:center; justify-content:center;
-  background:#000; 
-  font-family:var(--font-sans); font-weight:800; font-size:1.6rem;
-  text-transform:uppercase; letter-spacing:1px;
-  opacity:0; pointer-events:none; padding:40px;
-  text-align:center; z-index:10; transition:opacity 0.1s ease;
-  border-radius:12px;
-  color: #fff; 
-  border: 1px solid #333;
-}
-
-/* Option Colors */
-.sl-up{ color: var(--green); } 
-.sl-left{ color: var(--text-grey); } 
-.sl-right{ color: var(--text-grey); }
-.sl-down{ color: var(--blue); }
-
-</style>
+        /* OBSERVER LAYER */
+        #observer-layer { display:none; position:fixed; inset:0; background:var(--bg); z-index:5000; flex-direction:column; }
+        #observer-header { border-bottom:1px solid #222; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; background: #000; }
+        #observer-grid { flex:1; overflow-y:auto; padding:20px; }
+        table { width:100%; border-collapse:collapse; font-family:var(--font-code); font-size:0.7rem; }
+        th { text-align:left; padding:10px; border-bottom:1px solid #444; color:var(--gold); position: sticky; top: 0; background: #000; }
+        td { padding:10px; border-bottom:1px solid #222; color: #aaa; }
+        tr:hover td { background: #111; color: #fff; }
+        .disabled-btn { opacity:0.3; pointer-events:none; }
+        
+    </style>
 </head>
 <body>
 
-<div id="header">
-  <div class="header-meta">
-    <span id="id-ui">BOOT</span>
-    <span id="xp-ui">0 XP</span>
-  </div>
-  <div id="review-text"></div>
-  <div class="progress-track"><div id="progress-bar"></div></div>
+<header>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// MASTER LAB v133.27</span></div>
+    <div class="status-pill" onclick="checkLocalData()">
+        <div class="dot" id="db-status-dot"></div>
+        <span id="db-status-text">DB READY</span>
+    </div>
+</header>
+
+<div id="master-scroll">
+
+    <div class="zone">
+        <div class="zone-title">01 // INGESTION ENGINE</div>
+        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW 25-COL TSV DATA HERE...&#10;>> AUTO-STRIPS HEADERS. ENFORCES 25-COL STRUCTURE."></textarea>
+        
+        <div class="action-bar">
+            <button class="btn-pill" onclick="initiateAlignment()">INITIATE ALIGNMENT</button>
+            <button class="btn-ghost" onclick="document.getElementById('raw-input').value=''">CLEAR INPUT</button>
+        </div>
+
+        <div class="terminal" id="console-log">
+            <div class="log-entry">> WAITING FOR INPUT...</div>
+        </div>
+    </div>
+
+    <div class="zone">
+        <div class="zone-title">02 // DEPLOYMENT DOCK</div>
+        
+        <div class="grid-6">
+            <div class="tile gold-border" onclick="exportJSON()">
+                <span class="tile-icon">📦</span>
+                <span class="tile-label" style="color:var(--gold)">JS OBJECT (BACKUP)</span>
+            </div>
+            <div class="tile" onclick="exportPDF()">
+                <span class="tile-icon">📄</span>
+                <span class="tile-label">EXPORT PROTOCOL (PDF)</span>
+            </div>
+            <div class="tile" onclick="exportTSV()">
+                <span class="tile-icon">📊</span>
+                <span class="tile-label">EXPORT TSV</span>
+            </div>
+            <div class="tile" onclick="exportCSV()">
+                <span class="tile-icon">📑</span>
+                <span class="tile-label">EXPORT MASTER CSV</span>
+            </div>
+        </div>
+
+        <button class="push-btn" onclick="pushToIndex()">
+            >>> PUSH TO OPERATOR INDEX >>>
+        </button>
+    </div>
+
+    <div class="zone">
+        <div class="zone-title">03 // PROGRESSION GOVERNANCE</div>
+        <div class="grid-6">
+            <div class="tile" onclick="openObserver()">
+                <span class="tile-icon">👁️</span>
+                <span class="tile-label">VAULT OBSERVER</span>
+            </div>
+            <div class="tile" onclick="forceUnlock('SET_B')">
+                <span class="tile-icon">🔓</span>
+                <span class="tile-label">UNLOCK SET_B</span>
+            </div>
+            <div class="tile" onclick="resetUserProgress()">
+                <span class="tile-icon">♻️</span>
+                <span class="tile-label">RESET USER XP</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="zone" style="border-bottom:none;">
+        <div class="zone-title" style="color:var(--red)">04 // DANGER ZONE</div>
+        <button class="btn-ghost" style="border-color:var(--red); color:var(--red); width:100%;" onclick="initPurge()">
+            PURGE SYSTEM MEMORY
+        </button>
+    </div>
+
 </div>
 
-<div id="stack">
-  <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | v132.21<br>INITIALIZING SYSTEM...
+<div id="surgeon-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span style="color:var(--red)">⚠️ SURGICAL INTERVENTION REQUIRED</span>
+        </div>
+        <div class="modal-desc" id="surgeon-msg">Structural drift detected.</div>
+        <textarea id="surgeon-input" class="surgeon-input"></textarea>
+        <div class="action-bar" style="justify-content: flex-end;">
+            <button class="btn-ghost" onclick="closeSurgeon()">DISCARD ROW</button>
+            <button class="btn-pill" onclick="sutureRow()">SUTURE & RETRY</button>
+        </div>
     </div>
-  </div>
+</div>
+
+<div id="observer-layer">
+    <div id="observer-header">
+        <div class="brand">VAULT.<span>OBSERVER</span></div>
+        <button class="btn-ghost" onclick="closeObserver()">EXIT VIEW</button>
+    </div>
+    <div id="observer-grid">
+        <table id="observer-table">
+            <thead>
+                <tr>
+                    <th width="10%">ID</th>
+                    <th width="10%">SET</th>
+                    <th width="50%">QUESTION</th>
+                    <th width="30%" style="text-align:right;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody id="observer-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="purge-modal" class="modal-overlay">
+    <div class="modal-box" style="text-align:center;">
+        <div class="modal-header" style="justify-content:center;">CONFIRM SYSTEM WIPE</div>
+        <div class="modal-desc">This destroys all data. Type 'DELETE' to confirm.</div>
+        <input type="text" id="purge-code" class="ingest-box" style="height:40px; text-align:center;" placeholder="DELETE">
+        <div class="action-bar" style="justify-content:center;">
+            <button class="btn-ghost" onclick="document.getElementById('purge-modal').style.display='none'">CANCEL</button>
+            <button class="btn-pill" style="background:var(--red); color:#fff;" onclick="executePurge()">CONFIRM</button>
+        </div>
+    </div>
 </div>
 
 <script>
-/* ================= BRIDGE CONFIG ================= */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+    let STAGED_DATA = [];
+    let FAULTY_ROW_INDEX = -1;
+    let RAW_LINES = [];
+    
+    const DB_KEY = 'ALCHEMIST_MASTER_DB';
+    const USER_KEY = 'ALCHEMIST_USER_PROGRESS';
+    const EXPECTED_COLS = 25; // UPDATED FOR RAW 25
 
-/* ================= STATE ================= */
-let RAW_DATA = [];
-let SET_CURSOR = 0; 
-let ACTIVE_SET = null;
-let POOL = [], WRONG = [], REVIEW_INDEX = 0;
-let SESSION_ALL = [], XP = 0;
-let VOLUME_LIMIT = null;
-let ATTEMPTED = new Set(); 
+    // --- 1. GATEKEEPER v26 (25-COLUMN PROTOCOL) ---
+    function initiateAlignment() {
+        const raw = document.getElementById('raw-input').value;
+        if(!raw.trim()) return log("NO INPUT DETECTED.", "err");
 
-/* ================= UTILS ================= */
-function chemText(t){
-  if(!t) return "";
-  return String(t)
-    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
-    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
-}
+        // Pre-Process: Strip Headers
+        RAW_LINES = raw.split('\n').filter(line => 
+            !line.toUpperCase().startsWith('ID\t') && 
+            !line.toUpperCase().startsWith('DOM\t') && // Filter simpler headers too
+            line.trim() !== ""
+        );
 
-function cleanPDF(t){
-  if(!t) return "";
-  return String(t).replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
-}
-
-function shuffle(array) {
-  let currentIndex = array.length, randomIndex;
-  while (currentIndex != 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-  }
-  return array;
-}
-
-/* ================= PHYSICS ENGINE (UNCHANGED) ================= */
-class PhysicsController{
- constructor(el,cbs){
-  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
-  this.labels={
-    UP:el.querySelector(".sl-up"),
-    LEFT:el.querySelector(".sl-left"),
-    RIGHT:el.querySelector(".sl-right"),
-    DOWN:el.querySelector(".sl-down")
-  };
-  const s=e=>this.startDrag(e.touches?e.touches[0]:e);
-  const m=e=>this.move(e.touches?e.touches[0]:e);
-  const e2=()=>this.end();
-  el.addEventListener("mousedown",s);
-  window.addEventListener("mousemove",m);
-  window.addEventListener("mouseup",e2);
-  el.addEventListener("touchstart",s,{passive:false});
-  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
-  el.addEventListener("touchend",e2);
- }
- startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
- move(p){
-  if(!this.active)return;
-  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
-  const d=Math.hypot(dx,dy);
-  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
-  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
-  if(d>20){
-    const dir=this.dir(dx,dy);
-    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
-  }
- }
- end(){
-  if(!this.active)return;this.active=false;
-  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-  const dx=m.m41,dy=m.m42;
-  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
-  else{this.el.style.transition=".4s cubic-bezier(0.2, 0.8, 0.2, 1)";this.el.style.transform="translate(0,0)"}
- }
- dir(dx,dy){
-  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
-  if(a>45&&a<135)return"UP";
-  if(a>135&&a<225)return"LEFT";
-  if(a>225&&a<315)return"DOWN";
-  return"RIGHT";
- }
-}
-
-/* ================= RENDER LOGIC ================= */
-function card(text,labels,cb){
- const safeText=chemText(text);
- UI.stack.innerHTML="";
- const el=document.createElement("div");
- el.className="card";
- el.innerHTML=`
-  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
-  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
-  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
-  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
-  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
- UI.stack.appendChild(el);
- new PhysicsController(el,{onCommit:cb});
-}
-
-/* ================= STATE & INIT ================= */
-const UI = {
-  stack: document.getElementById("stack"),
-  id: document.getElementById("id-ui"),
-  xp: document.getElementById("xp-ui"),
-  bar: document.getElementById("progress-bar"),
-  review: document.getElementById("review-text")
-};
-
-(function init(){
-  try {
-    RAW_DATA = JSON.parse(localStorage.getItem(MASTER_KEY) || "[]");
-  } catch {
-    RAW_DATA = [];
-  }
-
-  if (!RAW_DATA.length) {
-    card("NO VALID DATA\nPush TSV from Admin",{down:"RELOAD"},()=>location.reload());
-    return;
-  }
-
-  begin();
-})();
-
-/* ================= FLOW ================= */
-function begin(){
-  UI.review.textContent="";
-  card(
-    `SESSION READY\n${RAW_DATA.length} Questions Loaded`,
-    { up:"QUIZ" },
-    dir => { if(dir==="UP") pickSet(); }
-  );
-}
-
-function pickSet(){
-  const sets = [...new Set(RAW_DATA.map(d=>d.set))];
-  if (!sets.length) return;
-
-  card(
-    sets[SET_CURSOR],
-    { up:"SELECT", left:"", right:"", down:"BACK" },
-    dir=>{
-      if(dir==="LEFT"){ SET_CURSOR=(SET_CURSOR+sets.length-1)%sets.length; pickSet(); }
-      if(dir==="RIGHT"){ SET_CURSOR=(SET_CURSOR+1)%sets.length; pickSet(); }
-      if(dir==="UP"){
-        ACTIVE_SET = sets[SET_CURSOR];
-        pickVolume(); 
-      }
-      if(dir==="DOWN") begin();
-    }
-  );
-}
-
-function pickVolume(){
-  card(
-    "QUESTION VOLUME",
-    { up:"10 Q", left:"25 Q", right:"50 Q", down:"ALL" },
-    dir=>{
-      if(dir==="UP") VOLUME_LIMIT = 10;
-      if(dir==="LEFT") VOLUME_LIMIT = 25;
-      if(dir==="RIGHT") VOLUME_LIMIT = 50;
-      if(dir==="DOWN") VOLUME_LIMIT = null;
-      startQuiz();
-    }
-  );
-}
-
-function startQuiz(){
-  let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
-  base = shuffle(base);
-  if (VOLUME_LIMIT) base = base.slice(0, VOLUME_LIMIT);
-
-  POOL = base;
-  WRONG = [];
-  SESSION_ALL = [];
-  XP = 0;
-  ATTEMPTED.clear();
-
-  nextQ();
-}
-
-function nextQ(){
-  UI.review.textContent=""; 
-  
-  if(!POOL.length){
-    WRONG.length ? review() : report();
-    return;
-  }
-
-  const d = POOL.shift();
-  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
-  UI.id.textContent = d.id;
-
-  const opts = shuffle([d.u, d.l, d.r]);
-  const map = { up:opts[0], left:opts[1], right:opts[2] };
-
-  card(d.q, map, dir=>{
-    const picked =
-      dir==="UP" ? map.up :
-      dir==="LEFT" ? map.left :
-      map.right;
-
-    let c = d.correct;
-    if(c==="UP"||c==="A") c=d.u;
-    else if(c==="LEFT"||c==="B") c=d.l;
-    else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
-
-    if (String(picked).trim().toLowerCase() !== String(c).trim().toLowerCase()) {
-      WRONG.push(d);
-    } else if(!ATTEMPTED.has(d.id)){
-      XP++;
+        runGatekeeper();
     }
 
-    ATTEMPTED.add(d.id);
-    UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
-    UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
+    function runGatekeeper() {
+        const seenIDs = new Set();
+        let collision = null;
+        let drift = null;
 
-    nextQ();
-  });
-}
+        for(let i=0; i<RAW_LINES.length; i++) {
+            const cols = RAW_LINES[i].split('\t');
+            
+            // CHECK STRUCTURE: ALLOW 24 OR 25
+            // If 24, we will auto-pad. If <24 or >25, Flag Drift.
+            if(cols.length < 24 || cols.length > 25) {
+                drift = { index: i, line: RAW_LINES[i], len: cols.length };
+                break;
+            }
 
-function review(){
-  const d = WRONG[0];
-  UI.review.innerHTML = chemText(`HINT: ${d.hint || "Recall the basics."}`);
+            // CHECK COLLISION
+            const id = cols[0].trim();
+            if(seenIDs.has(id)) {
+                collision = { index: i, line: RAW_LINES[i], id: id };
+                break;
+            }
+            seenIDs.add(id);
+        }
 
-  card(
-    `REVIEW\n\n${d.logic || "Review the core principles."}`,
-    { up:"RETRY", down:"SKIP" },
-    dir=>{
-      if(dir==="UP"){
-        WRONG.shift(); 
-        POOL.unshift(d); 
-      } else {
-        WRONG.shift();
-      }
-      nextQ();
+        if(drift) launchSurgeon(drift, "DRIFT");
+        else if(collision) launchSurgeon(collision, "COLLISION");
+        else finalizeStaging();
     }
-  );
-}
 
-function report(){
-  UI.review.textContent="SESSION COMPLETE";
-  
-  const total = SESSION_ALL.length;
-  const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
-  
-  card(
-    `DONE\n${XP}/${total} Correct\n(${percent}%)`,
-    { up:"RESTART", down:"PDF" },
-    dir=>{
-        if(dir==="UP") begin();
-        if(dir==="DOWN") exportSessionPDF();
+    function launchSurgeon(fault, type) {
+        FAULTY_ROW_INDEX = fault.index;
+        const msg = type === "DRIFT" 
+            ? `ROW ${fault.index+1} HAS ${fault.len} COLUMNS (EXPECTED 25).` 
+            : `ID '${fault.id}' APPEARS TWICE.`;
+        
+        document.getElementById('surgeon-msg').innerText = msg;
+        document.getElementById('surgeon-input').value = fault.line;
+        document.getElementById('surgeon-modal').style.display = 'flex';
     }
-  );
+
+    function sutureRow() {
+        const fixed = document.getElementById('surgeon-input').value;
+        RAW_LINES[FAULTY_ROW_INDEX] = fixed; 
+        document.getElementById('surgeon-modal').style.display = 'none';
+        runGatekeeper(); 
+    }
+
+    function closeSurgeon() {
+        RAW_LINES.splice(FAULTY_ROW_INDEX, 1);
+        document.getElementById('surgeon-modal').style.display = 'none';
+        runGatekeeper();
+    }
+
+    function finalizeStaging() {
+        const cleanData = [];
+        RAW_LINES.forEach(line => {
+            const cols = line.split('\t');
+            
+            // NORMALIZER (Fix 'UP'/'RIGHT'/'LEFT')
+            let ansVal = cols[9] ? cols[9].trim().toUpperCase() : "UP";
+            let realAnswer = cols[6]; 
+            
+            if(ansVal === "RIGHT" || ansVal === "R") realAnswer = cols[7];
+            else if(ansVal === "LEFT" || ansVal === "L") realAnswer = cols[8];
+            else if(ansVal === "UP" || ansVal === "U") realAnswer = cols[6];
+
+            cleanData.push({
+                id: cols[0], set: cols[1], dom: cols[2], topic: cols[3], level: cols[4],
+                q: cols[5], u: cols[6], r: cols[7], l: cols[8],
+                correct: realAnswer, logic: cols[10], hint: cols[11], ctx: cols[12], 
+                ref: cols[13], tags: cols[14], img: cols[15], link: cols[16], trap: cols[17],
+                date: cols[18], rev: cols[19], w_up: cols[20], w_side: cols[21],
+                s1: cols[22], s2: cols[23], raw25: cols[24] || "N/A"
+            });
+        });
+
+        STAGED_DATA = cleanData;
+        log(`ALIGNMENT COMPLETE: ${STAGED_DATA.length} UNITS READY.`, "success");
+    }
+
+    // --- 2. DEPLOYMENT ---
+    function pushToIndex() {
+        if(STAGED_DATA.length === 0) return log("STAGE EMPTY.", "err");
+        
+        // MERGE LOGIC: Get existing, remove duplicates based on ID, append new
+        const existingRaw = localStorage.getItem(DB_KEY);
+        let finalDB = STAGED_DATA;
+        
+        if(existingRaw) {
+            const existingDB = JSON.parse(existingRaw);
+            const newIDs = new Set(STAGED_DATA.map(i => i.id));
+            const keptOld = existingDB.filter(i => !newIDs.has(i.id));
+            finalDB = [...keptOld, ...STAGED_DATA];
+        }
+
+        localStorage.setItem(DB_KEY, JSON.stringify(finalDB));
+        if(!localStorage.getItem("ACTIVE_SET_ID")) localStorage.setItem("ACTIVE_SET_ID", "SET_A");
+        
+        log(`PUSH SUCCESSFUL. TOTAL DB SIZE: ${finalDB.length} UNITS.`, "success");
+        updateStatus("DB SYNCHRONIZED");
+        // Don't auto-export JSON here to avoid annoying popups on every push
+    }
+
+    // --- 3. EXPORT PROTOCOLS ---
+    
+    // PDF ENGINE (40/60 Split Protocol)
+  
+function exportPDF() {
+    const data = getDataFromStorage();
+    if (!data || data.length === 0) return log("NO DATA.", "err");
+
+    // HARD FIX — jsPDF namespace safe resolution
+    const jsPDFConstructor =
+        (window.jspdf && window.jspdf.jsPDF) ||
+        (window.jsPDF);
+
+    if (!jsPDFConstructor) {
+        return log("PDF ENGINE NOT LOADED.", "err");
+    }
+
+    const doc = new jsPDFConstructor("p", "mm", "a4");
+
+    let y = 18;
+
+    // ===== DOCUMENT HEADER =====
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("ALCHEMIST_RESEARCH_PROTOCOL // v133.27", 14, y);
+    y += 8;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(`SESSION_DATE: ${getDateStr()}`, 14, y);
+    y += 6;
+
+    doc.line(14, y, PAGE_W - 14, y);
+    y += 8;
+
+    data.forEach((item, idx) => {
+        if (y > PAGE_H - 50) {
+            doc.addPage();
+            y = 18;
+        }
+
+        /* =========================
+           META LINE
+        ========================= */
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(
+            `${item.id} // ${item.dom} > ${item.topic}`,
+            14,
+            y
+        );
+        y += 6;
+
+        doc.rect(14, y - 4, PAGE_W - 28, 8);
+        y += 6;
+
+        /* =========================
+           QUESTION
+        ========================= */
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        const qLines = doc.splitTextToSize(
+            `"${item.q}"`,
+            PAGE_W - 28
+        );
+        doc.text(qLines, 14, y);
+        y += qLines.length * 5 + 6;
+
+        /* =========================
+           OPTIONS GRID
+        ========================= */
+        const optY = y;
+        const colW = (PAGE_W - 28) / 3;
+
+        doc.rect(14, optY, colW - 2, 10);
+        doc.rect(14 + colW, optY, colW - 2, 10);
+        doc.rect(14 + colW * 2, optY, colW - 2, 10);
+
+        doc.setFontSize(9);
+        doc.text(item.u, 14 + 4, optY + 6);
+        doc.text(item.r, 14 + colW + 4, optY + 6);
+        doc.text(item.l, 14 + colW * 2 + 4, optY + 6);
+
+        y += 16;
+
+        /* =========================
+           LOGIC WELL
+        ========================= */
+        doc.setDrawColor(41, 121, 255);
+        doc.setLineWidth(1.2);
+        doc.line(14, y, 14, y + 20);
+
+        doc.setDrawColor(0);
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(9);
+
+        const logicLines = doc.splitTextToSize(
+            item.logic || "-",
+            PAGE_W - 34
+        );
+        doc.text(logicLines, 18, y + 5);
+        y += logicLines.length * 4 + 10;
+
+        /* =========================
+           EXECUTION BLOCK
+        ========================= */
+        const leftX = 14;
+        const rightX = PAGE_W / 2 + 4;
+        const execStartY = y;
+
+        // LEFT — STEP 1 / STEP 2
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text("STEP 1 —", leftX, y);
+        y += 4;
+
+        doc.setFont("helvetica", "normal");
+        doc.text(item.s1 || "-", leftX + 2, y);
+        y += 6;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("STEP 2 —", leftX, y);
+        y += 4;
+
+        doc.setFont("helvetica", "normal");
+        doc.text(item.s2 || "-", leftX + 2, y);
+
+        // RIGHT — IMAGE / LINK
+        let ry = execStartY;
+        doc.setFont("helvetica", "bold");
+        doc.text("IMAGE", rightX, ry);
+        ry += 5;
+
+        doc.setFont("helvetica", "normal");
+        doc.text(item.img || "—", rightX, ry);
+        ry += 8;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("LINK", rightX, ry);
+        ry += 5;
+
+        if (item.link) {
+            doc.setTextColor(0, 0, 255);
+            doc.textWithLink(item.link, rightX, ry, { url: item.link });
+            doc.setTextColor(0);
+        } else {
+            doc.text("—", rightX, ry);
+        }
+
+        y = Math.max(y + 8, ry + 8);
+
+        /* =========================
+           HINT
+        ========================= */
+        doc.setFillColor(0, 0, 0);
+        doc.setTextColor(255, 255, 255);
+        doc.rect(14, y, PAGE_W - 28, 10, "F");
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(item.hint || "-", 16, y + 7);
+
+        doc.setTextColor(0);
+        y += 18;
+    });
+
+    doc.save(`ALCHEMIST_PROTOCOL_${getDateStr()}.pdf`);
 }
 
-/* ================= ACADEMY PDF ENGINE v132.21 ================= */
-function exportSessionPDF(){
- if(!SESSION_ALL.length){alert("No session data");return;}
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- 
- const seen=new Set();
- const unique=SESSION_ALL.filter(q=>{
-  if(seen.has(q.id)) return false;
-  seen.add(q.id);return true;
- });
 
- let y=20;
- const ML=15; const W=180;
- const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
- const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+    // MASTER CSV EXPORTER (25 COLUMNS)
+    function exportCSV() {
+        const data = getDataFromStorage();
+        if(data.length === 0) return log("NO DATA.", "err");
+        
+        let csv = "ID,SET,DOM,TOPIC,LEVEL,Q,UP,RIGHT,LEFT,ANS,LOGIC,HINT,CTX,REF,TAGS,IMG,LINK,NOTE,DATE,REV,W_UP,W_SIDE,S1,S2,RAW25\n";
+        
+        data.forEach(r => {
+            const clean = (txt) => txt ? `"${String(txt).replace(/"/g, '""')}"` : '""';
+            csv += `${clean(r.id)},${clean(r.set)},${clean(r.dom)},${clean(r.topic)},${clean(r.level)},` +
+                   `${clean(r.q)},${clean(r.u)},${clean(r.r)},${clean(r.l)},${clean(r.correct)},` +
+                   `${clean(r.logic)},${clean(r.hint)},${clean(r.ctx)},${clean(r.ref)},${clean(r.tags)},` +
+                   `${clean(r.img)},${clean(r.link)},${clean(r.trap)},${clean(r.date)},${clean(r.rev)},` +
+                   `${clean(r.w_up)},${clean(r.w_side)},${clean(r.s1)},${clean(r.s2)},${clean(r.raw25)}\n`;
+        });
+        download(csv, `ALCHEMIST_MASTER_${getDateStr()}.csv`, 'csv');
+    }
 
- doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text("ACADEMY SESSION REPORT",105,y,{align:"center"});
- doc.line(ML,y+2,195,y+2); doc.line(ML,y+3,195,y+3);
- y+=15;
+    function exportTSV() {
+        const data = getDataFromStorage();
+        if(data.length === 0) return log("NO DATA.", "err");
+        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tRIGHT\tLEFT\tANS\tLOGIC\tHINT\tCTX\tREF\tTAGS\tIMG\tLINK\tNOTE\tDATE\tREV\tW_UP\tW_SIDE\tS1\tS2\tRAW25\n";
+        data.forEach(r => {
+            const c = (t) => (t || "").toString().replace(/\t/g, " ");
+            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t${c(r.level)}\t${c(r.q)}\t${c(r.u)}\t${c(r.r)}\t${c(r.l)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.ctx)}\t${c(r.ref)}\t${c(r.tags)}\t${c(r.img)}\t${c(r.link)}\t${c(r.trap)}\t${c(r.date)}\t${c(r.rev)}\t${c(r.w_up)}\t${c(r.w_side)}\t${c(r.s1)}\t${c(r.s2)}\t${c(r.raw25)}\n`;
+        });
+        download(tsv, `ALCHEMIST_SHEET.tsv`, 'tsv');
+    }
 
- unique.forEach((d,i)=>{
-  if(y>240){doc.addPage();y=20;}
+    function exportJSON() {
+        const data = getDataFromStorage();
+        if(data.length === 0) return log("NO DATA.", "err");
+        download(JSON.stringify(data, null, 2), `MASTER_VAULT_${getDateStr()}.json`, 'json');
+    }
 
-  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
-  doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||"CONCEPTS"}`,ML,y); y+=5;
+    // --- 4. OBSERVER (READ-ONLY FOR DEFAULTS) ---
+    function openObserver() {
+        const data = getDataFromStorage();
+        const tbody = document.getElementById('observer-body');
+        tbody.innerHTML = '';
+        
+        data.forEach((row, idx) => {
+            const isDefault = row.set.startsWith("SET_");
+            const btnStyle = isDefault ? "disabled-btn" : "";
+            const btnTxt = isDefault ? "LOCKED" : "EDIT";
+            
+            tbody.innerHTML += `
+            <tr>
+                <td style="color:var(--blue)">${row.id}</td>
+                <td>${row.set}</td>
+                <td>${row.q.substring(0,50)}...</td>
+                <td style="text-align:right;">
+                    <button class="btn-ghost ${btnStyle}" style="padding:5px 10px; font-size:0.6rem;">${btnTxt}</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById('observer-layer').style.display = 'flex';
+    }
+    function closeObserver() { document.getElementById('observer-layer').style.display = 'none'; }
 
-  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
-  const qText = cleanPDF(d.q);
-  const qLines = doc.splitTextToSize(qText,W);
-  doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+    // --- 5. UTILS ---
+    function getDataFromStorage() {
+        return JSON.parse(localStorage.getItem(DB_KEY)||'[]');
+    }
 
-  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+    function forceUnlock(setID) {
+        let stats = JSON.parse(localStorage.getItem(USER_KEY) || '{"unlockedSets":["SET_A"]}');
+        if(!stats.unlockedSets.includes(setID)) {
+            stats.unlockedSets.push(setID);
+            localStorage.setItem(USER_KEY, JSON.stringify(stats));
+            log(`UNLOCKED ${setID}.`, "success");
+        }
+    }
 
-  const startY=y;
-  
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
-  doc.text("OPTIONS",ML,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); 
-  doc.setTextColor(80,80,80); 
-  
-  const optA = `(A) ${cleanPDF(d.u)}`;
-  const optB = `(B) ${cleanPDF(d.l)}`;
-  const optC = `(C) ${cleanPDF(d.r)}`;
-  
-  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
-  
-  let maxH = y; y=startY;
+    function resetUserProgress() {
+        if(confirm("RESET USER XP?")) {
+            localStorage.removeItem(USER_KEY);
+            log("USER DATA WIPED.", "log-warn");
+        }
+    }
 
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
-  doc.text("THEORY & LOGIC",COL_LOG_X,y); y+=4;
-  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
-  const logT = doc.splitTextToSize(cleanPDF(d.logic||"No logic provided."),COL_LOG_W);
-  doc.text(logT,COL_LOG_X,y); 
-  const col2H = y+(logT.length*4);
-  if(col2H>maxH) maxH=col2H;
-  y=startY;
+    function initPurge() { document.getElementById('purge-modal').style.display = 'flex'; }
+    function executePurge() {
+        if(document.getElementById('purge-code').value === 'DELETE') {
+            localStorage.clear();
+            location.reload();
+        }
+    }
 
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
-  doc.text("EXECUTION",COL_EXE_X,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
-  const s1 = `1. ${cleanPDF(d.s1||d.step1||"-")}`;
-  const s2 = `2. ${cleanPDF(d.s2||d.step2||"-")}`;
-  const s1L = doc.splitTextToSize(s1,COL_EXE_W);
-  doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
-  const s2L = doc.splitTextToSize(s2,COL_EXE_W);
-  doc.text(s2L,COL_EXE_X,y);
-  const col3H = y+(s2L.length*4);
-  if(col3H>maxH) maxH=col3H;
+    function log(msg, type) {
+        const t = document.getElementById('console-log');
+        t.innerHTML = `<div class="log-entry log-${type}">> ${msg}</div>` + t.innerHTML;
+    }
 
-  y=maxH+5;
+    function updateStatus(msg) {
+        document.getElementById('db-status-text').innerText = msg;
+        document.getElementById('db-status-dot').classList.remove('off');
+    }
 
-  if(d.trap||d.note){
-    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
-    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50);
-    doc.text("DISTRACTOR ANALYSIS:",ML,y);
-    doc.setFont("times","italic"); doc.setTextColor(80);
-    doc.text(cleanPDF(d.trap||d.note),ML+35,y); y+=8;
-  } else {y+=5;}
-  y+=5;
- });
+    function checkLocalData() {
+        if(localStorage.getItem(DB_KEY)) updateStatus("DB CONNECTED");
+        else {
+            document.getElementById('db-status-text').innerText = "DB EMPTY";
+            document.getElementById('db-status-dot').classList.add('off');
+        }
+    }
 
- doc.save(`ACADEMY_v132_21_${Date.now()}.pdf`);
- setTimeout(begin,500);
-}
+    function download(content, name, type) {
+        const blob = new Blob([content], { type: `text/${type}` });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name; a.click();
+    }
+
+    function getDateStr() { return new Date().toISOString().split('T')[0]; }
+
+    window.onload = checkLocalData;
+
 </script>
 </body>
 </html>
