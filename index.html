@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Diagnostic v136.25</title>
+<title>Alchemist | Operator v136.35</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -75,11 +75,15 @@ body{
   line-height:1.5;
   font-weight:600; text-align:center;
   color: var(--text-grey);
-  width: 100%; max-height: 100%; overflow-y: auto; 
-  padding-right: 5px; pointer-events: auto;
+  
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto; 
+  padding-right: 5px; 
+  pointer-events: auto;
 }
 
-/* ERROR STATE TEXT */
+/* ERROR STATE */
 .card-error { color: #e74c3c; font-family: var(--font-code); font-size: 0.9rem; text-align: left; white-space: pre-wrap; }
 
 /* CUSTOM SCROLLBAR */
@@ -126,7 +130,7 @@ body{
 <div id="stack">
   <div class="card">
     <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      VIA.STACK | DIAGNOSTIC<br>CONNECTING TO VAULT...
+      VIA.STACK | V136.35<br>SYNCING VAULT...
     </div>
   </div>
 </div>
@@ -136,7 +140,7 @@ body{
 const MASTER_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/e939bcc47c331c43fb8875e3a77f1125329a3810/master.json";
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 const VERSION_KEY = "ALCHEMIST_VERSION";
-const APP_VERSION = "v136.25"; // Forces Reset
+const APP_VERSION = "v136.35"; // Increment to force flush
 
 /* ================= STATE ================= */
 let RAW_DATA = [];
@@ -175,9 +179,8 @@ function shuffle(array) {
 (function checkVersion(){
     const v = localStorage.getItem(VERSION_KEY);
     if(v !== APP_VERSION){
-        console.log("VERSION UPDATE: Clearing old data caches...");
-        // We do NOT clear MASTER_KEY (Admin Push) to preserve local work
-        // But we DO clear any session data if you had it
+        console.log("VERSION UPDATE: Clearing old caches...");
+        // Keeping MASTER_KEY intact so local work isn't lost
         localStorage.setItem(VERSION_KEY, APP_VERSION);
     }
 })();
@@ -533,7 +536,6 @@ async function init(){
     if(r.ok) webData = await r.json();
     else card(`WEB FETCH FAILED\nHTTP ${r.status}`, {down:"RETRY"}, ()=>location.reload(), true);
   } catch(e) {
-    // If Web fails, and we have no bridge data, Show Error
     if(bridgeData.length === 0){
         card(`CRITICAL FAILURE\nJSON Parse Error or Network\n\n${e.message}`, {down:"RETRY"}, ()=>location.reload(), true);
         return;
