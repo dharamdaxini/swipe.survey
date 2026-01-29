@@ -365,43 +365,49 @@ function exportMenu(){
     );
 }
 
-function showUnlockCard(){
-  log("GATEWAY LOCKED", "primary");
-  card(
-    `
-    <div style="text-align:center">
-      <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">
-        UNLOCK SUPPORT PDF
-      </div>
+function showUnlockCard() {
+    log("GATEWAY LOCKED", "primary");
+    card(
+      `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%;">
+        
+        <div style="font-size:3.5rem; margin-bottom:15px; filter: drop-shadow(0 0 10px rgba(255,214,0,0.3));">📑</div>
 
-      <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">
-        Complete Academy Analysis
-      </div>
+        <div style="font-family:'Crimson Text', serif; font-size:1.5rem; font-weight:700; color:#fff; margin-bottom:5px;">
+          UNLOCK SUPPORT PDF
+        </div>
 
-      <a href="https://wa.me/916351537770?text=Support%20PDF%20Unlock"
-         target="_blank"
-         onclick="setTimeout(() => { renderSupportPDF(SESSION_ALL); }, 2000)"
-         style="
-           display:inline-block;
-           padding:14px 22px;
-           background:#25D366;
-           color:#000;
-           font-family:Inter,sans-serif;
-           font-weight:700;
-           border-radius:10px;
-           text-decoration:none;
-         ">
-         Unlock via WhatsApp (₹1)
-      </a>
+        <div style="font-family:'Inter', sans-serif; font-size:0.8rem; color:#888; text-align:center; margin-bottom:25px; max-width:250px;">
+          Complete Academy Analysis
+        </div>
 
-      <div style="margin-top:15px; font-size:0.6rem; color:#444;">
-        SECURE UPI GATEWAY
+        <a href="https://wa.me/916351537770?text=Support%20PDF%20Unlock"
+           target="_blank"
+           onclick="setTimeout(() => { renderSupportPDF(SESSION_ALL); }, 3000)"
+           style="
+             display:flex; align-items:center; justify-content:center; gap:8px;
+             padding:16px 32px;
+             background:#25D366;
+             color:#000;
+             font-family:'Inter', sans-serif;
+             font-weight:800;
+             font-size:0.9rem;
+             border-radius:50px;
+             text-decoration:none;
+             box-shadow:0 4px 20px rgba(37, 211, 102, 0.4);
+             transition: transform 0.1s;
+           ">
+           <span>UNLOCK NOW (₹1)</span>
+        </a>
+
+        <div style="margin-top:15px; font-family:'JetBrains Mono', monospace; font-size:0.6rem; color:#444;">
+          SECURE WHATSAPP GATEWAY
+        </div>
       </div>
-    </div>
-    `,
-    { down: "BACK" },
-    dir => { if(dir === "DOWN") exportMenu(); }
-  );
+      `,
+      { down: "BACK" },
+      dir => { if(dir === "DOWN") exportMenu(); }
+    );
 }
 
 /* ================= RENDERER A: SESSION PDF (Worksheet) ================= */
@@ -551,13 +557,13 @@ async function init(){
 
   let loaded = false;
 
-  // 1️⃣ Try localStorage FIRST (Admin Push)
+  // 1️⃣ Try localStorage FIRST (Bridge)
   try {
     const localData = localStorage.getItem(MASTER_KEY);
     if(localData && localData.length > 10){
       RAW_DATA = JSON.parse(localData);
       loaded = true;
-      log("BRIDGE CONNECTED", "primary");
+      log("LOCAL BRIDGE CONNECTED", "primary");
     }
   } catch(e){
     RAW_DATA = [];
