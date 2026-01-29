@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final v137.9</title>
+<title>Alchemist | Final v137.10</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -348,31 +348,8 @@ function report(){
     if(dir==="DOWN") exportMenu();
     if(dir==="UP") startQuiz(); 
     if(dir==="LEFT") begin();
-
-   card(
-  `
-  <div style="text-align:center">
-    <div style="margin-bottom:14px">Unlock Support PDF</div>
-
-    <a href="https://upi.link/pay?pa=6351537770-2@ybl&pn=Alchemist&am=1&cu=INR"
-       target="_blank"
-       style="
-         display:inline-block;
-         padding:14px 22px;
-         background:#ffd600;
-         color:#000;
-         font-family:Inter, sans-serif;
-         font-weight:700;
-         border-radius:10px;
-         text-decoration:none;
-       ">
-       Pay ₹1
-    </a>
-  </div>
-  `,
-  {},            // labels (empty = swipe disabled visually)
-  () => {}       // callback (no swipe action)
-);
+ });
+}
 
 /* ================= EXPORT MENU ================= */
 function exportMenu(){
@@ -505,10 +482,17 @@ function renderSupportPDF(data){
         const logH = contentY + (logLines.length * 4);
         if(logH > maxH) maxH = logH;
 
-        // Col 3: Execution (Locked Steps)
+        // Col 3: Execution (Locked Steps + Fallback)
         doc.setFont("helvetica", "normal"); doc.setTextColor(0);
-        const s1 = `1. ${cleanPDF(d.step1 || "Identify key principles.")}`;
-        const s2 = `2. ${cleanPDF(d.step2 || "Apply and verify.")}`; // Explicit Fallback
+        
+        // --- PATCH START: FORCE CONTENT ---
+        const textS1 = cleanPDF(d.step1);
+        const textS2 = cleanPDF(d.step2);
+        
+        const s1 = `1. ${textS1 || "Identify governing principle."}`;
+        const s2 = `2. ${textS2 || "Apply principle and verify result."}`;
+        // --- PATCH END ---
+
         const s1L = doc.splitTextToSize(s1, COL_W.EXE);
         const s2L = doc.splitTextToSize(s2, COL_W.EXE);
         let exeY = contentY;
