@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.61</title>  
+    <title>VIA.STACK | ADMIN v136.60</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.61</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.60</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -147,7 +147,7 @@
     <div class="zone">
         <div class="zone-title">01 // INGESTION ENGINE</div>
         
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV HERE...&#10;>> DETECTS HEADERS OR FALLS BACK TO DEFAULT POSITIONS.&#10;>> SAFE-SPLIT & REPAIR ENGINE ENABLED."></textarea>
+        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> REPAIR ENGINE ACTIVE (Sanitizes directional corruption)."></textarea>
         
         <div class="action-bar">
             <input type="file" id="tsv-upload" hidden accept=".tsv,.txt,.csv" onchange="handleFileUpload(this)">
@@ -272,21 +272,35 @@
 
     // --- 1. UTILS: REPAIR & SAFE SPLIT ---
     
+    // THE REPAIR ENGINE
     function repairDirectionalCorruption(row) {
         const DIR = ["UP", "LEFT", "RIGHT"];
         const isDir = v => DIR.includes((v || "").toUpperCase().trim());
 
+        // If options themselves are direction labels → corrupted
         if (isDir(row.u) || isDir(row.l) || isDir(row.r)) {
-            row.u = ""; row.l = ""; row.r = "";
+            row.u = "";
+            row.l = "";
+            row.r = "";
         }
-        if (isDir(row.correct)) row.correct = "";
 
-        row.q ||= ""; row.logic ||= ""; row.hint ||= "";
-        row.trap ||= ""; row.s1 ||= ""; row.s2 ||= "";
+        // If correct is direction, null it (cannot recover text)
+        if (isDir(row.correct)) {
+            row.correct = "";
+        }
+
+        // Ensure strings (no undefined leakage)
+        row.q ||= "";
+        row.logic ||= "";
+        row.hint ||= "";
+        row.trap ||= "";
+        row.s1 ||= "";
+        row.s2 ||= "";
 
         return row;
     }
 
+    // SAFE SPLIT
     function safeTSVSplit(line, cols) {
         let parts = line.split('\t');
         if (parts.length <= cols) {
@@ -417,6 +431,7 @@
             else if (ansFlag.includes("RIGHT") || ansFlag.includes("C")) realAnswer = cols[i.r];
             else if (i.correct > -1 && cols[i.correct] && cols[i.correct].length > 1) realAnswer = cols[i.correct]; 
 
+            // --- REPAIR PIPELINE APPLIED HERE ---
             const repaired = repairDirectionalCorruption({
                 id: (cols[i.id] || `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
                 set: i.set > -1 ? cols[i.set] : "SET_A",
