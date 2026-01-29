@@ -368,7 +368,7 @@ function exportMenu(){
 function showUnlockCard() {
     log("GATEWAY LOCKED", "primary");
     card(
-      `
+   
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%;">
         
         <div style="font-size:3.5rem; margin-bottom:15px; filter: drop-shadow(0 0 10px rgba(255,214,0,0.3));">📑</div>
@@ -404,7 +404,7 @@ function showUnlockCard() {
           SECURE WHATSAPP GATEWAY
         </div>
       </div>
-      `,
+      
       { down: "BACK" },
       dir => { if(dir === "DOWN") exportMenu(); }
     );
