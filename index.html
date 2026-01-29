@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final v137.14</title>
+<title>Alchemist | Final v137.15</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -355,53 +355,55 @@ function report(){
 function exportMenu(){
     log("SELECT FORMAT", "primary");
     card(
-        "VIA.STACK\n\nSELECT OUTPUT FORMAT",
-        { left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK" },
+        "VIA.STACK\n\nSELECT OUTPUT FORMAT", 
+        {left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK"}, 
         dir => {
-
-            if(dir === "LEFT"){
-                renderSessionPDF(SESSION_ALL);
-                return;
-            }
-
-          if (dir === "RIGHT") {
-  log("OPENING SUPPORT LINK", "active");
-  setTimeout(() => {
-    window.location.href = SUPPORT_LINK;
-  }, 120);
-  return;
-}
-            if(dir === "DOWN"){
-                report();
-            }
+            if(dir === "LEFT") renderSessionPDF(SESSION_ALL);
+            if(dir === "RIGHT") showUnlockCard(); 
+            if(dir === "DOWN") report();
         }
     );
 }
+
 function showUnlockCard(){
   log("GATEWAY LOCKED", "primary");
   card(
+    `
+    <div style="text-align:center">
+      <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">
+        UNLOCK SUPPORT PDF
+      </div>
 
-<div style="text-align:center">
-  <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">
-    UNLOCK SUPPORT PDF
-  </div>
-  <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">
-    Complete Academy Analysis
-  </div>
-  <a href="${SUPPORT_LINK}" target="_blank"
-     style="display:inline-block;padding:14px 22px;background:#25D366;color:#000;
-            font-family:Inter,sans-serif;font-weight:700;border-radius:10px;text-decoration:none;">
-     Unlock via WhatsApp (₹1)
-  </a>
-  <div style="margin-top:15px; font-size:0.6rem; color:#444;">
-    SECURE UPI GATEWAY
-  </div>
-</div>
+      <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">
+        Complete Academy Analysis
+      </div>
 
-{ down: "BACK" },
-dir => { if(dir === "DOWN") exportMenu(); }
+      <a href="https://wa.me/916351537770?text=Support%20PDF%20Unlock"
+         target="_blank"
+         onclick="setTimeout(() => { renderSupportPDF(SESSION_ALL); }, 2000)"
+         style="
+           display:inline-block;
+           padding:14px 22px;
+           background:#25D366;
+           color:#000;
+           font-family:Inter,sans-serif;
+           font-weight:700;
+           border-radius:10px;
+           text-decoration:none;
+         ">
+         Unlock via WhatsApp (₹1)
+      </a>
+
+      <div style="margin-top:15px; font-size:0.6rem; color:#444;">
+        SECURE UPI GATEWAY
+      </div>
+    </div>
+    `,
+    { down: "BACK" },
+    dir => { if(dir === "DOWN") exportMenu(); }
   );
 }
+
 /* ================= RENDERER A: SESSION PDF (Worksheet) ================= */
 function renderSessionPDF(data){
     log("GENERATING SESSION PDF...", "active");
@@ -549,7 +551,7 @@ async function init(){
 
   let loaded = false;
 
-  // 1️⃣ Try localStorage FIRST
+  // 1️⃣ Try localStorage FIRST (Admin Push)
   try {
     const localData = localStorage.getItem(MASTER_KEY);
     if(localData && localData.length > 10){
@@ -561,7 +563,7 @@ async function init(){
     RAW_DATA = [];
   }
 
-  // 2️⃣ Try master.json with timeout
+  // 2️⃣ Try master.json with timeout (Repo)
   if(!loaded){
     log("FETCHING MASTER...", "normal");
 
