@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.54</title>  
+    <title>VIA.STACK | ADMIN v136.58</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.54</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.58</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -147,7 +147,7 @@
     <div class="zone">
         <div class="zone-title">01 // INGESTION ENGINE</div>
         
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW 25+ COL TSV HERE...&#10;>> OR USE UPLOAD BUTTON BELOW.&#10;>> AUTO-STRIPS HEADERS. ENFORCES STRUCTURE."></textarea>
+        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> SAFE-SPLIT ENABLED (Fixes broken S2)."></textarea>
         
         <div class="action-bar">
             <input type="file" id="tsv-upload" hidden accept=".tsv,.txt,.csv" onchange="handleFileUpload(this)">
@@ -225,9 +225,9 @@
             <thead>
                 <tr>
                     <th width="10%">ID</th>
-                    <th width="10%">SET</th>
-                    <th width="50%">QUESTION</th>
-                    <th width="30%" style="text-align:right;">CORRECT</th>
+                    <th width="40%">QUESTION</th>
+                    <th width="25%">S1</th>
+                    <th width="25%">S2</th>
                 </tr>
             </thead>
             <tbody id="observer-body"></tbody>
@@ -251,6 +251,7 @@
     let STAGED_DATA = [];
     let FAULTY_ROW_INDEX = -1;
     let RAW_LINES = [];
+    let TSV_HEADERS = [];
     
     // === SYSTEM LINKAGE ===
     const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
@@ -263,30 +264,42 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             const content = e.target.result;
-            // Populate textarea so user sees what happened
             document.getElementById('raw-input').value = content;
             log("FILE READ SUCCESS. INITIATING ALIGNMENT...", "success");
-            
-            // Auto-trigger the existing pipeline
             initiateAlignment();
         };
         reader.readAsText(file);
-        
-        // Reset input to allow re-upload of same file if needed
-        input.value = '';
+        input.value = ''; 
     }
 
-    // --- 1. GATEKEEPER v26 ---
+    // --- 1. UTILS: SAFE SPLIT (THE FIX) ---
+    function safeTSVSplit(line, cols) {
+        const parts = line.split('\t');
+        if (parts.length <= cols) {
+            // Pad if short
+            while(parts.length < cols) parts.push("");
+            return parts;
+        }
+        
+        // If line is too long, assume extra tabs are in the logic/description fields
+        // We preserve the first (cols-1) fields, and merge everything else into the last field.
+        const head = parts.slice(0, cols - 1);
+        const tail = parts.slice(cols - 1).join(' ').replace(/\s+/g, ' ').trim();
+        return head.concat([tail]);
+    }
+
+    // --- 2. GATEKEEPER v29 (Safe Split Enabled) ---
     function initiateAlignment() {
         const raw = document.getElementById('raw-input').value;
-        if(!raw.trim()) return log("NO INPUT DETECTED.", "err");
+        if (!raw.trim()) return log("NO INPUT DETECTED.", "err");
 
-        // Pre-Process: Strip Headers
-        RAW_LINES = raw.split('\n').filter(line => 
-            !line.toUpperCase().startsWith('ID\t') && 
-            line.trim() !== ""
-        );
+        const lines = raw.split(/\r?\n/).filter(l => l.trim() !== "");
 
+        // CAPTURE HEADERS
+        TSV_HEADERS = lines[0].split('\t').map(h => h.trim().toUpperCase());
+        RAW_LINES = lines.slice(1);
+
+        log(`HEADERS DETECTED (${TSV_HEADERS.length}): ${TSV_HEADERS.join(', ')}`, "success");
         runGatekeeper();
     }
 
@@ -294,22 +307,27 @@
         const seenIDs = new Set();
         let collision = null;
         let drift = null;
+        const expectedCols = TSV_HEADERS.length;
 
         for(let i=0; i<RAW_LINES.length; i++) {
-            const cols = RAW_LINES[i].split('\t');
+            // USE SAFE SPLIT HERE
+            const cols = safeTSVSplit(RAW_LINES[i], expectedCols);
             
-            // Soft validation: Warn if too short (likely copied wrong)
-            if(cols.length < 10) {
+            // Allow minor tolerance, but warn if drastically short
+            if(cols.length < 5) { 
                 drift = { index: i, line: RAW_LINES[i], len: cols.length };
                 break;
             }
 
-            const id = cols[0].trim();
-            if(seenIDs.has(id)) {
-                collision = { index: i, line: RAW_LINES[i], id: id };
-                break;
+            const idIdx = TSV_HEADERS.indexOf("ID");
+            if(idIdx > -1 && cols[idIdx]) {
+                const id = cols[idIdx].trim();
+                if(seenIDs.has(id)) {
+                    collision = { index: i, line: RAW_LINES[i], id: id };
+                    break;
+                }
+                seenIDs.add(id);
             }
-            seenIDs.add(id);
         }
 
         if(drift) launchSurgeon(drift, "DRIFT");
@@ -341,36 +359,62 @@
     }
 
     function finalizeStaging() {
-        const cleanData = [];
-        RAW_LINES.forEach(line => {
-            const cols = line.split('\t');
-            if(cols.length < 9) return;
+        const idx = name => TSV_HEADERS.indexOf(name);
+        const expectedCols = TSV_HEADERS.length;
 
-            // NORMALIZER (Standard 6=U, 7=L, 8=R)
-            let ansVal = cols[9] ? cols[9].trim().toUpperCase() : "UP";
-            let realAnswer = cols[6]; // Default to U
-            
-            if(ansVal.includes("RIGHT") || ansVal.includes("OPT_C")) realAnswer = cols[8];
-            else if(ansVal.includes("LEFT") || ansVal.includes("OPT_B")) realAnswer = cols[7];
-            else if(ansVal.includes("UP") || ansVal.includes("OPT_A")) realAnswer = cols[6];
+        // --- MAPPER ENGINE ---
+        const i = {
+            id: idx("ID"),
+            set: idx("SET"),
+            dom: idx("DOM"),
+            topic: idx("TOPIC"),
+            q: idx("Q"),
+            u: idx("UP"),
+            l: idx("LEFT"),
+            r: idx("RIGHT"),
+            correct: idx("CORRECT"),
+            logic: idx("LOGIC"),
+            hint: idx("HINT"),
+            ref: idx("REF"),
+            link: idx("LINK"),
+            trap: idx("TRAP"),
+            s1: idx("S1") > -1 ? idx("S1") : idx("STEP1"),
+            s2: idx("S2") > -1 ? idx("S2") : idx("STEP2")
+        };
+
+        const cleanData = [];
+
+        RAW_LINES.forEach(line => {
+            // CRITICAL FIX: Use Safe Split to prevent S2 shifting
+            const cols = safeTSVSplit(line, expectedCols);
+
+            if ((i.q > -1 && !cols[i.q]) || (i.u > -1 && !cols[i.u])) return;
+
+            let ansFlag = (i.correct > -1 ? cols[i.correct] : "").toUpperCase();
+            let realAnswer = i.u > -1 ? cols[i.u] : "";
+
+            if (ansFlag.includes("LEFT") || ansFlag.includes("OPT_B")) realAnswer = cols[i.l];
+            else if (ansFlag.includes("RIGHT") || ansFlag.includes("OPT_C")) realAnswer = cols[i.r];
+            else if (ansFlag.includes("UP") || ansFlag.includes("OPT_A")) realAnswer = cols[i.u];
+            else if (i.correct > -1 && cols[i.correct]) realAnswer = cols[i.correct]; 
 
             cleanData.push({
-                id: cols[0].trim(), 
-                set: cols[1] || "SET_A", 
-                dom: cols[2] || "GENERAL", 
-                topic: cols[3] || "", 
-                q: cols[5], 
-                u: cols[6], 
-                l: cols[7], // Left=7
-                r: cols[8], // Right=8
-                correct: realAnswer, 
-                logic: cols[10] || "", 
-                hint: cols[11] || "", 
-                ref: cols[13] || "",
-                link: cols[16] || "",
-                trap: cols[17] || "",
-                s1: cols[23] || "", 
-                s2: cols[24] || ""
+                id: (i.id > -1 ? cols[i.id] : `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
+                set: i.set > -1 ? cols[i.set] : "SET_A",
+                dom: i.dom > -1 ? cols[i.dom] : "GENERAL",
+                topic: i.topic > -1 ? cols[i.topic] : "",
+                q: i.q > -1 ? cols[i.q] : "",
+                u: i.u > -1 ? cols[i.u] : "",
+                l: i.l > -1 ? cols[i.l] : "",
+                r: i.r > -1 ? cols[i.r] : "",
+                correct: realAnswer,
+                logic: i.logic > -1 ? cols[i.logic] : "",
+                hint: i.hint > -1 ? cols[i.hint] : "",
+                ref: i.ref > -1 ? cols[i.ref] : "",
+                link: i.link > -1 ? cols[i.link] : "",
+                trap: i.trap > -1 ? cols[i.trap] : "",
+                s1: i.s1 > -1 ? cols[i.s1] : "",
+                s2: i.s2 > -1 ? cols[i.s2] : "" // Now protected by safeSplit
             });
         });
 
@@ -378,7 +422,7 @@
         log(`ALIGNMENT COMPLETE: ${STAGED_DATA.length} UNITS READY.`, "success");
     }
 
-    // --- 2. DEPLOYMENT ---
+    // --- 3. DEPLOYMENT ---
     function pushToIndex() {
         if(STAGED_DATA.length === 0) return log("STAGE EMPTY.", "err");
         
@@ -389,7 +433,7 @@
             const existingDB = JSON.parse(existingRaw);
             const map = new Map();
             existingDB.forEach(d => map.set(d.id, d));
-            STAGED_DATA.forEach(d => map.set(d.id, d)); // Overwrite duplicates
+            STAGED_DATA.forEach(d => map.set(d.id, d)); 
             finalDB = Array.from(map.values());
         }
 
@@ -398,7 +442,7 @@
         updateStatus("BRIDGE CONNECTED");
     }
 
-    // --- 3. EXPORTS ---
+    // --- 4. EXPORTS ---
     function exportJSON() {
         const data = getDataFromStorage();
         if(data.length === 0) return log("NO DATA.", "err");
@@ -419,7 +463,7 @@
 
     function exportCSV() { exportTSV(); } 
 
-    // --- 4. OBSERVER ---
+    // --- 5. OBSERVER ---
     function openObserver() {
         const data = getDataFromStorage();
         const tbody = document.getElementById('observer-body');
@@ -427,16 +471,16 @@
         data.forEach((row) => {
             tbody.innerHTML += `<tr>
                 <td style="color:var(--blue)">${row.id}</td>
-                <td>${row.set}</td>
-                <td>${row.q.substring(0,50)}...</td>
-                <td style="text-align:right; color:var(--green)">${row.correct.substring(0,10)}</td>
+                <td>${row.q.substring(0,40)}...</td>
+                <td style="color:var(--gold)">${(row.s1||"").substring(0,15)}</td>
+                <td style="color:var(--green)">${(row.s2||"").substring(0,15)}</td>
             </tr>`;
         });
         document.getElementById('observer-layer').style.display = 'flex';
     }
     function closeObserver() { document.getElementById('observer-layer').style.display = 'none'; }
 
-    // --- 5. UTILS ---
+    // --- 6. UTILS ---
     function getDataFromStorage() { return JSON.parse(localStorage.getItem(DB_KEY)||'[]'); }
     function initPurge() { document.getElementById('purge-modal').style.display = 'flex'; }
     function executePurge() {
