@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic Loop v136.57</title>
+<title>Alchemist | Kinetic Loop v136.58</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -37,32 +37,31 @@ body{
   display:flex; justify-content:space-between;
   font-family:var(--font-code); font-size:0.75rem; 
   color:#666; letter-spacing:1.5px; text-transform:uppercase;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 /* PROGRESS BAR */
-.progress-track{ width:100%; height:3px; background:#222; border-radius:2px; margin-top: 5px; }
+.progress-track{ width:100%; height:3px; background:#222; border-radius:2px; }
 #progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
 
-/* KINETIC LOGGER */
+/* KINETIC LOGGER (v130.73 Style) */
 #kinetic-logger {
-  width: 90%; margin: 0 auto 10px;
-  font-family: var(--font-code); font-size: 0.75rem;
+  width: 90%; margin: 15px auto 5px;
+  font-family: var(--font-code); font-size: 0.8rem;
   color: #444; line-height: 1.4;
   text-transform: uppercase;
-  min-height: 50px; 
+  min-height: 60px; /* Space for 3 lines */
   display: flex; flex-direction: column; justify-content: flex-end;
   pointer-events: none;
 }
-.log-line { opacity: 0.4; transition: opacity 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-line { opacity: 0.5; transition: opacity 0.2s; }
 .log-line.active { color: var(--green); opacity: 1; font-weight: 700; }
 .log-line.primary { color: var(--gold); opacity: 1; font-weight: 700; }
-.log-line.error { color: #ff4444; opacity: 1; font-weight: 700; }
 
-/* STACK */
+/* FLUID STACK ENGINE */
 #stack{
   position:relative; width:90%; max-width:420px; 
-  height: calc(100vh - 180px - env(safe-area-inset-bottom)); 
+  height: calc(100vh - 220px - env(safe-area-inset-bottom)); 
   margin: 10px auto 20px; 
   perspective:1500px;
   display:flex; align-items:center; justify-content:center;
@@ -80,6 +79,7 @@ body{
   overflow: hidden; 
 }
 
+/* MAIN TEXT */
 .card-q{
   font-family:var(--font-serif);
   font-size: clamp(1.4rem, 5vw, 1.9rem); 
@@ -87,8 +87,17 @@ body{
   font-weight:600; text-align:center;
   color: var(--text-white); 
   width: 100%;
+  max-height: 100%;
+  overflow-y: auto; 
+  word-wrap: break-word;
+  padding: 0 5px; 
+  display: flex; flex-direction: column; justify-content: center;
 }
+.card-q::-webkit-scrollbar { width: 0px; }
+.card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
+.card-q sup{ font-size:0.7em; vertical-align:0.5em; }
 
+/* SWIPE LABELS */
 .swipe-label{
   position:absolute; inset:0; 
   display:flex; align-items:center; justify-content:center;
@@ -98,6 +107,7 @@ body{
   font-size:1.8rem; 
   text-transform:uppercase; 
   letter-spacing:1px;
+  text-align:center; padding:40px;
   opacity:0; pointer-events:none; 
   transition:opacity 0.15s ease;
   border-radius:14px;
@@ -110,23 +120,22 @@ body{
 
 <div id="header">
   <div class="header-meta">
-    <span style="color:#666; font-weight:700;">VIA.STACK</span> 
+    <span id="id-ui">VIA.STACK</span> 
     <span id="xp-ui">0 XP</span>
   </div>
-
-  <div id="kinetic-logger">
-    <div class="log-line" id="log-1"></div>
-    <div class="log-line" id="log-2"></div>
-    <div class="log-line active" id="log-3">> SYSTEM BOOT</div>
-  </div>
-
   <div class="progress-track"><div id="progress-bar"></div></div>
+</div>
+
+<div id="kinetic-logger">
+  <div class="log-line" id="log-1">> SYSTEM BOOT</div>
+  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
+  <div class="log-line active" id="log-3">> ...</div>
 </div>
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">
-      INITIALIZING...
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
+      INITIALIZING CORE...
     </div>
   </div>
 </div>
@@ -144,16 +153,21 @@ let SESSION_ALL = [], VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
 let REVIEW_INDEX = 0;
 
-/* ================= LOGGER ================= */
+/* ================= LOGGER ENGINE ================= */
 function log(msg, type="normal") {
-  const l1 = log-1, l2 = log-2, l3 = log-3;
-  log-1.innerText = log-2.innerText;
-  log-2.innerText = log-3.innerText;
-  log-3.innerText = `> ${msg}`;
+    const l1 = document.getElementById("log-1");
+    const l2 = document.getElementById("log-2");
+    const l3 = document.getElementById("log-3");
+    l1.innerText = l2.innerText; l1.className = l2.className;
+    l2.innerText = l3.innerText; l2.className = "log-line"; 
+    l3.innerText = `> ${msg}`;
+    l3.className = type === "active" ? "log-line active" : 
+                   type === "primary" ? "log-line primary" : "log-line";
 }
 
 /* ================= UTILS ================= */
-const chemText = t => String(t||"");
+const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔|\\rightleftharpoons/g,"⇌");
+const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
 
 /* ================= UI ================= */
@@ -163,83 +177,242 @@ const UI = {
   bar: document.getElementById("progress-bar")
 };
 
-/* ================= PHYSICS ENGINE (UNCHANGED) ================= */
+/* ================= PHYSICS ENGINE (Restored Full Logic) ================= */
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={
+    UP:el.querySelector(".sl-up"),
+    LEFT:el.querySelector(".sl-left"),
+    RIGHT:el.querySelector(".sl-right"),
+    DOWN:el.querySelector(".sl-down")
+  };
   const s=e=>this.startDrag(e.touches?e.touches[0]:e);
   const m=e=>this.move(e.touches?e.touches[0]:e);
   const e2=()=>this.end();
-  el.addEventListener("mousedown",s);
-  window.addEventListener("mousemove",m);
-  window.addEventListener("mouseup",e2);
-  el.addEventListener("touchstart",s,{passive:true});
-  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
-  el.addEventListener("touchend",e2);
+  el.addEventListener("mousedown",s); window.addEventListener("mousemove",m); window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:true}); el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); el.addEventListener("touchend",e2);
  }
- startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};}
- move(p){}
- end(){ if(this.active){ this.active=false; this.cbs.onCommit("UP"); } }
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+ move(p){
+  if(!this.active)return;
+  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const d=Math.hypot(dx,dy);
+  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d>20){
+    const dir=this.dir(dx,dy);
+    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+  }
+ }
+ end(){
+  if(!this.active)return;this.active=false;
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+  const dx=m.m41,dy=m.m42;
+  if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+  else{this.el.style.transition=".4s cubic-bezier(0.2, 0.8, 0.2, 1)";this.el.style.transform="translate(0,0)"}
+ }
+ dir(dx,dy){
+  const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;
+  if(a>45&&a<135)return"UP";
+  if(a>135&&a<225)return"LEFT";
+  if(a>225&&a<315)return"DOWN";
+  return"RIGHT";
+ }
 }
 
-/* ================= CARD ================= */
-function card(text, labels, cb){
-  UI.stack.innerHTML="";
-  const el=document.createElement("div");
-  el.className="card";
-  el.innerHTML=`
-    <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
-    <div class="swipe-label sl-up">${labels.up||""}</div>
-    <div class="swipe-label sl-down">${labels.down||""}</div>
-  `;
-  UI.stack.appendChild(el);
-  new PhysicsController(el,{onCommit:cb});
+/* ================= RENDER LOGIC ================= */
+function card(text,labels,cb){
+ UI.stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up||"")}</div>
+  <div class="swipe-label sl-left">${chemText(labels.left||"")}</div>
+  <div class="swipe-label sl-right">${chemText(labels.right||"")}</div>
+  <div class="swipe-label sl-down">${chemText(labels.down||"")}</div>`;
+ UI.stack.appendChild(el);
+ new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= LOOP 1 ================= */
+/* ================= APP FLOW ================= */
+function begin(){
+ log("SESSION READY", "active");
+ card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
+  if(dir==="UP") setPick();
+  if(dir==="DOWN") exportSessionPDF();
+ });
+}
+
+function setPick(){
+ log("SELECT DATASET", "primary");
+ const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ if(sets.length===0) { card("NO DATA FOUND", {down:"RETRY"}, () => location.reload()); return; }
+ card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
+  if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
+  if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
+  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
+  if(dir==="DOWN") begin();
+ });
+}
+
+function volumePick(){
+ log("SET VOLUME", "primary");
+ card("QUESTION VOLUME",{up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},dir=>{
+    if(dir==="UP") VOLUME_LIMIT=10;
+    if(dir==="LEFT") VOLUME_LIMIT=25;
+    if(dir==="RIGHT") VOLUME_LIMIT=50;
+    if(dir==="DOWN") VOLUME_LIMIT=null;
+    startQuiz();
+ });
+}
+
+function startQuiz(){
+ log("INITIATING QUIZ...", "active");
+ let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+ base = shuffle(base); 
+ if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
+ POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
+ nextQ();
+}
+
 function nextQ(){
-  if(!POOL.length){
-    if(WRONG.length){ REVIEW_INDEX=0; review(); }
-    else report();
+ // 1. Check if Pool Empty
+ if(!POOL.length){
+    if(WRONG.length){ 
+        REVIEW_INDEX = 0; // Reset index for review loop
+        review(); 
+        return; 
+    } 
+    report(); return;
+ }
+ const d=POOL.shift();
+ log(`ID: ${d.id}`, "normal");
+ if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+
+ const opts = shuffle([d.u, d.l, d.r]);
+ const map = { up: opts[0], left: opts[1], right: opts[2] };
+
+ card(d.q, map, dir=>{
+  if(dir==="DOWN"){nextQ();return;}
+  let picked = null;
+  if(dir==="UP") picked = map.up;
+  if(dir==="LEFT") picked = map.left;
+  if(dir==="RIGHT") picked = map.right;
+
+  let c = d.correct;
+  if(c==="UP"||c==="A") c=d.u;
+  else if(c==="LEFT"||c==="B") c=d.l;
+  else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+
+  const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
+  if(!isCorrect){ WRONG.push(d); log("OUTCOME: NEGATIVE", "primary"); } 
+  else { if(!ATTEMPTED.has(d.id)){ XP+=1; } log("OUTCOME: POSITIVE", "active"); }
+  
+  ATTEMPTED.add(d.id);
+  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
+  // Stable Math
+  const total = SESSION_ALL.length + POOL.length + WRONG.length;
+  UI.bar.style.width = ((SESSION_ALL.length) / total) * 100 + "%";
+  nextQ();
+ });
+}
+
+// === CIRCULAR REVIEW LOOP (FINAL UPGRADE) ===
+function review(){
+ if(WRONG.length === 0){ nextQ(); return; }
+ if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX = 0;
+
+ const d = WRONG[REVIEW_INDEX]; 
+ log("REVIEW MODE", "primary");
+ log(`HINT: ${d.hint || "NONE"}`, "normal"); // Header Hint
+ 
+ card(
+  `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
+  {up:"RETRY", down:"SKIP"},
+  dir=>{
+    if(dir==="UP"){
+        // RETRY: Remove from Wrong, Add to Front of Pool, Exit Review
+        WRONG.splice(REVIEW_INDEX, 1);
+        POOL.unshift(d);
+        log("RE-INSERTING...", "active");
+        nextQ();
+    } else {
+        // SKIP: Circular Rotate
+        REVIEW_INDEX = (REVIEW_INDEX + 1) % WRONG.length;
+        log("SKIPPING...", "normal");
+        review();
+    }
+  }
+ );
+}
+
+function report(){
+ log("SESSION COMPLETE", "active");
+ const total = SESSION_ALL.length;
+ const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
+ card(`SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)`,{down:"EXPORT PDF", up:"RESTART", left:"MENU"},dir=>{
+    if(dir==="DOWN") exportSessionPDF();
+    if(dir==="UP") startQuiz(); 
+    if(dir==="LEFT") begin();
+ });
+}
+
+/* ================= HYBRID BOOT ================= */
+async function init(){
+  log("SYSTEM BOOT", "active");
+  const localData = localStorage.getItem(MASTER_KEY);
+  if(localData && localData.length > 10){
+    log("BRIDGE CONNECTED", "primary");
+    try { 
+      RAW_DATA = JSON.parse(localData); 
+      await new Promise(r => setTimeout(r, 600)); 
+    } catch(e) { RAW_DATA = []; }
+  }
+  if(!RAW_DATA.length){
+    log("FETCHING MASTER...");
+    try {
+      const r = await fetch('master.json', {cache: "no-store"});
+      if(r.ok){ RAW_DATA = await r.json(); }
+    } catch(e) { }
+  }
+  // Normalization
+  RAW_DATA = RAW_DATA.map(d => ({
+      id: d.id, set: d.set || "DEFAULT", dom: d.dom || "GENERAL", topic: d.topic || "",
+      q: d.q, u: d.u, l: d.l, r: d.r, correct: d.correct,
+      logic: d.logic || "", hint: d.hint || "", trap: d.trap || "",
+      step1: d.s1 || d.step1 || "", step2: d.s2 || d.step2 || ""
+  })).filter(d => d.id && d.q && d.u);
+
+  if(!RAW_DATA.length){
+    log("DATA ERROR", "active");
+    card("NO DATA FOUND\nPush via Admin", {down:"RETRY"}, () => location.reload());
     return;
   }
-  const d=POOL.shift();
-  SESSION_ALL.push(d);
-  card(d.q,{up:d.u,down:d.l},()=>nextQ());
+  begin();
 }
 
-/* ================= LOOP 2 (FIXED) ================= */
-function review(){
-  if(WRONG.length===0){ nextQ(); return; }
-
-  if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX = 0;
-  const d = WRONG[REVIEW_INDEX];
-
-  card(
-    `REVIEW\n\n${d.logic || "Review the core principles."}`,
-    {up:"RETRY", down:"SKIP"},
-    dir=>{
-      if(dir==="UP"){
-        WRONG.splice(REVIEW_INDEX,1);
-        POOL.unshift(d);
-        nextQ();              // ✅ EXIT REVIEW LOOP
-      } else {
-        REVIEW_INDEX = (REVIEW_INDEX + 1) % WRONG.length;
-        review();             // 🔁 STAY IN LOOP 2
-      }
-    }
-  );
+function exportSessionPDF(){
+ if(!SESSION_ALL.length){alert("No data");return;}
+ log("GENERATING PDF...", "active");
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ let y=20;
+ SESSION_ALL.forEach((d,i)=>{
+  if(y>240){doc.addPage();y=20;}
+  doc.setFont("times","bold"); doc.setFontSize(12);
+  doc.text(`Q${i+1} | ${cleanPDF(d.q)}`,15,y); y+=10;
+  doc.setFont("helvetica","normal"); doc.setFontSize(10);
+  doc.text(`A) ${cleanPDF(d.u)}`,15,y); y+=5;
+  doc.text(`B) ${cleanPDF(d.l)}`,15,y); y+=5;
+  doc.text(`C) ${cleanPDF(d.r)}`,15,y); y+=8;
+ });
+ doc.save(`ALCHEMIST_${Date.now()}.pdf`);
+ setTimeout(begin,500);
 }
 
-/* ================= REPORT ================= */
-function report(){
-  card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length}`,{up:"RESTART"},()=>location.reload());
-}
-
-/* ================= BOOT ================= */
-RAW_DATA=[{id:1,set:"A",q:"Demo Question",u:"Yes",l:"No",r:"Maybe",correct:"Yes",logic:"Demo logic"}];
-POOL=[...RAW_DATA];
-nextQ();
+init();
 </script>
 </body>
 </html>
