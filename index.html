@@ -384,7 +384,7 @@ function exportMenu(){
 function showUnlockCard(){
   log("GATEWAY LOCKED", "primary");
   card(
-
+    
 <div style="text-align:center">
   <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">
     UNLOCK SUPPORT PDF
@@ -394,7 +394,8 @@ function showUnlockCard(){
     Complete Academy Analysis
   </div>
 
-  <a href="${https://wa.me/916351537770?text=Support%20PDF%20Unlock}" target="_blank"
+  <a href="https://wa.me/916351537770?text=Support%20PDF%20Unlock"
+     target="_blank"
      style="
        display:inline-block;
        padding:14px 22px;
@@ -417,7 +418,6 @@ function showUnlockCard(){
 dir => { if(dir === "DOWN") exportMenu(); }
   );
 }
-
 /* ================= RENDERER A: SESSION PDF (Worksheet) ================= */
 function renderSessionPDF(data){
     log("GENERATING SESSION PDF...", "active");
