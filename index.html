@@ -364,13 +364,16 @@ function exportMenu(){
                 return;
             }
 
-            if(dir === "RIGHT"){
-                log("OPENING SUPPORT LINK", "active");
+           if(dir === "RIGHT"){
+  log("OPENING SUPPORT LINK", "active");
 
-                // HARD NAVIGATION (browser-safe)
-                window.location.href = SUPPORT_LINK;
-                return;
-            }
+  // HARD EXIT FROM PHYSICS + SAFE NAV
+  setTimeout(() => {
+    window.open(SUPPORT_LINK, "_blank");
+  }, 150);
+
+  return;
+}
 
             if(dir === "DOWN"){
                 report();
@@ -378,34 +381,41 @@ function exportMenu(){
         }
     );
 }
-function showUnlockCard() {
-    log("GATEWAY LOCKED", "primary");
-    card(
-      `
-      <div style="text-align:center">
-        <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">UNLOCK SUPPORT PDF</div>
-        <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">Complete Academy Analysis</div>
+function showUnlockCard(){
+  log("GATEWAY LOCKED", "primary");
+  card(
 
-       <a
- const SUPPORT_LINK = "https://wa.me/919429732666?text=Support%20PDF%20Unlock";
-  style="
-    display:inline-block;
-    padding:14px 22px;
-    background:#25D366;
-    color:#000;
-    font-family:Inter,sans-serif;
-    font-weight:700;
-    border-radius:10px;
-    text-decoration:none;
-  ">
-  Unlock via WhatsApp (₹1)
-</a>
-        <div style="margin-top:15px; font-size:0.6rem; color:#444;">SECURE UPI GATEWAY</div>
-      </div>
-      `,
-      {down: "BACK"}, 
-      dir => { if(dir === "DOWN") exportMenu(); }
-    );
+<div style="text-align:center">
+  <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">
+    UNLOCK SUPPORT PDF
+  </div>
+
+  <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">
+    Complete Academy Analysis
+  </div>
+
+  <a href="${https://wa.me/916351537770?text=Support%20PDF%20Unlock}" target="_blank"
+     style="
+       display:inline-block;
+       padding:14px 22px;
+       background:#25D366;
+       color:#000;
+       font-family:Inter,sans-serif;
+       font-weight:700;
+       border-radius:10px;
+       text-decoration:none;
+     ">
+     Unlock via WhatsApp (₹1)
+  </a>
+
+  <div style="margin-top:15px; font-size:0.6rem; color:#444;">
+    SECURE UPI GATEWAY
+  </div>
+</div>
+
+{ down: "BACK" },
+dir => { if(dir === "DOWN") exportMenu(); }
+  );
 }
 
 /* ================= RENDERER A: SESSION PDF (Worksheet) ================= */
