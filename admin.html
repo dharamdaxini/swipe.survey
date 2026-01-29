@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.54</title>  
+    <title>VIA.STACK | ADMIN v136.57</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.54</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.57</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -147,7 +147,7 @@
     <div class="zone">
         <div class="zone-title">01 // INGESTION ENGINE</div>
         
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW 25+ COL TSV HERE...&#10;>> OR USE UPLOAD BUTTON BELOW.&#10;>> AUTO-STRIPS HEADERS. ENFORCES STRUCTURE."></textarea>
+        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> STRUCTURE IS DYNAMIC."></textarea>
         
         <div class="action-bar">
             <input type="file" id="tsv-upload" hidden accept=".tsv,.txt,.csv" onchange="handleFileUpload(this)">
@@ -251,6 +251,7 @@
     let STAGED_DATA = [];
     let FAULTY_ROW_INDEX = -1;
     let RAW_LINES = [];
+    let TSV_HEADERS = [];
     
     // === SYSTEM LINKAGE ===
     const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
@@ -263,30 +264,26 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             const content = e.target.result;
-            // Populate textarea so user sees what happened
             document.getElementById('raw-input').value = content;
             log("FILE READ SUCCESS. INITIATING ALIGNMENT...", "success");
-            
-            // Auto-trigger the existing pipeline
             initiateAlignment();
         };
         reader.readAsText(file);
-        
-        // Reset input to allow re-upload of same file if needed
-        input.value = '';
+        input.value = ''; 
     }
 
-    // --- 1. GATEKEEPER v26 ---
+    // --- 1. GATEKEEPER v28 (Dynamic Header + S2 Fix) ---
     function initiateAlignment() {
         const raw = document.getElementById('raw-input').value;
-        if(!raw.trim()) return log("NO INPUT DETECTED.", "err");
+        if (!raw.trim()) return log("NO INPUT DETECTED.", "err");
 
-        // Pre-Process: Strip Headers
-        RAW_LINES = raw.split('\n').filter(line => 
-            !line.toUpperCase().startsWith('ID\t') && 
-            line.trim() !== ""
-        );
+        const lines = raw.split(/\r?\n/).filter(l => l.trim() !== "");
 
+        // CAPTURE HEADERS (Dynamic Mapping)
+        TSV_HEADERS = lines[0].split('\t').map(h => h.trim().toUpperCase());
+        RAW_LINES = lines.slice(1);
+
+        log(`HEADERS DETECTED: ${TSV_HEADERS.join(', ')}`, "success");
         runGatekeeper();
     }
 
@@ -298,18 +295,22 @@
         for(let i=0; i<RAW_LINES.length; i++) {
             const cols = RAW_LINES[i].split('\t');
             
-            // Soft validation: Warn if too short (likely copied wrong)
-            if(cols.length < 10) {
+            // Allow loose validation (some columns might be empty at end)
+            if(cols.length < 5) { // Minimum ID, Set, Q, U
                 drift = { index: i, line: RAW_LINES[i], len: cols.length };
                 break;
             }
 
-            const id = cols[0].trim();
-            if(seenIDs.has(id)) {
-                collision = { index: i, line: RAW_LINES[i], id: id };
-                break;
+            // ID check if header exists
+            const idIdx = TSV_HEADERS.indexOf("ID");
+            if(idIdx > -1 && cols[idIdx]) {
+                const id = cols[idIdx].trim();
+                if(seenIDs.has(id)) {
+                    collision = { index: i, line: RAW_LINES[i], id: id };
+                    break;
+                }
+                seenIDs.add(id);
             }
-            seenIDs.add(id);
         }
 
         if(drift) launchSurgeon(drift, "DRIFT");
@@ -341,36 +342,64 @@
     }
 
     function finalizeStaging() {
+        const idx = name => TSV_HEADERS.indexOf(name);
+
+        // --- MAPPER ENGINE ---
+        // Looks for exact headers, or falls back to known defaults
+        const i = {
+            id: idx("ID"),
+            set: idx("SET"),
+            dom: idx("DOM"),
+            topic: idx("TOPIC"),
+            q: idx("Q"),
+            u: idx("UP"),
+            l: idx("LEFT"),
+            r: idx("RIGHT"),
+            correct: idx("CORRECT"),
+            logic: idx("LOGIC"),
+            hint: idx("HINT"),
+            ref: idx("REF"),
+            link: idx("LINK"),
+            trap: idx("TRAP"),
+            // PATCH: S1/S2 Detection
+            s1: idx("S1") > -1 ? idx("S1") : idx("STEP1"),
+            s2: idx("S2") > -1 ? idx("S2") : idx("STEP2")
+        };
+
         const cleanData = [];
+
         RAW_LINES.forEach(line => {
             const cols = line.split('\t');
-            if(cols.length < 9) return;
 
-            // NORMALIZER (Standard 6=U, 7=L, 8=R)
-            let ansVal = cols[9] ? cols[9].trim().toUpperCase() : "UP";
-            let realAnswer = cols[6]; // Default to U
-            
-            if(ansVal.includes("RIGHT") || ansVal.includes("OPT_C")) realAnswer = cols[8];
-            else if(ansVal.includes("LEFT") || ansVal.includes("OPT_B")) realAnswer = cols[7];
-            else if(ansVal.includes("UP") || ansVal.includes("OPT_A")) realAnswer = cols[6];
+            // Basic integrity
+            if ((i.q > -1 && !cols[i.q]) || (i.u > -1 && !cols[i.u])) return;
+
+            let ansFlag = (i.correct > -1 ? cols[i.correct] : "").toUpperCase();
+            let realAnswer = i.u > -1 ? cols[i.u] : "";
+
+            // Answer Logic
+            if (ansFlag.includes("LEFT") || ansFlag.includes("OPT_B")) realAnswer = cols[i.l];
+            else if (ansFlag.includes("RIGHT") || ansFlag.includes("OPT_C")) realAnswer = cols[i.r];
+            else if (ansFlag.includes("UP") || ansFlag.includes("OPT_A")) realAnswer = cols[i.u];
+            else if (i.correct > -1 && cols[i.correct]) realAnswer = cols[i.correct]; // Direct text match
 
             cleanData.push({
-                id: cols[0].trim(), 
-                set: cols[1] || "SET_A", 
-                dom: cols[2] || "GENERAL", 
-                topic: cols[3] || "", 
-                q: cols[5], 
-                u: cols[6], 
-                l: cols[7], // Left=7
-                r: cols[8], // Right=8
-                correct: realAnswer, 
-                logic: cols[10] || "", 
-                hint: cols[11] || "", 
-                ref: cols[13] || "",
-                link: cols[16] || "",
-                trap: cols[17] || "",
-                s1: cols[23] || "", 
-                s2: cols[24] || ""
+                id: (i.id > -1 ? cols[i.id] : `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
+                set: i.set > -1 ? cols[i.set] : "SET_A",
+                dom: i.dom > -1 ? cols[i.dom] : "GENERAL",
+                topic: i.topic > -1 ? cols[i.topic] : "",
+                q: i.q > -1 ? cols[i.q] : "",
+                u: i.u > -1 ? cols[i.u] : "",
+                l: i.l > -1 ? cols[i.l] : "",
+                r: i.r > -1 ? cols[i.r] : "",
+                correct: realAnswer,
+                logic: i.logic > -1 ? cols[i.logic] : "",
+                hint: i.hint > -1 ? cols[i.hint] : "",
+                ref: i.ref > -1 ? cols[i.ref] : "",
+                link: i.link > -1 ? cols[i.link] : "",
+                trap: i.trap > -1 ? cols[i.trap] : "",
+                s1: i.s1 > -1 ? cols[i.s1] : "",
+                s2: i.s2 > -1 ? cols[i.s2] : "" // --- FIX APPLIED HERE ---
             });
         });
 
@@ -389,7 +418,7 @@
             const existingDB = JSON.parse(existingRaw);
             const map = new Map();
             existingDB.forEach(d => map.set(d.id, d));
-            STAGED_DATA.forEach(d => map.set(d.id, d)); // Overwrite duplicates
+            STAGED_DATA.forEach(d => map.set(d.id, d)); 
             finalDB = Array.from(map.values());
         }
 
