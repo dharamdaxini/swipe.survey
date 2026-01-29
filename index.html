@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v136.46</title>
+<title>Alchemist | Kinetic Loop v136.57</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -37,31 +37,33 @@ body{
   display:flex; justify-content:space-between;
   font-family:var(--font-code); font-size:0.75rem; 
   color:#666; letter-spacing:1.5px; text-transform:uppercase;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 /* PROGRESS BAR */
-.progress-track{ width:100%; height:3px; background:#222; border-radius:2px; }
+.progress-track{ width:100%; height:3px; background:#222; border-radius:2px; margin-top: 5px; }
 #progress-bar{ height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px; }
 
 /* KINETIC LOGGER (v130.73 Style) */
 #kinetic-logger {
-  width: 90%; margin: 15px auto 5px;
-  font-family: var(--font-code); font-size: 0.8rem;
+  width: 90%; margin: 0 auto 10px;
+  font-family: var(--font-code); font-size: 0.75rem;
   color: #444; line-height: 1.4;
   text-transform: uppercase;
-  min-height: 60px; /* Space for 3 lines */
+  min-height: 50px; 
   display: flex; flex-direction: column; justify-content: flex-end;
+  pointer-events: none;
 }
-.log-line { opacity: 0.5; transition: opacity 0.2s; }
+.log-line { opacity: 0.4; transition: opacity 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .log-line.active { color: var(--green); opacity: 1; font-weight: 700; }
 .log-line.primary { color: var(--gold); opacity: 1; font-weight: 700; }
+.log-line.error { color: #ff4444; opacity: 1; font-weight: 700; }
 
 /* FLUID STACK ENGINE */
 #stack{
   position:relative; width:90%; max-width:420px; 
-  /* Adjusted for Logger space */
-  height: calc(100vh - 220px - env(safe-area-inset-bottom)); 
+  /* Calc: 100vh - Header/Logger Space - Safe Area */
+  height: calc(100vh - 180px - env(safe-area-inset-bottom)); 
   margin: 10px auto 20px; 
   perspective:1500px;
   display:flex; align-items:center; justify-content:center;
@@ -79,7 +81,7 @@ body{
   overflow: hidden; 
 }
 
-/* MAIN TEXT - WHITE & CENTERED */
+/* MAIN TEXT - DIAMOND UI (White) */
 .card-q{
   font-family:var(--font-serif);
   font-size: clamp(1.4rem, 5vw, 1.9rem); 
@@ -104,7 +106,7 @@ body{
 .card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
 .card-q sup{ font-size:0.7em; vertical-align:0.5em; }
 
-/* OG SWIPE LABELS - CENTERED OVERLAY */
+/* OG SWIPE LABELS - CENTERED OVERLAY (Grey) */
 .swipe-label{
   position:absolute; inset:0; 
   display:flex; align-items:center; justify-content:center;
@@ -128,22 +130,23 @@ body{
 
 <div id="header">
   <div class="header-meta">
-    <span id="id-ui">VIA.STACK</span> 
+    <span style="color:#666; font-weight:700;">VIA.STACK</span> 
     <span id="xp-ui">0 XP</span>
   </div>
-  <div class="progress-track"><div id="progress-bar"></div></div>
-</div>
+  
+  <div id="kinetic-logger">
+    <div class="log-line" id="log-1"></div>
+    <div class="log-line" id="log-2"></div>
+    <div class="log-line active" id="log-3">> SYSTEM BOOT</div>
+  </div>
 
-<div id="kinetic-logger">
-  <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
-  <div class="log-line active" id="log-3">> ...</div>
+  <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="stack">
   <div class="card">
     <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">
-      INITIALIZING CORE...
+      INITIALIZING...
     </div>
   </div>
 </div>
@@ -159,6 +162,7 @@ let ACTIVE_SET = null;
 let POOL = [], WRONG = [], XP = 0;
 let SESSION_ALL = [], VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
+let REVIEW_INDEX = 0; // State for Circular Review
 
 /* ================= LOGGER ENGINE ================= */
 function log(msg, type="normal") {
@@ -166,49 +170,26 @@ function log(msg, type="normal") {
     const l2 = document.getElementById("log-2");
     const l3 = document.getElementById("log-3");
     
-    // Shift logs up
     l1.innerText = l2.innerText; l1.className = l2.className;
-    l2.innerText = l3.innerText; l2.className = "log-line"; // Reset style
+    l2.innerText = l3.innerText; l2.className = "log-line"; 
     
-    // Set new log
     l3.innerText = `> ${msg}`;
-    l3.className = type === "active" ? "log-line active" : 
-                   type === "primary" ? "log-line primary" : "log-line";
+    l3.className = `log-line ${type}`;
 }
 
 /* ================= UTILS ================= */
-function chemText(t){
-  if(!t) return "";
-  return String(t)
-    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
-    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
-    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
-}
-
-function cleanPDF(t){
-  if(!t) return "";
-  return String(t).replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
-}
-
-function shuffle(array) {
-  let currentIndex = array.length, randomIndex;
-  while (currentIndex != 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-  }
-  return array;
-}
+const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔|\\rightleftharpoons/g,"⇌");
+const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
 
 /* ================= UI ================= */
 const UI = {
   stack: document.getElementById("stack"),
-  id: document.getElementById("id-ui"),
   xp: document.getElementById("xp-ui"),
   bar: document.getElementById("progress-bar")
 };
 
-/* ================= PHYSICS ENGINE ================= */
+/* ================= PHYSICS ENGINE (Optimized) ================= */
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
@@ -221,11 +202,13 @@ class PhysicsController{
   const s=e=>this.startDrag(e.touches?e.touches[0]:e);
   const m=e=>this.move(e.touches?e.touches[0]:e);
   const e2=()=>this.end();
-  el.addEventListener("mousedown",s);
-  window.addEventListener("mousemove",m);
+  el.addEventListener("mousedown",s); 
+  window.addEventListener("mousemove",m); 
   window.addEventListener("mouseup",e2);
-  el.addEventListener("touchstart",s,{passive:false});
-  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  
+  // UPGRADE: Passive listener for performance
+  el.addEventListener("touchstart",s,{passive:true}); 
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); 
   el.addEventListener("touchend",e2);
  }
  startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
@@ -234,6 +217,8 @@ class PhysicsController{
   const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
   const d=Math.hypot(dx,dy);
   this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+  
+  // Center Label Visibility Logic
   Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
   if(d>20){
     const dir=this.dir(dx,dy);
@@ -256,285 +241,248 @@ class PhysicsController{
  }
 }
 
-/* ================= RENDER LOGIC ================= */
-function card(text,labels,cb){
- const safeText=chemText(text);
- UI.stack.innerHTML="";
- const el=document.createElement("div");
- el.className="card";
- el.innerHTML=`
-  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
-  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
-  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
-  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
-  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
- UI.stack.appendChild(el);
- new PhysicsController(el,{onCommit:cb});
-}
+/* ================= CORE LOOP PROTOCOL ================= */
 
-/* ================= APP FLOW ================= */
-function begin(){
- log("SESSION READY", "active");
- card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
-  if(dir==="UP") setPick();
-  if(dir==="DOWN") exportSessionPDF();
- });
-}
-
-function setPick(){
- log("SELECT DATASET", "primary");
- const sets=[...new Set(RAW_DATA.map(d=>d.set))];
- if(sets.length===0) { 
-    card("NO DATA FOUND", {down:"RETRY"}, () => location.reload());
-    return; 
- }
- card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
-  if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
-  if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
-  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
-  if(dir==="DOWN") begin();
- });
-}
-
-function volumePick(){
- log("SET VOLUME", "primary");
- card(
-  `QUESTION VOLUME`,
-  {up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},
-  dir=>{
-    if(dir==="UP") VOLUME_LIMIT=10;
-    if(dir==="LEFT") VOLUME_LIMIT=25;
-    if(dir==="RIGHT") VOLUME_LIMIT=50;
-    if(dir==="DOWN") VOLUME_LIMIT=null;
-    startQuiz();
-  }
- );
-}
-
-function startQuiz(){
- log("INITIATING QUIZ...", "active");
- let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
- base = shuffle(base); 
- if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
- POOL=base;
- WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED = new Set();
- nextQ();
-}
-
-function nextQ(){
- if(!POOL.length){
-    if(WRONG.length){ review(); return; } 
-    report(); return;
- }
- const d=POOL.shift();
- log(`ID: ${d.id}`, "normal");
- if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
-
- const opts = shuffle([d.u, d.l, d.r]);
- const map = { up: opts[0], left: opts[1], right: opts[2] };
-
- card(d.q, map, dir=>{
-  let picked = null;
-  if(dir==="UP") picked = map.up;
-  if(dir==="LEFT") picked = map.left;
-  if(dir==="RIGHT") picked = map.right;
-
-  let c = d.correct;
-  if(c==="UP"||c==="A") c=d.u;
-  else if(c==="LEFT"||c==="B") c=d.l;
-  else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
-
-  const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
-
-  if(!isCorrect){
-    WRONG.push(d); 
-  } else {
-    if(!ATTEMPTED.has(d.id)){ XP+=1; }
-  }
-  
-  ATTEMPTED.add(d.id);
-  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
-  UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
-  
-  nextQ();
- });
-}
-
-function review(){
- if(!WRONG.length){ report(); return; } 
- const d=WRONG[0]; 
- log("REVIEW MODE", "primary");
- // HINT IN LOG INSTEAD OF HEADER FOR CLEANER LOOK? 
- // Keeping user pref: HINT in Header implies logic in Card.
- // But let's log the Hint too for kinetic feel.
- log(`HINT: ${d.hint ? "ACTIVE" : "NONE"}`, "active");
- 
- card(
-  `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
-  {up:"RETRY", down:"SKIP"},
-  dir=>{
-    if(dir==="UP"){
-        WRONG.shift();
-        POOL.unshift(d);
-    } else {
-        WRONG.shift();
+// 1. BOOT (Hybrid + No-Cache)
+async function init() {
+    log("SYSTEM CHECK...", "primary");
+    const local = localStorage.getItem(MASTER_KEY);
+    
+    // Bridge Check
+    if(local && local.length > 10){
+        try { 
+            const data = JSON.parse(local);
+            log("BRIDGE CONNECTED", "active");
+            RAW_DATA = normalize(data);
+            begin(); return;
+        } catch(e) { log("BRIDGE CORRUPT", "error"); }
     }
+    
+    // Network Fetch (No-Store)
+    log("FETCHING MASTER...", "normal");
+    try {
+        const r = await fetch('master.json', {cache: "no-store"});
+        if(r.ok){ 
+            const data = await r.json();
+            RAW_DATA = normalize(data);
+            log("MASTER LOADED", "active");
+            begin(); 
+        } else { throw new Error(); }
+    } catch(e) { 
+        log("NO DATA SOURCE", "error");
+        card("NO DATA FOUND\nPush via Admin or Add master.json", {down:"RETRY"}, ()=>location.reload());
+    }
+}
+
+// 2. BEGIN
+function begin() {
+    UI.stack.innerHTML = "";
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `
+        <div class="card-q">SESSION READY<br><br><span style="font-size:0.6em;opacity:0.7;">${RAW_DATA.length} QUESTIONS LOADED</span></div>
+        <div class="swipe-label sl-up">SELECT SET</div>
+        <div class="swipe-label sl-down">PDF EXPORT</div>
+    `;
+    UI.stack.appendChild(el);
+    new PhysicsController(el, {
+        onCommit: (dir) => {
+            if(dir==="UP") pickSet();
+            if(dir==="DOWN") exportSessionPDF();
+        }
+    });
+}
+
+// 3. SET SELECTION
+function pickSet() {
+    const sets = [...new Set(RAW_DATA.map(d=>d.set))];
+    if(!sets.length) return;
+    log("SELECT DATASET", "primary");
+    renderSetCard(sets, 0);
+}
+
+function renderSetCard(sets, idx) {
+    const s = sets[idx];
+    card(s, {up:"SELECT", left:"PREV", right:"NEXT", down:"BACK"}, dir => {
+        if(dir==="LEFT") renderSetCard(sets, (idx-1+sets.length)%sets.length);
+        if(dir==="RIGHT") renderSetCard(sets, (idx+1)%sets.length);
+        if(dir==="UP") { ACTIVE_SET = s; pickVolume(); }
+        if(dir==="DOWN") begin();
+    });
+}
+
+// 4. VOLUME SELECTION
+function pickVolume() {
+    log("SET VOLUME", "primary");
+    card("QUESTION VOLUME", {up:"10", left:"25", right:"50", down:"ALL"}, dir => {
+        if(dir==="UP") VOLUME_LIMIT=10;
+        if(dir==="LEFT") VOLUME_LIMIT=25;
+        if(dir==="RIGHT") VOLUME_LIMIT=50;
+        if(dir==="DOWN") VOLUME_LIMIT=null;
+        startQuiz();
+    });
+}
+
+// 5. START QUIZ
+function startQuiz() {
+    log("INITIATING POOL...", "active");
+    let base = RAW_DATA.filter(d => d.set === ACTIVE_SET);
+    base = shuffle(base);
+    if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
+    
+    POOL = base;
+    WRONG = [];
+    SESSION_ALL = [];
+    XP = 0;
+    ATTEMPTED.clear();
     nextQ();
-  }
- );
 }
 
-function report(){
- log("SESSION COMPLETE", "active");
- const total = SESSION_ALL.length;
- const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
- 
- card(
-  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nReview Recommended`,
-  {down:"EXPORT PDF", up:"RESTART", left:"MENU"},
-  dir=>{
-    if(dir==="DOWN") exportSessionPDF();
-    if(dir==="UP") startQuiz(); 
-    if(dir==="LEFT") begin();
-  }
- );
+// 6. NEXT QUESTION (Loop 1)
+function nextQ() {
+    if(!POOL.length) {
+        if(WRONG.length) {
+            REVIEW_INDEX = 0; // Reset index for review loop
+            review();
+        } else {
+            report();
+        }
+        return;
+    }
+
+    const d = POOL.shift();
+    SESSION_ALL.push(d);
+    log(`ACTIVE: ${d.id}`, "normal");
+
+    const opts = shuffle([d.u, d.l, d.r]);
+    const map = { UP: opts[0], LEFT: opts[1], RIGHT: opts[2] };
+
+    card(d.q, {up:map.UP, left:map.LEFT, right:map.RIGHT}, dir => {
+        if(dir==="DOWN") { nextQ(); return; }
+        
+        const picked = map[dir];
+        const isCorrect = String(picked).trim().toLowerCase() === String(d.correct).trim().toLowerCase();
+        
+        if(isCorrect) {
+            if(!ATTEMPTED.has(d.id)) XP++;
+            log("OUTCOME: POSITIVE", "active");
+        } else {
+            WRONG.push(d);
+            log("OUTCOME: NEGATIVE", "error");
+        }
+        
+        ATTEMPTED.add(d.id);
+        updateHUD();
+        nextQ();
+    });
 }
 
-/* ================= PDF ENGINE ================= */
+// 7. CIRCULAR REVIEW LOOP (Loop 2)
+function review() {
+    // Safety exit
+    if(WRONG.length === 0) { nextQ(); return; }
+    
+    // Bounds Check
+    if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX = 0;
+    
+    const d = WRONG[REVIEW_INDEX]; 
+    log("REVIEW MODE", "primary");
+    log(`HINT: ${d.hint || "NONE"}`, "normal"); // Header HINT
+    
+    card(`REVIEW\n\n${d.logic || "Review the core principles."}`, {up:"RETRY", down:"NEXT"}, dir => {
+        if(dir==="UP") {
+            // RETRY PATH: Remove from WRONG, Insert into POOL
+            WRONG.splice(REVIEW_INDEX, 1);
+            POOL.unshift(d);
+            log("RE-INSERTING...", "active");
+            
+            // Adjust Index? Since element removed, next element slides to this index.
+            // Just ensure bounds.
+            if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX = 0;
+            
+            // Check if we need to stay in review or go back to quiz
+            if(WRONG.length > 0) {
+                review(); // Stay in Loop 2
+            } else {
+                nextQ(); // Exit to Loop 1
+            }
+        } else {
+            // SKIP PATH: Circular Iterate
+            REVIEW_INDEX = (REVIEW_INDEX + 1) % WRONG.length;
+            log("SKIPPING...", "normal");
+            review(); // Stay in Loop 2
+        }
+    });
+}
+
+// 8. REPORT
+function report() {
+    log("SESSION COMPLETE", "active");
+    const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
+    card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} (${percent}%)`, {down:"PDF", up:"RESTART"}, dir => {
+        if(dir==="DOWN") exportSessionPDF();
+        if(dir==="UP") begin();
+    });
+}
+
+/* ================= HELPERS ================= */
+function card(text, labels, cb) {
+    UI.stack.innerHTML = "";
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `
+        <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+        <div class="swipe-label sl-up">${chemText(labels.up||"")}</div>
+        <div class="swipe-label sl-left">${chemText(labels.left||"")}</div>
+        <div class="swipe-label sl-right">${chemText(labels.right||"")}</div>
+        <div class="swipe-label sl-down">${chemText(labels.down||"")}</div>
+    `;
+    UI.stack.appendChild(el);
+    new PhysicsController(el, {onCommit: cb});
+}
+
+function updateHUD() {
+    UI.xp.textContent = `${XP} XP`;
+    // Stable Math: Session / Total Active Items
+    const total = SESSION_ALL.length + POOL.length + WRONG.length;
+    const progress = (SESSION_ALL.length / total) * 100;
+    UI.bar.style.width = `${progress}%`;
+}
+
+function normalize(data) {
+    return data.map(d => ({
+        id: d.id, set: d.set || "DEFAULT",
+        q: d.q, u: d.u, l: d.l, r: d.r, correct: d.correct,
+        logic: d.logic || "", hint: d.hint || "", trap: d.trap || "",
+        dom: d.dom || "GENERAL", topic: d.topic || "",
+        ref: d.ref || "", s1: d.s1 || "", s2: d.s2 || ""
+    })).filter(d => d.q && d.u);
+}
+
 function exportSessionPDF(){
- if(!SESSION_ALL.length){alert("No session data");return;}
- log("GENERATING PDF...", "active");
+ if(!SESSION_ALL.length){alert("No data");return;}
  const {jsPDF}=window.jspdf;
  const doc=new jsPDF();
- 
- const seen=new Set();
- const unique=SESSION_ALL.filter(q=>{
-  if(seen.has(q.id)) return false;
-  seen.add(q.id);return true;
- });
-
  let y=20;
- const ML=15; const W=180;
- const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
- const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
-
- doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text("ACADEMY SESSION REPORT",105,y,{align:"center"});
- doc.line(ML,y+2,195,y+2); doc.line(ML,y+3,195,y+3);
- y+=15;
-
- unique.forEach((d,i)=>{
-  if(y>240){doc.addPage();y=20;}
-
-  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
-  doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||"CONCEPTS"}`,ML,y); y+=5;
-
-  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
-  const qText = cleanPDF(d.q);
-  const qLines = doc.splitTextToSize(qText,W);
-  doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
-
-  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
-
-  const startY=y;
-  
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
-  doc.text("OPTIONS",ML,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); 
-  doc.setTextColor(80,80,80); 
-  
-  const optA = `(A) ${cleanPDF(d.u)}`;
-  const optB = `(B) ${cleanPDF(d.l)}`;
-  const optC = `(C) ${cleanPDF(d.r)}`;
-  
-  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
-  
-  let maxH = y; y=startY;
-
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
-  doc.text("THEORY & LOGIC",COL_LOG_X,y); y+=4;
-  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
-  const logT = doc.splitTextToSize(cleanPDF(d.logic||"No logic provided."),COL_LOG_W);
-  doc.text(logT,COL_LOG_X,y); 
-  const col2H = y+(logT.length*4);
-  if(col2H>maxH) maxH=col2H;
-  y=startY;
-
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
-  doc.text("EXECUTION",COL_EXE_X,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
-  const s1 = `1. ${cleanPDF(d.s1||d.step1||"-")}`;
-  const s2 = `2. ${cleanPDF(d.s2||d.step2||"-")}`;
-  const s1L = doc.splitTextToSize(s1,COL_EXE_W);
-  doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
-  const s2L = doc.splitTextToSize(s2,COL_EXE_W);
-  doc.text(s2L,COL_EXE_X,y);
-  const col3H = y+(s2L.length*4);
-  if(col3H>maxH) maxH=col3H;
-
-  y=maxH+5;
-
-  if(d.trap||d.note){
-    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
-    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50);
-    doc.text("DISTRACTOR ANALYSIS:",ML,y);
-    doc.setFont("times","italic"); doc.setTextColor(80);
-    doc.text(cleanPDF(d.trap||d.note),ML+35,y); y+=8;
-  } else {y+=5;}
-  y+=5;
+ SESSION_ALL.forEach((d, i)=>{
+  if(y>260){doc.addPage();y=20;}
+  doc.setFont("courier","bold"); doc.setFontSize(11);
+  doc.text(`Q${i+1} | ${d.id}`, 15, y); y+=8;
+  doc.setFont("times","normal");
+  const q=doc.splitTextToSize(`Q: ${cleanPDF(d.q)}`, 180);
+  doc.text(q, 15, y); y+=q.length*6;
+  doc.setFontSize(10);
+  doc.text(`A) ${cleanPDF(d.u)}`, 15, y); y+=5;
+  doc.text(`B) ${cleanPDF(d.l)}`, 15, y); y+=5;
+  doc.text(`C) ${cleanPDF(d.r)}`, 15, y); y+=6;
+  doc.setFont("courier","bold");
+  doc.text(`ANSWER: ${cleanPDF(d.correct)}`, 15, y); y+=6;
+  doc.setFont("times","italic");
+  const l=doc.splitTextToSize(`LOGIC: ${cleanPDF(d.logic)}`, 180);
+  doc.text(l, 15, y); y+=l.length*5;
+  y+=10;
  });
-
- doc.save(`ALCHEMIST_SESSION_${Date.now()}.pdf`);
- setTimeout(begin,500);
-}
-
-/* ================= HYBRID BOOT ENGINE ================= */
-async function init(){
-  log("SYSTEM BOOT", "active");
-  
-  const localData = localStorage.getItem(MASTER_KEY);
-  
-  if(localData && localData.length > 10){
-    log("BRIDGE CONNECTED", "primary");
-    try { 
-      RAW_DATA = JSON.parse(localData); 
-      await new Promise(r => setTimeout(r, 600)); // Cinematic pause
-    } catch(e) { RAW_DATA = []; }
-  }
-  
-  if(!RAW_DATA.length){
-    log("FETCHING MASTER...");
-    try {
-      const r = await fetch('master.json');
-      if(r.ok){ RAW_DATA = await r.json(); }
-    } catch(e) { }
-  }
-
-  // Normalization
-  RAW_DATA = RAW_DATA.map(d => ({
-      id: d.id,
-      set: d.set || "DEFAULT",
-      dom: d.dom || "GENERAL",
-      topic: d.topic || "",
-      q: d.q,
-      u: d.u, l: d.l, r: d.r,
-      correct: d.correct,
-      logic: d.logic || "",
-      hint: d.hint || "",
-      trap: d.trap || "",
-      step1: d.s1 || d.step1 || "",
-      step2: d.s2 || d.step2 || ""
-  })).filter(d => d.id && d.q && d.u);
-
-  if(!RAW_DATA.length){
-    log("DATA ERROR", "active");
-    card("NO DATA FOUND\nPush via Admin", {down:"RETRY"}, () => location.reload());
-    return;
-  }
-
-  begin();
+ doc.save(`ALCHEMIST_${Date.now()}.pdf`);
 }
 
 init();
