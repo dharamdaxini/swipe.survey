@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final v137.12</title>
+<title>Alchemist | Final v137.13</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -142,7 +142,7 @@ body{
 
 <script>
 /* ================= CONFIG ================= */
-const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+// Standalone Mode: No LocalStorage Keys needed
 
 /* ================= STATE ================= */
 let RAW_DATA = [];
@@ -359,9 +359,42 @@ function exportMenu(){
         {left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK"}, 
         dir => {
             if(dir === "LEFT") renderSessionPDF(SESSION_ALL);
-            if(dir === "RIGHT") renderSupportPDF(SESSION_ALL);
+            if(dir === "RIGHT") showUnlockCard(); 
             if(dir === "DOWN") report();
         }
+    );
+}
+
+function showUnlockCard() {
+    log("GATEWAY LOCKED", "primary");
+    card(
+      `
+      <div style="text-align:center">
+        <div style="margin-bottom:14px; font-size:1.1rem; font-weight:700;">UNLOCK SUPPORT PDF</div>
+        <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">Complete Academy Analysis</div>
+
+        <a href="https://upi.link/pay?pa=6351537770-2@ybl&pn=Alchemist&am=1&cu=INR"
+           target="_blank"
+           onclick="setTimeout(() => { renderSupportPDF(SESSION_ALL); }, 2000)"
+           style="
+             display:inline-block;
+             padding:16px 32px;
+             background:#ffd600;
+             color:#000;
+             font-family:'JetBrains Mono', monospace;
+             font-weight:900;
+             border-radius:50px;
+             text-decoration:none;
+             box-shadow:0 10px 30px rgba(255, 214, 0, 0.2);
+             transition: transform 0.2s;
+           ">
+           PAY ₹1
+        </a>
+        <div style="margin-top:15px; font-size:0.6rem; color:#444;">SECURE UPI GATEWAY</div>
+      </div>
+      `,
+      {down: "BACK"}, 
+      dir => { if(dir === "DOWN") exportMenu(); }
     );
 }
 
@@ -402,7 +435,7 @@ function renderSessionPDF(data){
     });
 
     doc.save(`SESSION_PDF_${Date.now()}.pdf`);
-    setTimeout(exportMenu, 1000); // Return to menu
+    setTimeout(exportMenu, 1000); 
 }
 
 /* ================= RENDERER B: SUPPORT PDF (Academy) ================= */
@@ -416,7 +449,6 @@ function renderSupportPDF(data){
     const COL_W = { OPT: 45, LOG: 65, EXE: 65 };
     const COL_X = { OPT: ML, LOG: ML + 45 + 5, EXE: ML + 45 + 65 + 10 };
 
-    // Answer Normalization
     data.forEach(d => {
         const a = (d.correct || "").trim().toUpperCase();
         if(a === "A" || a === "UP") d.correct = d.u;
@@ -437,24 +469,20 @@ function renderSupportPDF(data){
     data.forEach((d, i) => {
         if (y > 230) { doc.addPage(); header(); }
 
-        // 1. Header
         doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(100);
         const headerText = `${d.id} // ${d.dom || "GENERAL"} > ${d.topic || "CONCEPTS"}`;
         doc.text(headerText, ML, y);
         y += 6;
 
-        // 2. Question
         doc.setFont("times", "bold"); doc.setFontSize(12); doc.setTextColor(0);
         const qLines = doc.splitTextToSize(cleanPDF(d.q), W);
         doc.text(qLines, ML, y);
         y += (qLines.length * 5) + 4;
 
-        // 3. Divider
         doc.setDrawColor(180); doc.setLineWidth(0.3);
         doc.line(ML, y, 195, y); doc.line(ML, y+1, 195, y+1);
         y += 6;
 
-        // 4. Columns
         doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(150);
         doc.text("OPTIONS", COL_X.OPT, y);
         doc.text("THEORY & LOGIC", COL_X.LOG, y);
@@ -464,7 +492,6 @@ function renderSupportPDF(data){
         const contentY = y;
         let maxH = y;
 
-        // Col 1: Options
         doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(80);
         let optY = contentY;
         const optA = doc.splitTextToSize(`(A) ${cleanPDF(d.u)}`, COL_W.OPT);
@@ -475,17 +502,18 @@ function renderSupportPDF(data){
         doc.text(optC, COL_X.OPT, optY); optY += optC.length*4 + 2;
         if(optY > maxH) maxH = optY;
 
-        // Col 2: Logic
         doc.setFont("times", "italic"); doc.setTextColor(50);
         const logLines = doc.splitTextToSize(cleanPDF(d.logic) || "Analysis pending.", COL_W.LOG);
         doc.text(logLines, COL_X.LOG, contentY);
         const logH = contentY + (logLines.length * 4);
         if(logH > maxH) maxH = logH;
 
-        // Col 3: Execution (Strict)
         doc.setFont("helvetica", "normal"); doc.setTextColor(0);
-        const s1 = `1. ${cleanPDF(d.step1 || "Identify key principles.")}`;
-        const s2 = `2. ${cleanPDF(d.step2 || "Apply and verify.")}`;
+        const textS1 = cleanPDF(d.step1);
+        const textS2 = cleanPDF(d.step2);
+        const s1 = `1. ${textS1 || "Identify governing principle."}`;
+        const s2 = `2. ${textS2 || "Apply principle and verify result."}`;
+        
         const s1L = doc.splitTextToSize(s1, COL_W.EXE);
         const s2L = doc.splitTextToSize(s2, COL_W.EXE);
         let exeY = contentY;
@@ -495,7 +523,6 @@ function renderSupportPDF(data){
 
         y = maxH + 6;
 
-        // 5. Distractor
         if(d.trap && d.trap !== "undefined") {
             doc.setLineDash([1, 1], 0); doc.setDrawColor(200); doc.line(ML, y, 195, y); doc.setLineDash([]);
             y += 4;
@@ -509,51 +536,39 @@ function renderSupportPDF(data){
     });
 
     doc.save(`SUPPORT_PDF_${Date.now()}.pdf`);
-    setTimeout(exportMenu, 1000); // Return to menu
+    setTimeout(exportMenu, 1000); 
 }
 
-/* ================= ROBUST DATA BOOT ================= */
+/* ================= STANDALONE DATA BOOT ================= */
 async function init(){
   log("SYSTEM BOOT", "active");
 
-  let loaded = false;
+  // Delinked from Pusher (Local Storage)
+  // Direct Master JSON Load Logic
+  
+  log("FETCHING MASTER...", "normal");
 
-  // 1️⃣ Try localStorage FIRST
-  try {
-    const localData = localStorage.getItem(MASTER_KEY);
-    if(localData && localData.length > 10){
-      RAW_DATA = JSON.parse(localData);
-      loaded = true;
-      log("LOCAL DATA LOADED", "primary");
+  try {  
+    const controller = new AbortController();  
+    setTimeout(() => controller.abort(), 3000); 
+
+    const r = await fetch('./master.json', {  
+      cache: "no-store",  
+      signal: controller.signal  
+    });  
+
+    if(r.ok){  
+      RAW_DATA = await r.json();  
+      log("MASTER LOADED", "primary");  
+    } else {
+        throw new Error("HTTP ERROR");
     }
-  } catch(e){
+  } catch(e){  
+    log("MASTER FETCH FAILED", "normal");
     RAW_DATA = [];
   }
 
-  // 2️⃣ Try master.json with timeout
-  if(!loaded){
-    log("FETCHING MASTER...", "normal");
-
-    try {  
-      const controller = new AbortController();  
-      setTimeout(() => controller.abort(), 3000); // HARD STOP  
-
-      const r = await fetch('./master.json', {  
-        cache: "no-store",  
-        signal: controller.signal  
-      });  
-
-      if(r.ok){  
-        RAW_DATA = await r.json();  
-        loaded = true;  
-        log("MASTER LOADED", "primary");  
-      }  
-    } catch(e){  
-      log("MASTER FETCH FAILED", "normal");  
-    }
-  }
-
-  // 3️⃣ Normalize
+  // Normalize
   RAW_DATA = (RAW_DATA || []).map(d => ({
     id: d.id,
     set: d.set || "DEFAULT",
@@ -571,18 +586,17 @@ async function init(){
     step2: d.step2 || d.s2 || ""
   })).filter(d => d.id && d.q && d.u);
 
-  // 4️⃣ HARD FAIL SAFE
+  // Fail Safe
   if(!RAW_DATA.length){
     log("NO DATA FOUND", "primary");
     card(
-      "NO DATA FOUND\n\nPush data via Admin",
+      "NO DATA FOUND\n\nPush master.json to repo",
       { down: "RETRY" },
       () => location.reload()
     );
     return;
   }
 
-  // 5️⃣ SUCCESS
   log(`DATA READY (${RAW_DATA.length})`, "active");
   begin();
 }
