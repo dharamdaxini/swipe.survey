@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.58</title>  
+    <title>VIA.STACK | ADMIN v136.60</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.58</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.60</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -147,7 +147,7 @@
     <div class="zone">
         <div class="zone-title">01 // INGESTION ENGINE</div>
         
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> SAFE-SPLIT ENABLED (Fixes broken S2)."></textarea>
+        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> REPAIR ENGINE ACTIVE (Sanitizes directional corruption)."></textarea>
         
         <div class="action-bar">
             <input type="file" id="tsv-upload" hidden accept=".tsv,.txt,.csv" onchange="handleFileUpload(this)">
@@ -260,11 +260,9 @@
     function handleFileUpload(input) {
         const file = input.files[0];
         if(!file) return;
-        
         const reader = new FileReader();
         reader.onload = function(e) {
-            const content = e.target.result;
-            document.getElementById('raw-input').value = content;
+            document.getElementById('raw-input').value = e.target.result;
             log("FILE READ SUCCESS. INITIATING ALIGNMENT...", "success");
             initiateAlignment();
         };
@@ -272,34 +270,69 @@
         input.value = ''; 
     }
 
-    // --- 1. UTILS: SAFE SPLIT (THE FIX) ---
-    function safeTSVSplit(line, cols) {
-        const parts = line.split('\t');
-        if (parts.length <= cols) {
-            // Pad if short
-            while(parts.length < cols) parts.push("");
-            return parts;
+    // --- 1. UTILS: REPAIR & SAFE SPLIT ---
+    
+    // THE REPAIR ENGINE
+    function repairDirectionalCorruption(row) {
+        const DIR = ["UP", "LEFT", "RIGHT"];
+        const isDir = v => DIR.includes((v || "").toUpperCase().trim());
+
+        // If options themselves are direction labels → corrupted
+        if (isDir(row.u) || isDir(row.l) || isDir(row.r)) {
+            row.u = "";
+            row.l = "";
+            row.r = "";
         }
-        
-        // If line is too long, assume extra tabs are in the logic/description fields
-        // We preserve the first (cols-1) fields, and merge everything else into the last field.
-        const head = parts.slice(0, cols - 1);
-        const tail = parts.slice(cols - 1).join(' ').replace(/\s+/g, ' ').trim();
-        return head.concat([tail]);
+
+        // If correct is direction, null it (cannot recover text)
+        if (isDir(row.correct)) {
+            row.correct = "";
+        }
+
+        // Ensure strings (no undefined leakage)
+        row.q ||= "";
+        row.logic ||= "";
+        row.hint ||= "";
+        row.trap ||= "";
+        row.s1 ||= "";
+        row.s2 ||= "";
+
+        return row;
     }
 
-    // --- 2. GATEKEEPER v29 (Safe Split Enabled) ---
+    // SAFE SPLIT
+    function safeTSVSplit(line, cols) {
+        let parts = line.split('\t');
+        if (parts.length <= cols) {
+            while(parts.length < cols) parts.push("");
+        }
+        if (parts.length > cols) {
+            const head = parts.slice(0, cols - 1);
+            const tail = parts.slice(cols - 1).join(' ').trim();
+            return head.concat([tail]);
+        }
+        return parts;
+    }
+
+    function match(headers, queries) {
+        for (let q of queries) {
+            const idx = headers.indexOf(q);
+            if (idx > -1) return idx;
+        }
+        return -1;
+    }
+
+    // --- 2. GATEKEEPER v31 (Repair Enabled) ---
     function initiateAlignment() {
         const raw = document.getElementById('raw-input').value;
         if (!raw.trim()) return log("NO INPUT DETECTED.", "err");
 
         const lines = raw.split(/\r?\n/).filter(l => l.trim() !== "");
 
-        // CAPTURE HEADERS
         TSV_HEADERS = lines[0].split('\t').map(h => h.trim().toUpperCase());
         RAW_LINES = lines.slice(1);
 
-        log(`HEADERS DETECTED (${TSV_HEADERS.length}): ${TSV_HEADERS.join(', ')}`, "success");
+        log(`HEADERS: ${TSV_HEADERS.length} DETECTED`, "success");
         runGatekeeper();
     }
 
@@ -307,27 +340,23 @@
         const seenIDs = new Set();
         let collision = null;
         let drift = null;
-        const expectedCols = TSV_HEADERS.length;
+        const expectedCols = TSV_HEADERS.length < 20 ? 25 : TSV_HEADERS.length;
 
         for(let i=0; i<RAW_LINES.length; i++) {
-            // USE SAFE SPLIT HERE
             const cols = safeTSVSplit(RAW_LINES[i], expectedCols);
             
-            // Allow minor tolerance, but warn if drastically short
             if(cols.length < 5) { 
                 drift = { index: i, line: RAW_LINES[i], len: cols.length };
                 break;
             }
 
-            const idIdx = TSV_HEADERS.indexOf("ID");
-            if(idIdx > -1 && cols[idIdx]) {
-                const id = cols[idIdx].trim();
-                if(seenIDs.has(id)) {
-                    collision = { index: i, line: RAW_LINES[i], id: id };
-                    break;
-                }
-                seenIDs.add(id);
+            const idCol = match(TSV_HEADERS, ["ID", "IDENTIFIER"]) > -1 ? match(TSV_HEADERS, ["ID"]) : 0;
+            const id = cols[idCol].trim();
+            if(seenIDs.has(id)) {
+                collision = { index: i, line: RAW_LINES[i], id: id };
+                break;
             }
+            seenIDs.add(id);
         }
 
         if(drift) launchSurgeon(drift, "DRIFT");
@@ -359,54 +388,59 @@
     }
 
     function finalizeStaging() {
-        const idx = name => TSV_HEADERS.indexOf(name);
-        const expectedCols = TSV_HEADERS.length;
-
-        // --- MAPPER ENGINE ---
-        const i = {
-            id: idx("ID"),
-            set: idx("SET"),
-            dom: idx("DOM"),
-            topic: idx("TOPIC"),
-            q: idx("Q"),
-            u: idx("UP"),
-            l: idx("LEFT"),
-            r: idx("RIGHT"),
-            correct: idx("CORRECT"),
-            logic: idx("LOGIC"),
-            hint: idx("HINT"),
-            ref: idx("REF"),
-            link: idx("LINK"),
-            trap: idx("TRAP"),
-            s1: idx("S1") > -1 ? idx("S1") : idx("STEP1"),
-            s2: idx("S2") > -1 ? idx("S2") : idx("STEP2")
+        let i = {
+            id: match(TSV_HEADERS, ["ID", "REF"]),
+            set: match(TSV_HEADERS, ["SET", "GROUP"]),
+            dom: match(TSV_HEADERS, ["DOM", "DOMAIN"]),
+            topic: match(TSV_HEADERS, ["TOPIC", "SUB"]),
+            q: match(TSV_HEADERS, ["Q", "QUESTION"]),
+            u: match(TSV_HEADERS, ["UP", "U", "A", "OPT_A"]),
+            l: match(TSV_HEADERS, ["LEFT", "L", "B", "OPT_B"]),
+            r: match(TSV_HEADERS, ["RIGHT", "R", "C", "OPT_C"]),
+            correct: match(TSV_HEADERS, ["CORRECT", "ANS", "ANSWER"]),
+            logic: match(TSV_HEADERS, ["LOGIC", "EXP", "EXPLANATION"]),
+            hint: match(TSV_HEADERS, ["HINT", "TIP"]),
+            ref: match(TSV_HEADERS, ["REF", "REFERENCE"]),
+            link: match(TSV_HEADERS, ["LINK", "URL"]),
+            trap: match(TSV_HEADERS, ["TRAP", "DISTRACTOR"]),
+            s1: match(TSV_HEADERS, ["S1", "STEP1", "STEP 1", "EXECUTION 1"]),
+            s2: match(TSV_HEADERS, ["S2", "STEP2", "STEP 2", "EXECUTION 2"])
         };
 
+        if (i.id === -1) {
+            log("NO HEADERS DETECTED - APPLYING DEFAULT MAPPING", "warn");
+            i = {
+                id:0, set:1, dom:2, topic:3, 
+                q:5, u:6, l:7, r:8, correct:9, 
+                logic:10, hint:11, 
+                trap:17, s1:23, s2:24 
+            };
+        }
+
         const cleanData = [];
+        const expectedCols = Math.max(25, TSV_HEADERS.length);
 
         RAW_LINES.forEach(line => {
-            // CRITICAL FIX: Use Safe Split to prevent S2 shifting
             const cols = safeTSVSplit(line, expectedCols);
 
             if ((i.q > -1 && !cols[i.q]) || (i.u > -1 && !cols[i.u])) return;
 
             let ansFlag = (i.correct > -1 ? cols[i.correct] : "").toUpperCase();
-            let realAnswer = i.u > -1 ? cols[i.u] : "";
+            let realAnswer = cols[i.u];
+            if (ansFlag.includes("LEFT") || ansFlag.includes("B")) realAnswer = cols[i.l];
+            else if (ansFlag.includes("RIGHT") || ansFlag.includes("C")) realAnswer = cols[i.r];
+            else if (i.correct > -1 && cols[i.correct] && cols[i.correct].length > 1) realAnswer = cols[i.correct]; 
 
-            if (ansFlag.includes("LEFT") || ansFlag.includes("OPT_B")) realAnswer = cols[i.l];
-            else if (ansFlag.includes("RIGHT") || ansFlag.includes("OPT_C")) realAnswer = cols[i.r];
-            else if (ansFlag.includes("UP") || ansFlag.includes("OPT_A")) realAnswer = cols[i.u];
-            else if (i.correct > -1 && cols[i.correct]) realAnswer = cols[i.correct]; 
-
-            cleanData.push({
-                id: (i.id > -1 ? cols[i.id] : `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
+            // --- REPAIR PIPELINE APPLIED HERE ---
+            const repaired = repairDirectionalCorruption({
+                id: (cols[i.id] || `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
                 set: i.set > -1 ? cols[i.set] : "SET_A",
                 dom: i.dom > -1 ? cols[i.dom] : "GENERAL",
                 topic: i.topic > -1 ? cols[i.topic] : "",
-                q: i.q > -1 ? cols[i.q] : "",
-                u: i.u > -1 ? cols[i.u] : "",
-                l: i.l > -1 ? cols[i.l] : "",
-                r: i.r > -1 ? cols[i.r] : "",
+                q: cols[i.q],
+                u: cols[i.u],
+                l: cols[i.l],
+                r: cols[i.r],
                 correct: realAnswer,
                 logic: i.logic > -1 ? cols[i.logic] : "",
                 hint: i.hint > -1 ? cols[i.hint] : "",
@@ -414,8 +448,10 @@
                 link: i.link > -1 ? cols[i.link] : "",
                 trap: i.trap > -1 ? cols[i.trap] : "",
                 s1: i.s1 > -1 ? cols[i.s1] : "",
-                s2: i.s2 > -1 ? cols[i.s2] : "" // Now protected by safeSplit
+                s2: i.s2 > -1 ? cols[i.s2] : "" 
             });
+
+            cleanData.push(repaired);
         });
 
         STAGED_DATA = cleanData;
