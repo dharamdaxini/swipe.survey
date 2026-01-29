@@ -2,182 +2,423 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final v137.9</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VIA.STACK | PDF TRANSMUTER v138.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-</script>
 
 <style>
-/* === UI / UX UNCHANGED === */
 :root{
-  --bg:#000; --card:#0a0a0a; --border:#222;
-  --gold:#ffd600; --green:#2ecc71;
-  --font-serif:'Crimson Text',serif;
-  --font-sans:'Inter',sans-serif;
-  --font-code:'JetBrains Mono',monospace;
+  --bg:#050505; --card:#0a0a0a; --border:#222;
+  --gold:#ffd600; --green:#2ecc71; --blue:#2979ff; --red:#ff4757;
+  --font-ui:'Inter', sans-serif; --font-code:'JetBrains Mono', monospace;
 }
-*{box-sizing:border-box}
-body{margin:0;height:100vh;background:#000;color:#fff;font-family:var(--font-sans)}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+
+body{
+  margin:0; height:100vh; background:var(--bg); color:#eee;
+  font-family:var(--font-ui); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; overflow:hidden;
+}
+
+/* MAIN INTERFACE CARD */
+.container{
+  text-align:center; width:90%; max-width:420px;
+  background:var(--card); border:1px solid var(--border);
+  padding:40px 30px; border-radius:16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.brand{
+  font-family: var(--font-code); font-weight:700; 
+  letter-spacing:1px; margin-bottom:5px; font-size: 0.9rem;
+}
+.brand span{color:var(--gold);}
+.sub-brand{ font-size:0.7rem; color:#666; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* UPLOAD ZONE */
+.upload-box{
+  border:2px dashed #333; border-radius:12px;
+  padding:40px 20px; transition:0.2s all ease; cursor:pointer;
+  background: rgba(255,255,255,0.02);
+}
+.upload-box:hover{ border-color:var(--gold); background:rgba(255,214,0,0.05); }
+.upload-box:active{ transform: scale(0.98); }
+
+.icon { font-size: 2rem; margin-bottom: 15px; display: block; opacity: 0.8; }
+.label-main { font-weight: 700; font-size: 0.85rem; color: #fff; margin-bottom: 5px; }
+.label-sub { font-size: 0.7rem; color: #555; }
+
+/* STATUS & LOGS */
+.status-bar{
+  margin-top:25px; height:30px; display: flex; align-items: center; justify-content: center;
+  font-family:var(--font-code); font-size:0.7rem; color:#444; 
+}
+.status-bar.active { color: var(--green); animation: pulse 2s infinite; }
+.status-bar.error { color: var(--red); }
+
+@keyframes pulse { 0%{opacity:0.6} 50%{opacity:1} 100%{opacity:0.6} }
+
+/* EXPORT CONTROLS */
+#control-deck {
+  display: none; /* Hidden until data ready */
+  margin-top: 30px;
+  flex-direction: column; gap: 12px;
+  width: 100%;
+}
+
+.btn {
+  width: 100%; height: 55px; border-radius: 8px;
+  font-family: var(--font-code); font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; cursor: pointer; transition: 0.2s;
+  border: 1px solid var(--border); background: #111; color: #888;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 20px;
+}
+.btn:hover { border-color: var(--gold); color: #fff; background: #151515; }
+.btn.primary { background: var(--gold); color: #000; border-color: var(--gold); }
+.btn.primary:hover { filter: brightness(1.1); }
+
+.badge { 
+  background: #222; color: #555; padding: 2px 6px; 
+  border-radius: 4px; font-size: 0.6rem; 
+}
+.btn:hover .badge { background: #333; color: #ccc; }
+.btn.primary .badge { background: rgba(0,0,0,0.2); color: #000; }
+
 </style>
 </head>
 <body>
 
-<script>
-/* ======================================================
-   CORE PATCH: STEP-2 SAFE PARSER (NO UI TOUCH)
-   ====================================================== */
+<div class="container">
+  <div class="brand">VIA.<span>STACK</span></div>
+  <div class="sub-brand">PDF TRANSMUTER v138.0</div>
 
-function parseVaultText(text){
-  const lines = text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  <div class="upload-box" id="drop-zone" onclick="document.getElementById('fileIn').click()">
+    <span class="icon">📄</span>
+    <div class="label-main">UPLOAD SESSION PDF</div>
+    <div class="label-sub">Auto-Detects Layout & Fixes Steps</div>
+  </div>
+  
+  <input type="file" id="fileIn" hidden accept="application/pdf" onchange="handleFile(this)">
+  
+  <div class="status-bar" id="status">WAITING FOR INPUT...</div>
+
+  <div id="control-deck">
+    <button class="btn" onclick="exportData('SESSION')">
+      <span>SESSION PDF</span>
+      <span class="badge">WORKSHEET</span>
+    </button>
+    <button class="btn primary" onclick="exportData('SUPPORT')">
+      <span>SUPPORT PDF</span>
+      <span class="badge">ACADEMY</span>
+    </button>
+  </div>
+</div>
+
+<script>
+// --- CORE CONFIG ---
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let GLOBAL_DATA = [];
+
+// --- 1. FILE HANDLER & EXTRACTION ---
+async function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // UI Reset
+  document.getElementById('control-deck').style.display = 'none';
+  const drop = document.getElementById('drop-zone');
+  drop.style.opacity = '0.5'; drop.style.pointerEvents = 'none';
+  setStatus("READING STREAM...", "active");
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let rawText = "";
+
+    // PAGE LOOP
+    for (let i = 1; i <= pdf.numPages; i++) {
+      setStatus(`PARSING PAGE ${i}/${pdf.numPages}...`, "active");
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+
+      // LINEAR SORT (Y-Axis then X-Axis)
+      const lines = {};
+      content.items.forEach(item => {
+        const y = Math.round(item.transform[5]); // Group by Y coordinate
+        if (!lines[y]) lines[y] = [];
+        lines[y].push({ x: item.transform[4], str: item.str });
+      });
+
+      const pageText = Object.keys(lines)
+        .sort((a, b) => b - a) // Top to bottom
+        .map(y => lines[y].sort((a, b) => a.x - b.x).map(o => o.str).join(" ")) // Left to right
+        .join("\n");
+
+      rawText += pageText + "\n";
+    }
+
+    // CRITICAL FIX: FORCE SPLIT MERGED STEPS
+    // If "1." or "2." is stuck to previous text, force a newline
+    rawText = rawText.replace(/(\S)(\s+)(1\.\s)/g, "$1\n$3");
+    rawText = rawText.replace(/(\S)(\s+)(2\.\s)/g, "$1\n$3");
+
+    // PARSE
+    setStatus("RECONSTRUCTING DATA...", "active");
+    GLOBAL_DATA = parseText(rawText);
+
+    if (!GLOBAL_DATA.length) throw new Error("NO VALID QUESTIONS FOUND");
+
+    // SUCCESS
+    setStatus(`READY: ${GLOBAL_DATA.length} UNITS`, "active");
+    document.getElementById('control-deck').style.display = 'flex';
+    drop.innerHTML = '<span class="icon" style="color:var(--green)">✅</span><div class="label-main">READY FOR EXPORT</div>';
+    input.value = "";
+
+  } catch (e) {
+    console.error(e);
+    setStatus("ERROR: " + e.message, "error");
+    drop.style.opacity = '1'; drop.style.pointerEvents = 'all';
+  }
+}
+
+// --- 2. PARSER (STATE MACHINE) ---
+function parseText(text) {
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
   const out = [];
   let cur = null;
 
-  const flush = ()=>{
-    if(cur && cur.u && cur.l && cur.r){
-      if(!cur.correct) cur.correct="UP";
-      if(!cur.step1) cur.step1="—";
-      if(!cur.step2) cur.step2="—";
-      delete cur._exec;
+  const save = () => {
+    if (cur && cur.u && cur.l && cur.r) {
+      if (!cur.correct) cur.correct = "UP";
+      if (!cur.trap) cur.trap = "";
+      // ENFORCE EXECUTION DEFAULTS
+      if (!cur.step1) cur.step1 = "—";
+      if (!cur.step2) cur.step2 = "—";
+      delete cur._mode;
       out.push(cur);
     }
-    cur=null;
+    cur = null;
   };
 
-  for(const l of lines){
+  lines.forEach(l => {
+    // Ignore Structural Headers
+    if (/^(EXECUTION|THEORY|LOGIC|OPTIONS)/.test(l)) return;
 
-    const isHeader = /^Q\d+/.test(l) || /^\d+\s*\/\//.test(l);
-    if(isHeader){
-      flush();
-      let id="000",dom="GENERAL",topic="CONCEPTS";
-      if(l.includes("//")){
-        id=l.split("//")[0].trim();
-        const m=l.split("//")[1].split(">");
-        if(m[0]) dom=m[0].trim();
-        if(m[1]) topic=m[1].trim();
+    // Detect New Question Header
+    const isHead = /^Q\d+\s*[\|]/.test(l) || /^\d+\s*\/\//.test(l) || /^A_\d+/.test(l);
+
+    if (isHead) {
+      save();
+      
+      let id="000", dom="GENERAL", topic="CONCEPTS";
+      
+      // Parse ID from formats: "Q1 | 175" OR "175 // DOM > TOPIC"
+      if(l.includes("|")) {
+         const p = l.split("|");
+         if(p[1]) id = p[1].trim().split(" ")[0];
+      } else if(l.includes("//")) {
+         id = l.split("//")[0].trim();
+         const meta = l.split("//")[1].split(">");
+         if(meta[0]) dom = meta[0].trim();
+         if(meta[1]) topic = meta[1].trim();
       }
-      cur={id,dom,topic,q:"",u:"",l:"",r:"",logic:"",trap:"",step1:"",step2:"",_exec:0};
-      continue;
+
+      cur = { 
+        id, dom, topic, q: "", u: "", l: "", r: "", 
+        correct: "", logic: "", trap: "", step1: "", step2: "" 
+      };
+      return;
     }
 
-    if(!cur) continue;
+    if (!cur) return;
 
-    /* OPTIONS */
-    if(l.startsWith("A)")){cur.u=l.slice(2).trim();continue;}
-    if(l.startsWith("B)")){cur.l=l.slice(2).trim();continue;}
-    if(l.startsWith("C)")){cur.r=l.slice(2).trim();continue;}
-
-    /* ANSWER / LOGIC */
-    if(l.startsWith("ANSWER:")){cur.correct=l.replace("ANSWER:","").trim();continue;}
-    if(l.startsWith("LOGIC:")){cur.logic+=l.replace("LOGIC:","").trim()+" ";continue;}
-    if(l.startsWith("DISTRACTOR ANALYSIS:")){cur.trap=l.replace("DISTRACTOR ANALYSIS:","").trim();continue;}
-
-    /* ===== EXECUTION LOCK ===== */
-    if(l.startsWith("1.")){
-      cur._exec=1;
-      cur.step1=l.replace(/^1\.\s*/,"").trim();
-      continue;
+    // FIELD MATCHING
+    if (l.startsWith("A)") || l.startsWith("(A)")) cur.u = l.replace(/^[\(]?A[\)]?\s*/, "");
+    else if (l.startsWith("B)") || l.startsWith("(B)")) cur.l = l.replace(/^[\(]?B[\)]?\s*/, "");
+    else if (l.startsWith("C)") || l.startsWith("(C)")) cur.r = l.replace(/^[\(]?C[\)]?\s*/, "");
+    else if (l.startsWith("ANSWER:")) cur.correct = l.replace("ANSWER:", "").trim();
+    else if (l.startsWith("LOGIC:")) cur.logic += l.replace("LOGIC:", "").trim() + " ";
+    else if (l.startsWith("DISTRACTOR ANALYSIS:")) cur.trap = l.replace("DISTRACTOR ANALYSIS:", "").trim();
+    
+    // EXECUTION CAPTURE (With Wrap Support)
+    else if (/^1\s*\./.test(l)) {
+      cur._mode = 1; 
+      cur.step1 = l.replace(/^1\s*\.\s*/, "").trim();
     }
-    if(l.startsWith("2.")){
-      cur._exec=2;
-      cur.step2=l.replace(/^2\.\s*/,"").trim();
-      continue;
+    else if (/^2\s*\./.test(l)) {
+      cur._mode = 2; 
+      cur.step2 = l.replace(/^2\s*\.\s*/, "").trim();
     }
+    else if (cur._mode === 1) cur.step1 += " " + l;
+    else if (cur._mode === 2) cur.step2 += " " + l;
+    
+    // DEFAULT APPEND (Question or Logic)
+    else {
+      if (!cur.u) cur.q += l + " ";
+      else if (!cur._mode && !cur.trap) cur.logic += l + " ";
+    }
+  });
 
-    /* CONTINUATION LINES */
-    if(cur._exec===1){
-      cur.step1+=" "+l;
-      continue;
-    }
-    if(cur._exec===2){
-      cur.step2+=" "+l;
-      continue;
-    }
-
-    /* QUESTION BODY */
-    if(!cur.u){
-      cur.q+=l+" ";
-      continue;
-    }
-  }
-
-  flush();
+  save();
   return out;
 }
 
-/* ======================================================
-   SUPPORT PDF — STEP-2 NOW ALWAYS PRESENT
-   ====================================================== */
-function renderSupportPDF(data){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF();
-  let y=20;
-  const ML=15,W=180;
-  const COL_W={OPT:45,LOG:65,EXE:65};
-  const COL_X={OPT:ML,LOG:ML+50,EXE:ML+120};
+// --- 3. EXPORT CONTROLLER ---
+function exportData(mode) {
+  // Normalize Headers before passing
+  const data = GLOBAL_DATA.map(d => ({
+    ...d,
+    dom: (d.dom && d.dom.trim() !== "GENERAL") ? d.dom : "GENERAL",
+    topic: (d.topic && d.topic.trim() !== "CONCEPTS") ? d.topic : "CONCEPTS"
+  })).filter(d => d.id && d.q);
 
-  const clean=t=>String(t||"").replace(/<[^>]*>/g,"").trim();
+  if (mode === 'SESSION') renderSession(data);
+  if (mode === 'SUPPORT') renderSupport(data);
+}
 
-  const header=()=>{
-    doc.setFont("times","bold").setFontSize(16);
-    doc.text("ALCHEMIST // ACADEMY REPORT",105,15,{align:"center"});
-    doc.line(ML,18,195,18);doc.line(ML,19,195,19);
-    y=25;
+// --- RENDERER A: SESSION WORKSHEET ---
+function renderSession(data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  const clean = t => String(t||"").replace(/<[^>]*>/g,"").trim();
+
+  const head = () => {
+    doc.setFont("times","bold"); doc.setFontSize(16); doc.setTextColor(0);
+    doc.text("ALCHEMIST // SESSION WORKSHEET", 15, 20);
+    doc.setLineWidth(0.5); doc.line(15, 25, 195, 25);
+    y = 35;
   };
-  header();
+  head();
 
-  data.forEach(d=>{
-    if(y>230){doc.addPage();header();}
-    doc.setFont("helvetica","bold").setFontSize(8);
-    doc.text(`${d.id} // ${d.dom} > ${d.topic}`,ML,y);y+=6;
+  data.forEach((d, i) => {
+    if (y > 260) { doc.addPage(); head(); }
+    doc.setFont("courier","bold"); doc.setFontSize(11);
+    doc.text(`Q${i+1} | ${d.id}`, 15, y); y += 6;
+    
+    doc.setFont("times","normal"); doc.setFontSize(11);
+    const q = doc.splitTextToSize(clean(d.q), 180);
+    doc.text(q, 15, y); y += q.length*5 + 4;
 
-    doc.setFont("times","bold").setFontSize(12);
-    const q=doc.splitTextToSize(clean(d.q),W);
-    doc.text(q,ML,y);y+=q.length*5+4;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(60);
+    doc.text(`(A) ${clean(d.u)}`, 15, y); y+=5;
+    doc.text(`(B) ${clean(d.l)}`, 15, y); y+=5;
+    doc.text(`(C) ${clean(d.r)}`, 15, y); y+=10;
+    doc.setTextColor(0);
+  });
+  doc.save(`SESSION_${Date.now()}.pdf`);
+}
 
-    doc.line(ML,y,195,y);y+=6;
+// --- RENDERER B: SUPPORT ACADEMY ---
+function renderSupport(data) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  
+  const ML=15; const W=180;
+  const CW={OPT:45, LOG:65, EXE:65};
+  const CX={OPT:ML, LOG:ML+45+5, EXE:ML+45+65+10};
+  const clean = t => String(t||"").replace(/<[^>]*>/g,"").trim();
 
-    doc.setFont("helvetica","bold").setFontSize(7);
-    doc.text("OPTIONS",COL_X.OPT,y);
-    doc.text("THEORY & LOGIC",COL_X.LOG,y);
-    doc.text("EXECUTION",COL_X.EXE,y);
-    y+=5;
-
-    const base=y;let max=y;
-
-    doc.setFont("helvetica","normal").setFontSize(9);
-    let oy=base;
-    ["u","l","r"].forEach((k,i)=>{
-      const t=doc.splitTextToSize(`(${String.fromCharCode(65+i)}) ${clean(d[k])}`,COL_W.OPT);
-      doc.text(t,COL_X.OPT,oy);oy+=t.length*4+2;
-    });
-    max=Math.max(max,oy);
-
-    doc.setFont("times","italic");
-    const lg=doc.splitTextToSize(clean(d.logic),COL_W.LOG);
-    doc.text(lg,COL_X.LOG,base);
-    max=Math.max(max,base+lg.length*4);
-
-    doc.setFont("helvetica","normal");
-    const s1=doc.splitTextToSize(`1. ${clean(d.step1)}`,COL_W.EXE);
-    const s2=doc.splitTextToSize(`2. ${clean(d.step2)}`,COL_W.EXE);
-    let ey=base;
-    doc.text(s1,COL_X.EXE,ey);ey+=s1.length*4+2;
-    doc.text(s2,COL_X.EXE,ey);ey+=s2.length*4;
-    max=Math.max(max,ey);
-
-    y=max+10;
+  // Normalize Answers
+  data.forEach(d => {
+    const a = (d.correct||"").toUpperCase();
+    if(a.includes("A")) d.correct=d.u;
+    else if(a.includes("B")) d.correct=d.l;
+    else if(a.includes("C")) d.correct=d.r;
   });
 
+  const head = () => {
+    doc.setFont("times","bold"); doc.setFontSize(16); doc.setTextColor(0);
+    doc.text("ALCHEMIST // ACADEMY REPORT", 105, 15, {align:"center"});
+    doc.setDrawColor(0); doc.setLineWidth(0.5);
+    doc.line(ML,18,195,18); doc.line(ML,19,195,19);
+    y=25;
+  };
+  head();
+
+  data.forEach((d, i) => {
+    if (y > 230) { doc.addPage(); head(); }
+
+    // META
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+    doc.text(`${d.id} // ${d.dom.toUpperCase()} > ${d.topic}`, ML, y); y+=5;
+
+    // QUESTION
+    doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+    const q = doc.splitTextToSize(clean(d.q), W);
+    doc.text(q, ML, y); y += (q.length*5)+4;
+
+    // DIVIDER
+    doc.setDrawColor(200); doc.setLineWidth(0.2); 
+    doc.line(ML,y,195,y); doc.line(ML,y+1,195,y+1); y+=6;
+
+    // COL HEADERS
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+    doc.text("OPTIONS", CX.OPT, y);
+    doc.text("THEORY & LOGIC", CX.LOG, y);
+    doc.text("EXECUTION", CX.EXE, y);
+    y+=5;
+
+    // CONTENT
+    let maxH = y;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80);
+    
+    // 1. Options
+    let oy = y;
+    const oa=doc.splitTextToSize(`(A) ${clean(d.u)}`, CW.OPT);
+    const ob=doc.splitTextToSize(`(B) ${clean(d.l)}`, CW.OPT);
+    const oc=doc.splitTextToSize(`(C) ${clean(d.r)}`, CW.OPT);
+    doc.text(oa,CX.OPT,oy); oy+=oa.length*4+2;
+    doc.text(ob,CX.OPT,oy); oy+=ob.length*4+2;
+    doc.text(oc,CX.OPT,oy); oy+=oc.length*4+2;
+    if(oy>maxH) maxH=oy;
+
+    // 2. Logic
+    doc.setFont("times","italic"); doc.setTextColor(50);
+    const log=doc.splitTextToSize(clean(d.logic)|| "Analysis pending.", CW.LOG);
+    doc.text(log,CX.LOG,y);
+    const ly = y + log.length*4;
+    if(ly>maxH) maxH=ly;
+
+    // 3. Execution (LOCKED)
+    doc.setFont("helvetica","normal"); doc.setTextColor(0);
+    const s1 = `1. ${clean(d.step1)}`;
+    const s2 = `2. ${clean(d.step2)}`;
+    const s1L = doc.splitTextToSize(s1, CW.EXE);
+    const s2L = doc.splitTextToSize(s2, CW.EXE);
+    let ey = y;
+    doc.text(s1L,CX.EXE,ey); ey+=s1L.length*4+2;
+    doc.text(s2L,CX.EXE,ey); ey+=s2L.length*4;
+    if(ey>maxH) maxH=ey;
+
+    y = maxH + 6;
+
+    // Distractor
+    if(d.trap && d.trap.length > 2){
+      doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(200,50,50);
+      doc.text("DISTRACTOR ANALYSIS:", ML, y);
+      doc.setFont("times","italic"); doc.setTextColor(80);
+      doc.text(clean(d.trap), ML+35, y); y+=8;
+    }
+    y+=6;
+  });
   doc.save(`SUPPORT_PDF_${Date.now()}.pdf`);
 }
-</script>
 
+function setStatus(msg, type){
+  const el = document.getElementById('status');
+  el.innerText = msg;
+  el.className = `status-bar ${type}`;
+}
+</script>
 </body>
 </html>
