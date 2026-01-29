@@ -586,6 +586,9 @@ async function init(){
 
   // 2️⃣ Try master.json with timeout (Repo)
   if(!loaded){
+
+    console.log("FETCH ATTEMPT RAW_DATA:", RAW_DATA);
+    
     log("FETCHING MASTER...", "normal");
 
     try {  
