@@ -355,16 +355,29 @@ function report(){
 function exportMenu(){
     log("SELECT FORMAT", "primary");
     card(
-        "VIA.STACK\n\nSELECT OUTPUT FORMAT", 
-        {left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK"}, 
+        "VIA.STACK\n\nSELECT OUTPUT FORMAT",
+        { left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK" },
         dir => {
-            if(dir === "LEFT") renderSessionPDF(SESSION_ALL);
-            if(dir === "RIGHT") showUnlockCard(); // Secured Gateway
-            if(dir === "DOWN") report();
+
+            if(dir === "LEFT"){
+                renderSessionPDF(SESSION_ALL);
+                return;
+            }
+
+            if(dir === "RIGHT"){
+                log("OPENING SUPPORT LINK", "active");
+
+                // HARD NAVIGATION (browser-safe)
+                window.location.href = SUPPORT_LINK;
+                return;
+            }
+
+            if(dir === "DOWN"){
+                report();
+            }
         }
     );
 }
-
 function showUnlockCard() {
     log("GATEWAY LOCKED", "primary");
     card(
@@ -374,8 +387,7 @@ function showUnlockCard() {
         <div style="margin-bottom:20px; font-size:0.8rem; color:#888;">Complete Academy Analysis</div>
 
        <a
-  href="https://wa.me/919429732666?text=Hi%20I%20want%20to%20unlock%20the%20Support%20PDF%20(₹1)"
-  target="_blank"
+ const SUPPORT_LINK = "https://wa.me/916351537770?text=Support%20PDF%20Unlock";
   style="
     display:inline-block;
     padding:14px 22px;
