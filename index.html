@@ -143,6 +143,7 @@ body{
 <script>
 /* ================= CONFIG ================= */
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+const SUPPORT_LINK = "https://wa.me/916351537770?text=Support%20PDF%20Unlock";
 
 /* ================= STATE ================= */
 let RAW_DATA = [];
@@ -358,59 +359,15 @@ function exportMenu(){
         "VIA.STACK\n\nSELECT OUTPUT FORMAT", 
         {left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK"}, 
         dir => {
-            if(dir === "LEFT") renderSessionPDF(SESSION_ALL);
-            if(dir === "RIGHT") showUnlockCard(); 
-            if(dir === "DOWN") report();
+            if(dir === "LEFT"){
+                renderSessionPDF(SESSION_ALL);
+            } else if(dir === "RIGHT"){
+                // DIRECT REDIRECT TO WHATSAPP
+                window.location.href = SUPPORT_LINK;
+            } else if(dir === "DOWN"){
+                report();
+            }
         }
-    );
-}
-
-function showUnlockCard() {
-    log("GATEWAY LOCKED", "primary");
-    card(
-      `
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; width:100%;">
-        
-        <div style="margin-bottom:15px; filter: drop-shadow(0 0 15px rgba(255,214,0,0.4));">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ffd600" stroke-width="1.5">
-                <path d="M12 17h.01M12 14v-3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-            </svg>
-        </div>
-
-        <div style="font-family:'Crimson Text', serif; font-size:1.5rem; font-weight:700; color:#fff; margin-bottom:5px;">
-          UNLOCK SUPPORT PDF
-        </div>
-
-        <div style="font-family:'Inter', sans-serif; font-size:0.8rem; color:#888; text-align:center; margin-bottom:25px; max-width:250px;">
-          Pay ₹1 to access full Academy Analysis
-        </div>
-
-        <a href="https://wa.me/916351537770?text=I%20have%20paid%20₹1%20for%20Support%20PDF.%20Here%20is%20the%20screenshot."
-           target="_blank"
-           onclick="setTimeout(() => { renderSupportPDF(SESSION_ALL); }, 3000)"
-           style="
-             display:flex; align-items:center; justify-content:center; gap:8px;
-             padding:16px 32px;
-             background:#25D366;
-             color:#000;
-             font-family:'Inter', sans-serif;
-             font-weight:800;
-             font-size:0.9rem;
-             border-radius:50px;
-             text-decoration:none;
-             box-shadow:0 4px 20px rgba(37, 211, 102, 0.4);
-             transition: transform 0.1s;
-           ">
-           <span>UNLOCK NOW (₹1)</span>
-        </a>
-
-        <div style="margin-top:15px; font-family:'JetBrains Mono', monospace; font-size:0.6rem; color:#444;">
-          SECURE WHATSAPP GATEWAY
-        </div>
-      </div>
-      `,
-      { down: "BACK" },
-      dir => { if(dir === "DOWN") exportMenu(); }
     );
 }
 
@@ -451,107 +408,6 @@ function renderSessionPDF(data){
     });
 
     doc.save(`SESSION_PDF_${Date.now()}.pdf`);
-    setTimeout(exportMenu, 1000); 
-}
-
-/* ================= RENDERER B: SUPPORT PDF (Academy) ================= */
-function renderSupportPDF(data){
-    log("GENERATING SUPPORT PDF...", "active");
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 20;
-
-    const ML = 15; const W = 180;
-    const COL_W = { OPT: 45, LOG: 65, EXE: 65 };
-    const COL_X = { OPT: ML, LOG: ML + 45 + 5, EXE: ML + 45 + 65 + 10 };
-
-    data.forEach(d => {
-        const a = (d.correct || "").trim().toUpperCase();
-        if(a === "A" || a === "UP") d.correct = d.u;
-        else if(a === "B" || a === "LEFT") d.correct = d.l;
-        else if(a === "C" || a === "RIGHT") d.correct = d.r;
-    });
-
-    const header = () => {
-        doc.setFont("times", "bold"); doc.setFontSize(16); doc.setTextColor(0);
-        doc.text("ALCHEMIST // ACADEMY REPORT", 105, 15, {align:"center"});
-        doc.setDrawColor(0); doc.setLineWidth(0.5);
-        doc.line(ML, 18, 195, 18); doc.line(ML, 19, 195, 19); 
-        y = 25;
-    };
-
-    header();
-
-    data.forEach((d, i) => {
-        if (y > 230) { doc.addPage(); header(); }
-
-        doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(100);
-        const headerText = `${d.id} // ${d.dom || "GENERAL"} > ${d.topic || "CONCEPTS"}`;
-        doc.text(headerText, ML, y);
-        y += 6;
-
-        doc.setFont("times", "bold"); doc.setFontSize(12); doc.setTextColor(0);
-        const qLines = doc.splitTextToSize(cleanPDF(d.q), W);
-        doc.text(qLines, ML, y);
-        y += (qLines.length * 5) + 4;
-
-        doc.setDrawColor(180); doc.setLineWidth(0.3);
-        doc.line(ML, y, 195, y); doc.line(ML, y+1, 195, y+1);
-        y += 6;
-
-        doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(150);
-        doc.text("OPTIONS", COL_X.OPT, y);
-        doc.text("THEORY & LOGIC", COL_X.LOG, y);
-        doc.text("EXECUTION", COL_X.EXE, y);
-        y += 5;
-
-        const contentY = y;
-        let maxH = y;
-
-        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(80);
-        let optY = contentY;
-        const optA = doc.splitTextToSize(`(A) ${cleanPDF(d.u)}`, COL_W.OPT);
-        const optB = doc.splitTextToSize(`(B) ${cleanPDF(d.l)}`, COL_W.OPT);
-        const optC = doc.splitTextToSize(`(C) ${cleanPDF(d.r)}`, COL_W.OPT);
-        doc.text(optA, COL_X.OPT, optY); optY += optA.length*4 + 2;
-        doc.text(optB, COL_X.OPT, optY); optY += optB.length*4 + 2;
-        doc.text(optC, COL_X.OPT, optY); optY += optC.length*4 + 2;
-        if(optY > maxH) maxH = optY;
-
-        doc.setFont("times", "italic"); doc.setTextColor(50);
-        const logLines = doc.splitTextToSize(cleanPDF(d.logic) || "Analysis pending.", COL_W.LOG);
-        doc.text(logLines, COL_X.LOG, contentY);
-        const logH = contentY + (logLines.length * 4);
-        if(logH > maxH) maxH = logH;
-
-        doc.setFont("helvetica", "normal"); doc.setTextColor(0);
-        const textS1 = cleanPDF(d.step1);
-        const textS2 = cleanPDF(d.step2);
-        const s1 = `1. ${textS1 || "Identify governing principle."}`;
-        const s2 = `2. ${textS2 || "Apply principle and verify result."}`;
-        
-        const s1L = doc.splitTextToSize(s1, COL_W.EXE);
-        const s2L = doc.splitTextToSize(s2, COL_W.EXE);
-        let exeY = contentY;
-        doc.text(s1L, COL_X.EXE, exeY); exeY += s1L.length*4 + 2;
-        doc.text(s2L, COL_X.EXE, exeY); exeY += s2L.length*4;
-        if(exeY > maxH) maxH = exeY;
-
-        y = maxH + 6;
-
-        if(d.trap && d.trap !== "undefined") {
-            doc.setLineDash([1, 1], 0); doc.setDrawColor(200); doc.line(ML, y, 195, y); doc.setLineDash([]);
-            y += 4;
-            doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(200, 50, 50);
-            doc.text("DISTRACTOR ANALYSIS:", ML, y);
-            doc.setFont("times", "italic"); doc.setTextColor(80);
-            doc.text(cleanPDF(d.trap), ML + 35, y);
-            y += 8;
-        }
-        y += 6; 
-    });
-
-    doc.save(`SUPPORT_PDF_${Date.now()}.pdf`);
     setTimeout(exportMenu, 1000); 
 }
 
@@ -609,28 +465,3 @@ async function init(){
     correct: d.correct,
     logic: d.logic || "",
     hint: d.hint || "",
-    trap: d.trap || "",
-    step1: d.step1 || d.s1 || "",
-    step2: d.step2 || d.s2 || ""
-  })).filter(d => d.id && d.q && d.u);
-
-  // 4️⃣ HARD FAIL SAFE
-  if(!RAW_DATA.length){
-    log("NO DATA FOUND", "primary");
-    card(
-      "NO DATA FOUND\n\nPush data via Admin",
-      { down: "RETRY" },
-      () => location.reload()
-    );
-    return;
-  }
-
-  // 5️⃣ SUCCESS
-  log(`DATA READY (${RAW_DATA.length})`, "active");
-  begin();
-}
-
-init();
-</script>
-</body>
-</html>
