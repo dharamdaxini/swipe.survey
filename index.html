@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final Report v136.62</title>
+<title>Alchemist | Final v136.63</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -177,7 +177,7 @@ const UI = {
   bar: document.getElementById("progress-bar")
 };
 
-/* ================= PHYSICS ENGINE (Unchanged) ================= */
+/* ================= PHYSICS ENGINE ================= */
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
@@ -276,7 +276,6 @@ function startQuiz(limit){
  
  POOL=base; WRONG=[]; SESSION_ALL=[...POOL]; XP=0; ATTEMPTED=new Set();
  
- // NO IMMEDIATE PDF - Wait for completion
  nextQ();
 }
 
@@ -345,7 +344,7 @@ function report(){
  log("SESSION COMPLETE", "active");
  const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
  card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} (${percent}%)`,{down:"EXPORT PDF", up:"RESTART", left:"MENU"},dir=>{
-    // ENFORCED: PDF TRIGGER ON DOWN SWIPE
+    // PDF TRIGGER ON DOWN SWIPE (AT END)
     if(dir==="DOWN") exportSessionPDF(SESSION_ALL, "REPORT");
     if(dir==="UP") startQuiz(); 
     if(dir==="LEFT") begin();
@@ -371,7 +370,7 @@ async function init(){
     } catch(e) { }
   }
   
-  // Normalization - Strict Mapping
+  // Normalization
   RAW_DATA = RAW_DATA.map(d => ({
       id: d.id, set: d.set || "DEFAULT", dom: d.dom || "GENERAL", topic: d.topic || "",
       q: d.q, u: d.u, l: d.l, r: d.r, correct: d.correct,
@@ -389,7 +388,7 @@ async function init(){
   begin();
 }
 
-/* ================= PDF ENGINE (FIXED & REPORT MODE) ================= */
+/* ================= PDF ENGINE (FIXED LAYOUT) ================= */
 function exportSessionPDF(dataList, titleSuffix){
  if(!dataList || !dataList.length){ alert("No data"); return; } 
  
@@ -397,59 +396,81 @@ function exportSessionPDF(dataList, titleSuffix){
  const doc=new jsPDF();
  let y=20;
  
- doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text(`ALCHEMIST // ${titleSuffix}`, 15, y); y+=10;
- doc.setFontSize(10); doc.text(`Generated: ${new Date().toLocaleString()}`, 15, y); y+=15;
-
  const clean = (str) => String(str || "").trim();
 
- dataList.forEach((d,i)=>{
-  if(y>250){doc.addPage();y=20;}
+ // Header Helper to prevent overwrite on new pages
+ const printHeader = () => {
+     doc.setFont("times","bold"); doc.setFontSize(16);
+     doc.text(`ALCHEMIST // ${titleSuffix}`, 15, 20); 
+     doc.setFontSize(10); 
+     doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 26); 
+     doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, 28, 195, 28);
+     y = 35; // Reset Y below header
+ };
 
+ printHeader(); // Initial Page 1 Header
+
+ dataList.forEach((d,i)=>{
+  // Smart Page Break: Check if we have room for at least Q + Options (~50mm)
+  if(y > 250){ doc.addPage(); printHeader(); }
+
+  // HEADER
   doc.setFont("courier","bold"); doc.setFontSize(11); doc.setTextColor(0);
   doc.text(`Q${i+1} | ${d.id} [${d.topic}]`, 15, y); y+=7;
   
+  // QUESTION
   doc.setFont("times","normal"); doc.setFontSize(11);
   const q=doc.splitTextToSize(`${cleanPDF(d.q)}`, 180);
   doc.text(q, 15, y); y+=q.length*5+5;
   
+  // OPTIONS
   doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(60);
   doc.text(`(A) ${cleanPDF(d.u)}`, 15, y); y+=5;
   doc.text(`(B) ${cleanPDF(d.l)}`, 15, y); y+=5;
   doc.text(`(C) ${cleanPDF(d.r)}`, 15, y); y+=7;
   
+  // ANSWER
   let ansLetter = "(?)";
   const cor = clean(d.correct).toLowerCase();
   if(cor === clean(d.u).toLowerCase()) ansLetter = "(A)";
   else if(cor === clean(d.l).toLowerCase()) ansLetter = "(B)";
   else if(cor === clean(d.r).toLowerCase()) ansLetter = "(C)";
+  else if(cor.includes("opt_a")) ansLetter = "(A)";
+  else if(cor.includes("opt_b")) ansLetter = "(B)";
+  else if(cor.includes("opt_c")) ansLetter = "(C)";
   
   doc.setFont("courier","bold"); doc.setTextColor(0);
   doc.text(`ANSWER: ${ansLetter} ${cleanPDF(d.correct)}`, 15, y); y+=7;
   
+  // LOGIC (Auto Page Break)
   if(d.logic){
-      if(y>270){doc.addPage();y=20;}
-      doc.setFont("times","italic"); doc.setTextColor(80);
       const l=doc.splitTextToSize(`LOGIC: ${cleanPDF(d.logic)}`, 180);
+      if(y + l.length*5 > 280) { doc.addPage(); printHeader(); }
+      
+      doc.setFont("times","italic"); doc.setTextColor(80);
       doc.text(l, 15, y); y+=l.length*5+3;
   }
 
+  // TRAP (Auto Page Break)
   if(d.trap && d.trap !== "undefined"){
-      if(y>270){doc.addPage();y=20;}
+      if(y > 275) { doc.addPage(); printHeader(); }
       doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(200,50,50);
       doc.text(`DISTRACTOR ANALYSIS: ${cleanPDF(d.trap)}`, 15, y); y+=6;
   }
 
+  // STEPS (Auto Page Break)
   if(d.step1){
-      if(y>270){doc.addPage();y=20;}
-      doc.setFont("courier","bold"); doc.setFontSize(9); doc.setTextColor(0,100,0);
       const s1 = doc.splitTextToSize(`STEP 1: ${cleanPDF(d.step1)}`, 180);
+      if(y + s1.length*5 > 280) { doc.addPage(); printHeader(); }
+      
+      doc.setFont("courier","bold"); doc.setFontSize(9); doc.setTextColor(0,100,0);
       doc.text(s1, 15, y); y+=s1.length*5+2;
   }
   if(d.step2){
-      if(y>270){doc.addPage();y=20;}
-      doc.setFont("courier","bold"); doc.setFontSize(9); doc.setTextColor(0,100,0);
       const s2 = doc.splitTextToSize(`STEP 2: ${cleanPDF(d.step2)}`, 180);
+      if(y + s2.length*5 > 280) { doc.addPage(); printHeader(); }
+      
+      doc.setFont("courier","bold"); doc.setFontSize(9); doc.setTextColor(0,100,0);
       doc.text(s2, 15, y); y+=s2.length*5+2;
   }
 
