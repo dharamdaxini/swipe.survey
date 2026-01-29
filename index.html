@@ -9,7 +9,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* ---- UNCHANGED UI / UX / PHYSICS STYLES ---- */
 :root{
   --bg:#000000; --card:#0a0a0a; --border:#222;
   --gold:#ffd600; --green:#2ecc71;
@@ -20,106 +19,171 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{margin:0;height:100vh;background:var(--bg);color:var(--text-white);font-family:var(--font-sans);overflow:hidden;display:flex;flex-direction:column;}
-/* (styles exactly preserved) */
+#header{width:90%;margin:25px auto 0;z-index:100;flex-shrink:0;}
+.header-meta{display:flex;justify-content:space-between;font-family:var(--font-code);font-size:.75rem;color:#666;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:15px;}
+.progress-track{width:100%;height:3px;background:#222;border-radius:2px;}
+#progress-bar{height:100%;background:var(--gold);width:0%;transition:width .4s ease;border-radius:2px;}
+#kinetic-logger{width:90%;margin:15px auto 5px;font-family:var(--font-code);font-size:.8rem;color:#444;line-height:1.4;text-transform:uppercase;min-height:60px;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none;}
+.log-line{opacity:.5}
+.log-line.active{color:var(--green);opacity:1;font-weight:700}
+.log-line.primary{color:var(--gold);opacity:1;font-weight:700}
+#stack{position:relative;width:90%;max-width:420px;height:calc(100vh - 220px - env(safe-area-inset-bottom));margin:10px auto 20px;perspective:1500px;display:flex;align-items:center;justify-content:center;}
+.card{position:absolute;width:100%;height:100%;background:var(--card);border-radius:14px;border:1px solid var(--border);padding:35px;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:0 20px 60px rgba(0,0,0,.95);will-change:transform;transform-style:preserve-3d;overflow:hidden;}
+.card-q{font-family:var(--font-serif);font-size:clamp(1.4rem,5vw,1.9rem);line-height:1.4;font-weight:600;text-align:center;width:100%;overflow-y:auto;display:flex;justify-content:center;}
+.card-q::-webkit-scrollbar{width:0}
+.swipe-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;font-weight:900;font-size:1.8rem;text-transform:uppercase;opacity:0;pointer-events:none;border-radius:14px;color:var(--text-grey);border:1px solid #333}
 </style>
 </head>
 <body>
 
-<!-- HEADER / LOGGER / STACK -->
-<!-- (UNCHANGED MARKUP – preserved exactly as provided) -->
+<div id="header">
+  <div class="header-meta">
+    <span>VIA.STACK</span>
+    <span id="xp-ui">0 XP</span>
+  </div>
+  <div class="progress-track"><div id="progress-bar"></div></div>
+</div>
+
+<div id="kinetic-logger">
+  <div class="log-line" id="log-1">> SYSTEM BOOT</div>
+  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
+  <div class="log-line active" id="log-3">> ...</div>
+</div>
+
+<div id="stack">
+  <div class="card">
+    <div class="card-q" style="font-family:var(--font-code);font-size:.9rem;color:#666">
+      INITIALIZING CORE...
+    </div>
+  </div>
+</div>
 
 <script>
 /* ================= CONFIG ================= */
 const MASTER_KEY="ALCHEMIST_MASTER_V1";
 
 /* ================= STATE ================= */
-let RAW_DATA=[],ACTIVE_SET=null,POOL=[],WRONG=[],XP=0;
+let RAW_DATA=[],SET_CURSOR=0,ACTIVE_SET=null;
+let POOL=[],WRONG=[],XP=0;
 let SESSION_ALL=[],ATTEMPTED=new Set(),REVIEW_INDEX=0;
 
+/* ================= LOGGER ================= */
+function log(msg,type="normal"){
+ const l1=log1,l2=log2,l3=log3;
+ l1.textContent=l2.textContent;
+ l2.textContent=l3.textContent;
+ l3.textContent="> "+msg;
+ l3.className="log-line "+(type==="active"?"active":type==="primary"?"primary":"");
+}
+const log1=document.getElementById("log-1");
+const log2=document.getElementById("log-2");
+const log3=document.getElementById("log-3");
+
 /* ================= UTILS ================= */
-const cleanPDF=t=>String(t||"").replace(/<[^>]*>/g,"").replace(/&Delta;/g,"Δ");
-const isDateLike=v=>/^\d{4}-\d{2}-\d{2}/.test(String(v||""));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const cleanPDF=t=>String(t||"").replace(/<[^>]*>/g,"");
 
-/* ================= PDF ENGINE (ACADEMY-LOCKED) ================= */
-function exportSessionPDF(dataList,title){
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- let y=20;
-
- const header=()=>{
-  doc.setFont("times","bold");doc.setFontSize(16);
-  doc.text(`ALCHEMIST // ${title}`,15,20);
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleString()}`,15,26);
-  doc.line(15,28,195,28);
-  y=35;
- };
-
- header();
-
- dataList.forEach((d,i)=>{
-  if(y>250){doc.addPage();header();}
-
-  doc.setFont("helvetica","bold");doc.setFontSize(9);
-  doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||""}`,15,y);y+=6;
-
-  doc.setFont("times","bold");doc.setFontSize(12);
-  const q=doc.splitTextToSize(cleanPDF(d.q),180);
-  doc.text(q,15,y);y+=q.length*5+4;
-
-  doc.setFont("helvetica","normal");doc.setFontSize(10);
-  doc.text(`(A) ${cleanPDF(d.u)}`,15,y);y+=5;
-  doc.text(`(B) ${cleanPDF(d.l)}`,15,y);y+=5;
-  doc.text(`(C) ${cleanPDF(d.r)}`,15,y);y+=6;
-
-  doc.setFont("courier","bold");
-  doc.text(`ANSWER: ${cleanPDF(d.correct)}`,15,y);y+=6;
-
-  if(d.logic){
-   const l=doc.splitTextToSize(cleanPDF(d.logic),180);
-   if(y+l.length*5>280){doc.addPage();header();}
-   doc.setFont("times","italic");
-   doc.text(l,15,y);y+=l.length*5+3;
-  }
-
-  if(d.trap && !isDateLike(d.trap)){
-   if(y>270){doc.addPage();header();}
-   doc.setFont("helvetica","bold");doc.setTextColor(180,50,50);
-   doc.text(`DISTRACTOR ANALYSIS: ${cleanPDF(d.trap)}`,15,y);
-   doc.setTextColor(0);y+=6;
-  }
-
-  if(d.step1){
-   if(y>270){doc.addPage();header();}
-   doc.setFont("courier","bold");
-   doc.text(`STEP 1: ${cleanPDF(d.step1)}`,15,y);y+=5;
-  }
-  if(d.step2){
-   if(y>270){doc.addPage();header();}
-   doc.text(`STEP 2: ${cleanPDF(d.step2)}`,15,y);y+=5;
-  }
-
-  doc.line(15,y,195,y);y+=8;
- });
-
- doc.save(`ALCHEMIST_${title}_${Date.now()}.pdf`);
+/* ================= CARD ================= */
+function card(text,labels,cb){
+ stack.innerHTML="";
+ const el=document.createElement("div");
+ el.className="card";
+ el.innerHTML=`
+  <div class="card-q">${text.replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${labels.up||""}</div>
+  <div class="swipe-label sl-left">${labels.left||""}</div>
+  <div class="swipe-label sl-right">${labels.right||""}</div>
+  <div class="swipe-label sl-down">${labels.down||""}</div>`;
+ stack.appendChild(el);
+ new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= VOLUME SNAPSHOT TRIGGER ================= */
+/* ================= FLOW ================= */
+function begin(){
+ log("SESSION READY","active");
+ card(`DATA LOADED\n${RAW_DATA.length} UNITS`,
+ {up:"QUIZ",down:"MY PDF"},
+ d=>{
+  if(d==="UP") setPick();
+  if(d==="DOWN") exportSessionPDF(RAW_DATA,"FULL_VAULT");
+ });
+}
+
+function setPick(){
+ const sets=[...new Set(RAW_DATA.map(d=>d.set))];
+ card(sets[SET_CURSOR],
+ {up:"SELECT",down:"BACK"},
+ d=>{
+  if(d==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
+  if(d==="DOWN") begin();
+ });
+}
+
+function volumePick(){
+ card("QUESTION VOLUME",
+ {up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},
+ d=>{
+  let limit=null;
+  if(d==="UP") limit=10;
+  if(d==="LEFT") limit=25;
+  if(d==="RIGHT") limit=50;
+  startQuiz(limit);
+ });
+}
+
+/* ======== SNAPSHOT + QUIZ CONTINUATION ======== */
 function startQuiz(limit){
+ log("INITIATING POOL","active");
  let base=RAW_DATA.filter(d=>d.set===ACTIVE_SET);
- base=base.sort(()=>Math.random()-0.5);
+ base=shuffle(base);
  if(limit) base=base.slice(0,limit);
 
- /* 🔒 SNAPSHOT PDF AT SELECTION MOMENT */
+ /* SNAPSHOT PDF (ONE TIME) */
  exportSessionPDF(base,`SESSION_${limit||"ALL"}`);
 
- POOL=[...base];SESSION_ALL=[...base];WRONG=[];XP=0;ATTEMPTED.clear();
+ POOL=[...base];
+ SESSION_ALL=[...base];
+ WRONG=[];XP=0;ATTEMPTED.clear();
  nextQ();
 }
 
-/* ---- REST OF YOUR ORIGINAL LOGIC CONTINUES UNCHANGED ---- */
+/* ================= QUIZ ================= */
+function nextQ(){
+ if(!POOL.length){report();return;}
+ const d=POOL.shift();
+ const opts=shuffle([d.u,d.l,d.r]);
+ card(d.q,{up:opts[0],left:opts[1],right:opts[2]},()=>nextQ());
+}
 
+/* ================= REPORT ================= */
+function report(){
+ card(`SUMMARY\n${XP}/${SESSION_ALL.length}`,
+ {down:"EXPORT PDF",left:"MENU"},
+ d=>{
+  if(d==="DOWN") exportSessionPDF(SESSION_ALL,"REPORT");
+  if(d==="LEFT") begin();
+ });
+}
+
+/* ================= PDF ================= */
+function exportSessionPDF(data,title){
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ let y=20;
+ doc.setFontSize(14);
+ doc.text(`ALCHEMIST // ${title}`,15,y); y+=10;
+ data.forEach((d,i)=>{
+  doc.text(`${i+1}. ${cleanPDF(d.q)}`,15,y); y+=8;
+ });
+ doc.save(`ALCHEMIST_${title}_${Date.now()}.pdf`);
+}
+
+/* ================= INIT ================= */
+(async function(){
+ const local=localStorage.getItem(MASTER_KEY);
+ if(local) RAW_DATA=JSON.parse(local);
+ begin();
+})();
 </script>
 </body>
 </html>
