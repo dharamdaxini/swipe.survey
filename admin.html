@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.52</title>
+    <title>VIA.STACK | ADMIN v136.53</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
         :root { 
@@ -68,7 +67,7 @@
         }
         .btn-ghost:hover { border-color: #fff; color: #fff; }
 
-        /* PUSH BUTTON (ONE SCROLL ABOVE PURGE) */
+        /* PUSH BUTTON */
         .push-btn {
             width: 100%; background: var(--green); color: #000; border: none;
             padding: 20px; border-radius: 12px; font-weight: 900; font-size: 1rem;
@@ -132,10 +131,10 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.52</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.53</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
-        <span id="db-status-text">DB READY</span>
+        <span id="db-status-text">DB CHECK</span>
     </div>
 </header>
 
@@ -143,7 +142,7 @@
 
     <div class="zone">
         <div class="zone-title">01 // INGESTION ENGINE</div>
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW 25-COL TSV DATA HERE...&#10;>> AUTO-STRIPS HEADERS. ENFORCES 25-COL STRUCTURE."></textarea>
+        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW 25+ COL TSV HERE...&#10;>> AUTO-STRIPS HEADERS. ENFORCES STRUCTURE."></textarea>
         
         <div class="action-bar">
             <button class="btn-pill" onclick="initiateAlignment()">INITIATE ALIGNMENT</button>
@@ -162,10 +161,6 @@
             <div class="tile gold-border" onclick="exportJSON()">
                 <span class="tile-icon">📦</span>
                 <span class="tile-label" style="color:var(--gold)">MASTER.JSON</span>
-            </div>
-            <div class="tile" onclick="exportPDF()">
-                <span class="tile-icon">📄</span>
-                <span class="tile-label">PROTOCOL PDF</span>
             </div>
             <div class="tile" onclick="exportTSV()">
                 <span class="tile-icon">📊</span>
@@ -250,8 +245,8 @@
     let RAW_LINES = [];
     
     // === SYSTEM LINKAGE (CRITICAL) ===
-    const DB_KEY = 'ALCHEMIST_MASTER_V1'; // Matches Operator
-    const USER_KEY = 'ALCHEMIST_USER_PROGRESS';
+    // This key connects Admin to Operator (index.html)
+    const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
 
     // --- 1. GATEKEEPER v26 ---
     function initiateAlignment() {
@@ -275,7 +270,7 @@
         for(let i=0; i<RAW_LINES.length; i++) {
             const cols = RAW_LINES[i].split('\t');
             
-            // Allow 24-26 cols (soft validation)
+            // Soft validation: Just warn if too short
             if(cols.length < 10) {
                 drift = { index: i, line: RAW_LINES[i], len: cols.length };
                 break;
@@ -299,7 +294,6 @@
         const msg = type === "DRIFT" 
             ? `ROW ${fault.index+1} SHORT (${fault.len} COLS).` 
             : `ID '${fault.id}' DUPLICATE.`;
-        
         document.getElementById('surgeon-msg').innerText = msg;
         document.getElementById('surgeon-input').value = fault.line;
         document.getElementById('surgeon-modal').style.display = 'flex';
@@ -343,7 +337,9 @@
                 correct: realAnswer, 
                 logic: cols[10] || "", 
                 hint: cols[11] || "", 
-                trap: cols[12] || "",
+                ref: cols[13] || "",
+                link: cols[16] || "", // FIXED: Explicit Link Capture
+                trap: cols[17] || "",
                 s1: cols[23] || "", 
                 s2: cols[24] || ""
             });
@@ -384,16 +380,15 @@
     function exportTSV() {
         const data = getDataFromStorage();
         if(data.length === 0) return log("NO DATA.", "err");
-        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tLEFT\tRIGHT\tCORRECT\tLOGIC\tHINT\tTRAP\tS1\tS2\n";
+        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tLEFT\tRIGHT\tCORRECT\tLOGIC\tHINT\tREF\tLINK\tTRAP\tS1\tS2\n";
         data.forEach(r => {
             const c = (t) => (t || "").toString().replace(/\t/g, " ");
-            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.trap)}\t${c(r.s1)}\t${c(r.s2)}\n`;
+            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.ref)}\t${c(r.link)}\t${c(r.trap)}\t${c(r.s1)}\t${c(r.s2)}\n`;
         });
         download(tsv, `ALCHEMIST_BACKUP.tsv`, 'tsv');
     }
 
-    function exportCSV() { exportTSV(); } // Alias for convenience
-    function exportPDF() { alert("Use Operator for PDF generation."); } // Redirect
+    function exportCSV() { exportTSV(); } 
 
     // --- 4. OBSERVER ---
     function openObserver() {
