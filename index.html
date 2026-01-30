@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v140.1</title>
+<title>Alchemist | Kinetic v140.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -61,11 +61,12 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v140.1
+   VIA.STACK | KINETIC v140.0
    ========================================= */
 
 // --- CONFIGURATION ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
+const DRIVE_FOLDER = "https://drive.google.com/drive/folders/14z8ugJINlbhyvp93byAK-UoUP92tpKnQ?usp=share_link";
 const WA_NUMBER = "919876543210"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
@@ -178,19 +179,13 @@ function checkLoginForVault(){
 
 function openVault(index){
     if(VAULT.length === 0){ 
-        // --- UPGRADE: WHATSAPP RECOVERY FOR EMPTY VAULT ---
-        card("LOCAL ARCHIVE EMPTY\n\nRecover from Cloud?", {down:"WHATSAPP", up:"MENU"}, dir => {
-            if(dir==="DOWN") {
-                const lastSes = localStorage.getItem("LAST_SES_ID") || "UNKNOWN";
-                // Generate Recovery Request
-                const text = `VAULT_RECOVERY || MOB: ${USER_MOBILE || "UNKNOWN"} || LAST_ID: ${lastSes}`;
-                window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
-            }
+        // EMPTY VAULT: OFFER CLOUD LINK
+        card("LOCAL VAULT EMPTY\n\nCheck Cloud Archives?", {up:"OPEN DRIVE", down:"BACK"}, dir => {
+            if(dir==="UP") window.open(DRIVE_FOLDER, '_blank');
             else begin();
         });
         return; 
     }
-    
     if(index < 0) { begin(); return; } 
     if(index >= VAULT.length) index = VAULT.length - 1;
 
@@ -198,18 +193,25 @@ function openVault(index){
     const isNewest = (index === 0);
     const isOldest = (index === VAULT.length - 1);
     
-    // Check if Cloud Link is available (for future proofing)
-    // For now, standard retrieval
+    // --- SMART RETRIEVAL LOGIC ---
+    // If we have a cloud link, show "CLOUD PDF". If not, "RE-GENERATE".
+    const hasCloud = !!item.cloud_url;
+    const upLabel = hasCloud ? "CLOUD PDF" : "RE-GEN";
+
     log(`ARCHIVE: ${item.id}`, "primary");
-    
     card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
-        { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
+        { up: upLabel, left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
         dir => {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT" && !isOldest) openVault(index + 1);
             if(dir === "UP") {
-                log("OPENING ARCHIVE...", "active");
-                renderSessionPDF(item.data, item.id);
+                if(hasCloud) {
+                    log("RETRIEVING FROM CLOUD...", "active");
+                    window.open(item.cloud_url, '_blank');
+                } else {
+                    log("REGENERATING LOCAL PDF...", "normal");
+                    renderSessionPDF(item.data, item.id);
+                }
             }
         }
     );
@@ -317,8 +319,6 @@ function exportSessionPDF(data=null, id=null){
     if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
     CREDITS--;
     localStorage.setItem("USER_CREDITS", CREDITS);
-    VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
-    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
     log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
  }
 
@@ -398,8 +398,19 @@ function exportSessionPDF(data=null, id=null){
                 pdf: base64data
             })
          }).then(response => {
-             // In no-cors, we can't read response, so we just assume success for UI
-             // We can't get the file URL back easily without CORS, but the file IS in Drive.
+             // NOTE: 'no-cors' mode is opaque, we can't read the response JSON directly here easily in standard fetch
+             // But we can assume it worked if no error. 
+             // To truly get the URL back for the Vault, we need a slight hack or just trust the folder structure.
+             // Given limitations, we will store the 'Expected' folder link for now.
+             
+             // UPDATE VAULT WITH FOLDER LINK (Since file link is hard to get in no-cors)
+             VAULT.unshift({ 
+                 id: renderID, date: new Date().toLocaleDateString(), 
+                 score: XP, total: SESSION_ALL.length, 
+                 data: [...SESSION_ALL],
+                 cloud_url: DRIVE_FOLDER // Store the Folder Link as the 'Cloud Link'
+             });
+             localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
              log("SECURE ARCHIVE COMPLETE", "active");
          }).catch(e => log("CLOUD SYNC FAILED", "danger"));
      }
