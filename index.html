@@ -5,7 +5,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v139.2</title>
+<title>Alchemist | Kinetic v139.3</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -62,13 +62,12 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | CONNECTED CORE v139.2
+   VIA.STACK | CONNECTED CORE v139.3
    ========================================= */
 
 // --- CONFIGURATION ---
-// YOUR SPECIFIC GOOGLE SCRIPT DEPLOYMENT (Web App)
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
-const WA_NUMBER = "916351537770"; // YOUR BUSINESS NUMBER
+const WA_NUMBER = "919876543210"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
 // --- STATE ---
@@ -76,12 +75,17 @@ let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
 let SET_CURSOR = 0, ACTIVE_SET = null, XP = 0, VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
 
-// --- BACKEND STATE ---
+// --- BACKEND STATE (PERSISTENT) ---
 let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
 let CURRENT_SES_ID = null;
 let SES_BEACON_SENT = false;
-let CREDITS = 10;
-let VAULT = []; 
+
+// 1. Load Credits from LocalStorage (Default 10)
+let CREDITS = parseInt(localStorage.getItem("USER_CREDITS") || "10");
+
+// 2. Load Vault from LocalStorage
+let VAULT = [];
+try { VAULT = JSON.parse(localStorage.getItem("USER_VAULT") || "[]"); } catch(e) { VAULT = []; }
 
 /* ================= LOGGER ENGINE ================= */
 function log(msg, type="normal") {
@@ -94,12 +98,9 @@ function log(msg, type="normal") {
 
 /* ================= BACKEND LOGIC (BEACON) ================= */
 function generateSessionID() {
-    // 1. Generate ID (SES_XXXXX)
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     CURRENT_SES_ID = `SES_${hash}`;
     localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
-    
-    // 2. Fire Beacon to Google Sheet
     sendBeacon();
     log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
 }
@@ -108,8 +109,6 @@ function sendBeacon() {
     if(SES_BEACON_SENT || !BEACON_URL) return;
     
     log("UPLINKING DATA...", "normal");
-    
-    // 3. Send Payload
     fetch(BEACON_URL, {
         method: "POST",
         mode: "no-cors",
@@ -164,7 +163,8 @@ function card(text,labels,cb){
 
 /* ================= APP FLOW & VAULT ================= */
 function begin(){
- if(USER_MOBILE) log(`USER: ${USER_MOBILE}`, "primary");
+ if(USER_MOBILE) log(`USER: ${USER_MOBILE} | CREDITS: ${CREDITS}`, "primary");
+ else log("USER: GUEST | CREDITS: " + CREDITS, "normal");
  card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"VAULT",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP")setPick(); 
   if(dir==="DOWN")openVault(0);
@@ -223,7 +223,6 @@ function startQuiz(){
 }
 
 function nextQ(){
- // Trigger Beacon at 50%
  if(!CURRENT_SES_ID && SESSION_ALL.length > 0 && POOL.length <= SESSION_ALL.length){ generateSessionID(); }
 
  if(!POOL.length){ if(WRONG.length){ review(); return; } report(); return; }
@@ -269,60 +268,55 @@ function report(){
 }
 
 /* ================= GATEKEEPER & PDF ================= */
-/* ================= PATCH: GATEKEEPER LOGIC v2.0 ================= */
 function handleDownloadRequest(){
-    // 1. Check if user is linked locally
     if(!USER_MOBILE){
         log("IDENTITY UNLINKED", "danger");
         
-        // --- STEP A: CAPTURE MOBILE NUMBER (The "Box") ---
-        const userStat = prompt("ENTER YOUR WHATSAPP NUMBER TO LINK:\n(Required to save progress)");
-        
-        // Basic Validation
-        if(!userStat || userStat.length < 10) {
-            log("INVALID INPUT. TRY AGAIN.", "danger");
-            return; // Stop here if no number
-        }
-
-        // --- STEP B: GENERATE PRE-FILLED MESSAGE ---
-        // This creates the "Exact Format" for the Admin Tool
-        const text = `LINK_REQ || ID: ${CURRENT_SES_ID} || MOB: ${userStat}`;
+        // 2. Pre-fill WhatsApp Message
+        const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}`;
         const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
         
-        card(`LINKING ACCOUNT...\n\nID: ${CURRENT_SES_ID}\nMOBILE: ${userStat}`,
-            { up: "SEND VERIFICATION", down: "CANCEL" },
+        card(`ACCOUNT REQUIRED\n\nTo save this PDF, you must link your device.\n\nID: ${CURRENT_SES_ID}`,
+            { up: "LINK VIA WHATSAPP", down: "I HAVE LINKED" },
             (dir) => {
                 if(dir === "UP") { 
-                    // Open WhatsApp with the code pre-filled
-                    window.open(url, '_blank');
-                    
-                    // Save locally
-                    localStorage.setItem("USER_MOBILE", userStat);
-                    USER_MOBILE = userStat;
-                    
-                    log("VERIFICATION SENT", "active");
-                    
-                    // Allow download immediately after sending
-                    setTimeout(() => exportSessionPDF(), 1000); 
+                    window.open(url, '_blank'); 
                 }
                 if(dir === "DOWN") {
-                    log("LINKING ABORTED", "normal");
+                    const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):\n\nEnter your mobile number here...");
+                    
+                    if(mob && mob.length >= 10) {
+                        localStorage.setItem("USER_MOBILE", mob);
+                        USER_MOBILE = mob;
+                        log("IDENTITY LINKED", "active");
+                        exportSessionPDF();
+                    } else { 
+                        log("INVALID INPUT", "normal");
+                        handleDownloadRequest(); // Re-loop
+                    }
                 }
             }
         );
         return;
     }
-    // 4. If already linked, download
+    // 4. If linked, download
     exportSessionPDF();
 }
+
 function exportSessionPDF(data=null, id=null){
  const renderData = data || SESSION_ALL;
  const renderID = id || CURRENT_SES_ID;
  
  if(!data){ // If this is a new download (not from Vault)
     if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
+    
+    // --- PERSISTENCE UPDATE ---
     CREDITS--;
+    localStorage.setItem("USER_CREDITS", CREDITS); // Save Credits
+    
     VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
+    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT)); // Save Vault
+    
     log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
  }
 
