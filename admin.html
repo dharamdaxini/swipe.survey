@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.60</title>  
+    <title>VIA.STACK | ADMIN v136.70</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.60</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.70</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -159,6 +159,17 @@
 
         <div class="terminal" id="console-log">
             <div class="log-entry">> WAITING FOR INPUT...</div>
+        </div>
+    </div>
+
+    <div class="zone" style="border-left: 2px solid var(--gold);">
+        <div class="zone-title" style="color:var(--gold)">04 // IDENTITY LINKER (WHATSAPP BRIDGE)</div>
+        <textarea id="wa-dump" class="ingest-box" style="height:120px; border-color:var(--gold);" 
+        placeholder=">> PASTE WHATSAPP CHAT EXPORT HERE...&#10;>> TOOL WILL FIND: 'SES_XXXXX' AND LINK TO '+91 XXXXX XXXXX'"></textarea>
+        
+        <div class="action-bar">
+            <button class="btn-pill" style="background:var(--green); color:#000;" onclick="linkIdentities()">🔗 AUTO-LINK IDENTITIES</button>
+            <button class="btn-ghost" onclick="document.getElementById('wa-dump').value=''">CLEAR DUMP</button>
         </div>
     </div>
 
@@ -225,9 +236,9 @@
             <thead>
                 <tr>
                     <th width="10%">ID</th>
-                    <th width="40%">QUESTION</th>
-                    <th width="25%">S1</th>
-                    <th width="25%">S2</th>
+                    <th width="30%">QUESTION</th>
+                    <th width="30%">USER_REF (MOBILE)</th>
+                    <th width="30%">STATUS</th>
                 </tr>
             </thead>
             <tbody id="observer-body"></tbody>
@@ -252,11 +263,59 @@
     let FAULTY_ROW_INDEX = -1;
     let RAW_LINES = [];
     let TSV_HEADERS = [];
-    
-    // === SYSTEM LINKAGE ===
     const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
 
-    // --- 0. FILE UPLOAD HANDLER ---
+    /* --- 0. WHATSAPP LINKER LOGIC (NEW) --- */
+    function linkIdentities() {
+        const dump = document.getElementById('wa-dump').value;
+        if(!dump.trim()) return log("NO WHATSAPP DUMP FOUND", "err");
+
+        // 1. Regex to find [Time] +91 Mobile ... SES_ID
+        // Loose regex to catch mobile numbers (Indian Format)
+        const mobileRegex = /(?:\+91|91)?[\-\s]?[6-9]\d{4}[\-\s]?\d{5}/g;
+        const sesRegex = /SES_[A-Z0-9]{5,6}/g;
+
+        const lines = dump.split(/\r?\n/);
+        let linkedCount = 0;
+        let db = getDataFromStorage();
+        let updates = 0;
+
+        lines.forEach(line => {
+            const sesMatch = line.match(sesRegex);
+            const mobMatch = line.match(mobileRegex);
+
+            if(sesMatch && mobMatch) {
+                const sesID = sesMatch[0];
+                const rawMobile = mobMatch[0].replace(/\D/g, ''); // Clean to pure numbers
+                const finalMobile = "+91" + rawMobile.slice(-10); // Standardize
+
+                // FIND IN DB
+                const record = db.find(r => r.id === sesID || (r.tags && r.tags.includes(sesID)));
+                
+                if(record) {
+                    if(record.user_ref && record.user_ref !== finalMobile) {
+                        log(`CONFLICT: ${sesID} CLAIMED BY ${finalMobile} BUT OWNED BY ${record.user_ref}`, "err");
+                    } else {
+                        record.user_ref = finalMobile;
+                        record.status = "VERIFIED";
+                        linkedCount++;
+                        updates++;
+                    }
+                }
+            }
+        });
+
+        if(updates > 0) {
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            log(`LINKING COMPLETE: ${linkedCount} IDENTITIES VERIFIED.`, "success");
+            checkLocalData(); // Refresh UI
+        } else {
+            log("NO MATCHING 'SES_ID' FOUND IN DATABASE.", "warn");
+        }
+    }
+
+    /* --- EXISTING LOGIC BELOW --- */
+
     function handleFileUpload(input) {
         const file = input.files[0];
         if(!file) return;
@@ -270,42 +329,18 @@
         input.value = ''; 
     }
 
-    // --- 1. UTILS: REPAIR & SAFE SPLIT ---
-    
-    // THE REPAIR ENGINE
     function repairDirectionalCorruption(row) {
         const DIR = ["UP", "LEFT", "RIGHT"];
         const isDir = v => DIR.includes((v || "").toUpperCase().trim());
-
-        // If options themselves are direction labels → corrupted
-        if (isDir(row.u) || isDir(row.l) || isDir(row.r)) {
-            row.u = "";
-            row.l = "";
-            row.r = "";
-        }
-
-        // If correct is direction, null it (cannot recover text)
-        if (isDir(row.correct)) {
-            row.correct = "";
-        }
-
-        // Ensure strings (no undefined leakage)
-        row.q ||= "";
-        row.logic ||= "";
-        row.hint ||= "";
-        row.trap ||= "";
-        row.s1 ||= "";
-        row.s2 ||= "";
-
+        if (isDir(row.u) || isDir(row.l) || isDir(row.r)) { row.u = ""; row.l = ""; row.r = ""; }
+        if (isDir(row.correct)) { row.correct = ""; }
+        row.q ||= ""; row.logic ||= ""; row.hint ||= ""; row.trap ||= ""; row.s1 ||= ""; row.s2 ||= "";
         return row;
     }
 
-    // SAFE SPLIT
     function safeTSVSplit(line, cols) {
         let parts = line.split('\t');
-        if (parts.length <= cols) {
-            while(parts.length < cols) parts.push("");
-        }
+        if (parts.length <= cols) { while(parts.length < cols) parts.push(""); }
         if (parts.length > cols) {
             const head = parts.slice(0, cols - 1);
             const tail = parts.slice(cols - 1).join(' ').trim();
@@ -322,16 +357,12 @@
         return -1;
     }
 
-    // --- 2. GATEKEEPER v31 (Repair Enabled) ---
     function initiateAlignment() {
         const raw = document.getElementById('raw-input').value;
         if (!raw.trim()) return log("NO INPUT DETECTED.", "err");
-
         const lines = raw.split(/\r?\n/).filter(l => l.trim() !== "");
-
         TSV_HEADERS = lines[0].split('\t').map(h => h.trim().toUpperCase());
         RAW_LINES = lines.slice(1);
-
         log(`HEADERS: ${TSV_HEADERS.length} DETECTED`, "success");
         runGatekeeper();
     }
@@ -344,21 +375,12 @@
 
         for(let i=0; i<RAW_LINES.length; i++) {
             const cols = safeTSVSplit(RAW_LINES[i], expectedCols);
-            
-            if(cols.length < 5) { 
-                drift = { index: i, line: RAW_LINES[i], len: cols.length };
-                break;
-            }
-
+            if(cols.length < 5) { drift = { index: i, line: RAW_LINES[i], len: cols.length }; break; }
             const idCol = match(TSV_HEADERS, ["ID", "IDENTIFIER"]) > -1 ? match(TSV_HEADERS, ["ID"]) : 0;
             const id = cols[idCol].trim();
-            if(seenIDs.has(id)) {
-                collision = { index: i, line: RAW_LINES[i], id: id };
-                break;
-            }
+            if(seenIDs.has(id)) { collision = { index: i, line: RAW_LINES[i], id: id }; break; }
             seenIDs.add(id);
         }
-
         if(drift) launchSurgeon(drift, "DRIFT");
         else if(collision) launchSurgeon(collision, "COLLISION");
         else finalizeStaging();
@@ -366,10 +388,7 @@
 
     function launchSurgeon(fault, type) {
         FAULTY_ROW_INDEX = fault.index;
-        const msg = type === "DRIFT" 
-            ? `ROW ${fault.index+1} SHORT (${fault.len} COLS).` 
-            : `ID '${fault.id}' DUPLICATE.`;
-        
+        const msg = type === "DRIFT" ? `ROW ${fault.index+1} SHORT (${fault.len} COLS).` : `ID '${fault.id}' DUPLICATE.`;
         document.getElementById('surgeon-msg').innerText = msg;
         document.getElementById('surgeon-input').value = fault.line;
         document.getElementById('surgeon-modal').style.display = 'flex';
@@ -404,17 +423,15 @@
             link: match(TSV_HEADERS, ["LINK", "URL"]),
             trap: match(TSV_HEADERS, ["TRAP", "DISTRACTOR"]),
             s1: match(TSV_HEADERS, ["S1", "STEP1", "STEP 1", "EXECUTION 1"]),
-            s2: match(TSV_HEADERS, ["S2", "STEP2", "STEP 2", "EXECUTION 2"])
+            s2: match(TSV_HEADERS, ["S2", "STEP2", "STEP 2", "EXECUTION 2"]),
+            // New fields for User Linking
+            user_ref: match(TSV_HEADERS, ["USER_REF", "MOBILE", "OWNER"]),
+            status: match(TSV_HEADERS, ["STATUS", "STATE"])
         };
 
         if (i.id === -1) {
             log("NO HEADERS DETECTED - APPLYING DEFAULT MAPPING", "warn");
-            i = {
-                id:0, set:1, dom:2, topic:3, 
-                q:5, u:6, l:7, r:8, correct:9, 
-                logic:10, hint:11, 
-                trap:17, s1:23, s2:24 
-            };
+            i = { id:0, set:1, dom:2, topic:3, q:5, u:6, l:7, r:8, correct:9, logic:10, hint:11, trap:17, s1:23, s2:24, user_ref:25, status:26 };
         }
 
         const cleanData = [];
@@ -422,7 +439,6 @@
 
         RAW_LINES.forEach(line => {
             const cols = safeTSVSplit(line, expectedCols);
-
             if ((i.q > -1 && !cols[i.q]) || (i.u > -1 && !cols[i.u])) return;
 
             let ansFlag = (i.correct > -1 ? cols[i.correct] : "").toUpperCase();
@@ -431,16 +447,12 @@
             else if (ansFlag.includes("RIGHT") || ansFlag.includes("C")) realAnswer = cols[i.r];
             else if (i.correct > -1 && cols[i.correct] && cols[i.correct].length > 1) realAnswer = cols[i.correct]; 
 
-            // --- REPAIR PIPELINE APPLIED HERE ---
             const repaired = repairDirectionalCorruption({
                 id: (cols[i.id] || `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
                 set: i.set > -1 ? cols[i.set] : "SET_A",
                 dom: i.dom > -1 ? cols[i.dom] : "GENERAL",
                 topic: i.topic > -1 ? cols[i.topic] : "",
-                q: cols[i.q],
-                u: cols[i.u],
-                l: cols[i.l],
-                r: cols[i.r],
+                q: cols[i.q], u: cols[i.u], l: cols[i.l], r: cols[i.r],
                 correct: realAnswer,
                 logic: i.logic > -1 ? cols[i.logic] : "",
                 hint: i.hint > -1 ? cols[i.hint] : "",
@@ -448,9 +460,10 @@
                 link: i.link > -1 ? cols[i.link] : "",
                 trap: i.trap > -1 ? cols[i.trap] : "",
                 s1: i.s1 > -1 ? cols[i.s1] : "",
-                s2: i.s2 > -1 ? cols[i.s2] : "" 
+                s2: i.s2 > -1 ? cols[i.s2] : "",
+                user_ref: i.user_ref > -1 ? cols[i.user_ref] : "",
+                status: i.status > -1 ? cols[i.status] : "PENDING"
             });
-
             cleanData.push(repaired);
         });
 
@@ -458,13 +471,10 @@
         log(`ALIGNMENT COMPLETE: ${STAGED_DATA.length} UNITS READY.`, "success");
     }
 
-    // --- 3. DEPLOYMENT ---
     function pushToIndex() {
         if(STAGED_DATA.length === 0) return log("STAGE EMPTY.", "err");
-        
         const existingRaw = localStorage.getItem(DB_KEY);
         let finalDB = STAGED_DATA;
-        
         if(existingRaw) {
             const existingDB = JSON.parse(existingRaw);
             const map = new Map();
@@ -472,13 +482,11 @@
             STAGED_DATA.forEach(d => map.set(d.id, d)); 
             finalDB = Array.from(map.values());
         }
-
         localStorage.setItem(DB_KEY, JSON.stringify(finalDB));
         log(`PUSH SUCCESSFUL. TOTAL DB: ${finalDB.length}.`, "success");
         updateStatus("BRIDGE CONNECTED");
     }
 
-    // --- 4. EXPORTS ---
     function exportJSON() {
         const data = getDataFromStorage();
         if(data.length === 0) return log("NO DATA.", "err");
@@ -489,17 +497,16 @@
     function exportTSV() {
         const data = getDataFromStorage();
         if(data.length === 0) return log("NO DATA.", "err");
-        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tLEFT\tRIGHT\tCORRECT\tLOGIC\tHINT\tREF\tLINK\tTRAP\tS1\tS2\n";
+        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tLEFT\tRIGHT\tCORRECT\tLOGIC\tHINT\tREF\tLINK\tTRAP\tS1\tS2\tUSER_REF\tSTATUS\n";
         data.forEach(r => {
             const c = (t) => (t || "").toString().replace(/\t/g, " ");
-            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.ref)}\t${c(r.link)}\t${c(r.trap)}\t${c(r.s1)}\t${c(r.s2)}\n`;
+            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.ref)}\t${c(r.link)}\t${c(r.trap)}\t${c(r.s1)}\t${c(r.s2)}\t${c(r.user_ref)}\t${c(r.status)}\n`;
         });
         download(tsv, `ALCHEMIST_BACKUP.tsv`, 'tsv');
     }
 
     function exportCSV() { exportTSV(); } 
 
-    // --- 5. OBSERVER ---
     function openObserver() {
         const data = getDataFromStorage();
         const tbody = document.getElementById('observer-body');
@@ -507,16 +514,15 @@
         data.forEach((row) => {
             tbody.innerHTML += `<tr>
                 <td style="color:var(--blue)">${row.id}</td>
-                <td>${row.q.substring(0,40)}...</td>
-                <td style="color:var(--gold)">${(row.s1||"").substring(0,15)}</td>
-                <td style="color:var(--green)">${(row.s2||"").substring(0,15)}</td>
+                <td>${row.q.substring(0,30)}...</td>
+                <td style="color:var(--gold)">${row.user_ref || "-"}</td>
+                <td style="color:${row.status==='VERIFIED'?'var(--green)':'#666'}">${row.status||"PENDING"}</td>
             </tr>`;
         });
         document.getElementById('observer-layer').style.display = 'flex';
     }
     function closeObserver() { document.getElementById('observer-layer').style.display = 'none'; }
 
-    // --- 6. UTILS ---
     function getDataFromStorage() { return JSON.parse(localStorage.getItem(DB_KEY)||'[]'); }
     function initPurge() { document.getElementById('purge-modal').style.display = 'flex'; }
     function executePurge() {
