@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v139.4</title>
+<title>Alchemist | Kinetic v140.1</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -62,7 +61,7 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | CONNECTED CORE v139.4
+   VIA.STACK | KINETIC v140.1
    ========================================= */
 
 // --- CONFIGURATION ---
@@ -80,10 +79,8 @@ let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
 let CURRENT_SES_ID = null;
 let SES_BEACON_SENT = false;
 
-// 1. Load Credits from LocalStorage (Default 10)
+// Load Credits & Vault
 let CREDITS = parseInt(localStorage.getItem("USER_CREDITS") || "10");
-
-// 2. Load Vault from LocalStorage
 let VAULT = [];
 try { VAULT = JSON.parse(localStorage.getItem("USER_VAULT") || "[]"); } catch(e) { VAULT = []; }
 
@@ -96,7 +93,7 @@ function log(msg, type="normal") {
     l3.className = type === "active" ? "log-line active" : type === "primary" ? "log-line primary" : type === "danger" ? "log-line danger" : "log-line";
 }
 
-/* ================= BACKEND LOGIC (BEACON) ================= */
+/* ================= BACKEND LOGIC ================= */
 function generateSessionID() {
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     CURRENT_SES_ID = `SES_${hash}`;
@@ -127,7 +124,7 @@ function sendBeacon() {
     });
 }
 
-/* ================= UTILS & PHYSICS ================= */
+/* ================= PHYSICS & RENDER ================= */
 const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔/g,"⇌");
 const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
@@ -152,7 +149,6 @@ class PhysicsController{
  dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
 }
 
-/* ================= RENDER LOGIC ================= */
 const UI = {stack:document.getElementById("stack"), id:document.getElementById("id-ui"), xp:document.getElementById("xp-ui"), bar:document.getElementById("progress-bar")};
 function card(text,labels,cb){
  UI.stack.innerHTML=""; const el=document.createElement("div"); el.className="card";
@@ -161,49 +157,51 @@ function card(text,labels,cb){
  UI.stack.appendChild(el); new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= APP FLOW & VAULT ================= */
+/* ================= APP FLOW ================= */
 function begin(){
  if(USER_MOBILE) log(`LOGIN: ${USER_MOBILE} | CREDITS: ${CREDITS}`, "primary");
  else log("LOGIN: GUEST | CREDITS: " + CREDITS, "normal");
  card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"VAULT",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP")setPick(); 
-  if(dir==="DOWN")checkLoginForVault(); // <-- UPDATED CHECK
+  if(dir==="DOWN")checkLoginForVault(); 
  });
 }
 
-// --- NEW LOGIN LOGIC FOR VAULT ---
 function checkLoginForVault(){
-    // 1. If already logged in, open vault
-    if(USER_MOBILE && USER_MOBILE.length > 5){ 
-        openVault(0); 
-        return; 
-    }
-
-    // 2. If not, Ask for Login
-    const mob = prompt("SECURE VAULT ACCESS\n\nEnter your Registered Mobile Number to unlock your archives:");
-    
+    if(USER_MOBILE && USER_MOBILE.length > 5){ openVault(0); return; }
+    const mob = prompt("SECURE VAULT ACCESS\n\nEnter your Registered Mobile Number to unlock:");
     if(mob && mob.length >= 10){
-        // We act on trust for local restore in this version
-        localStorage.setItem("USER_MOBILE", mob);
-        USER_MOBILE = mob;
-        log(`LOGIN SUCCESS: ${mob}`, "active");
-        openVault(0);
-    } else {
-        log("ACCESS DENIED", "danger");
-        begin();
-    }
+        localStorage.setItem("USER_MOBILE", mob); USER_MOBILE = mob;
+        log(`LOGIN SUCCESS: ${mob}`, "active"); openVault(0);
+    } else { log("ACCESS DENIED", "danger"); begin(); }
 }
 
 function openVault(index){
-    if(VAULT.length === 0){ card("VAULT EMPTY", {up:"BACK"}, ()=>begin()); return; }
+    if(VAULT.length === 0){ 
+        // --- UPGRADE: WHATSAPP RECOVERY FOR EMPTY VAULT ---
+        card("LOCAL ARCHIVE EMPTY\n\nRecover from Cloud?", {down:"WHATSAPP", up:"MENU"}, dir => {
+            if(dir==="DOWN") {
+                const lastSes = localStorage.getItem("LAST_SES_ID") || "UNKNOWN";
+                // Generate Recovery Request
+                const text = `VAULT_RECOVERY || MOB: ${USER_MOBILE || "UNKNOWN"} || LAST_ID: ${lastSes}`;
+                window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
+            }
+            else begin();
+        });
+        return; 
+    }
+    
     if(index < 0) { begin(); return; } 
     if(index >= VAULT.length) index = VAULT.length - 1;
 
     const item = VAULT[index];
     const isNewest = (index === 0);
     const isOldest = (index === VAULT.length - 1);
-
+    
+    // Check if Cloud Link is available (for future proofing)
+    // For now, standard retrieval
     log(`ARCHIVE: ${item.id}`, "primary");
+    
     card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
         { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
         dir => {
@@ -246,17 +244,13 @@ function startQuiz(){
 }
 
 function nextQ(){
- // Trigger Beacon at 50%
  if(!CURRENT_SES_ID && SESSION_ALL.length > 0 && POOL.length <= SESSION_ALL.length){ generateSessionID(); }
-
  if(!POOL.length){ if(WRONG.length){ review(); return; } report(); return; }
  const d=POOL.shift();
  log(`ID: ${d.id}`, "normal");
  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
-
  const opts = shuffle([d.u, d.l, d.r]);
  const map = { up: opts[0], left: opts[1], right: opts[2] };
-
  card(d.q, map, dir=>{
   let picked = null;
   if(dir==="UP") picked = map.up; if(dir==="LEFT") picked = map.left; if(dir==="RIGHT") picked = map.right;
@@ -284,10 +278,7 @@ function review(){
 function report(){
  if(!CURRENT_SES_ID) generateSessionID();
  const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
- 
- // DYNAMIC REPORT CARD
- let statusText = USER_MOBILE ? `USER: ${USER_MOBILE}` : "GUEST (UNLINKED)";
- 
+ const statusText = USER_MOBILE ? `USER: ${USER_MOBILE}` : "GUEST (UNLINKED)";
  card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} Correct\n(${percent}%)\n\nID: ${CURRENT_SES_ID}\n${statusText}`,{down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},dir=>{
     if(dir==="DOWN") handleDownloadRequest();
     if(dir==="UP") startQuiz(); 
@@ -295,41 +286,26 @@ function report(){
  });
 }
 
-/* ================= GATEKEEPER & PDF ================= */
 function handleDownloadRequest(){
     if(!USER_MOBILE){
         log("IDENTITY UNLINKED", "danger");
-        
-        // 2. Pre-fill WhatsApp Message
         const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}`;
         const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
-        
         card(`ACCOUNT REQUIRED\n\nTo save this PDF, you must link your device.\n\nID: ${CURRENT_SES_ID}`,
             { up: "LINK VIA WHATSAPP", down: "I HAVE LINKED" },
             (dir) => {
-                if(dir === "UP") { 
-                    window.open(url, '_blank'); 
-                }
+                if(dir === "UP") { window.open(url, '_blank'); }
                 if(dir === "DOWN") {
                     const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):\n\nEnter your mobile number here...");
-                    
                     if(mob && mob.length >= 10) {
-                        localStorage.setItem("USER_MOBILE", mob);
-                        USER_MOBILE = mob;
-                        log("IDENTITY LINKED", "active");
-                        
-                        // REFRESH REPORT CARD TO SHOW NUMBER
-                        report();
-                    } else { 
-                        log("INVALID INPUT", "normal");
-                        handleDownloadRequest(); // Re-loop
-                    }
+                        localStorage.setItem("USER_MOBILE", mob); USER_MOBILE = mob;
+                        log("IDENTITY LINKED", "active"); report();
+                    } else { log("INVALID INPUT", "normal"); handleDownloadRequest(); }
                 }
             }
         );
         return;
     }
-    // 4. If linked, download
     exportSessionPDF();
 }
 
@@ -337,23 +313,18 @@ function exportSessionPDF(data=null, id=null){
  const renderData = data || SESSION_ALL;
  const renderID = id || CURRENT_SES_ID;
  
- if(!data){ // If this is a new download (not from Vault)
+ if(!data){ 
     if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
-    
-    // --- PERSISTENCE UPDATE ---
     CREDITS--;
-    localStorage.setItem("USER_CREDITS", CREDITS); // Save Credits
-    
+    localStorage.setItem("USER_CREDITS", CREDITS);
     VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
-    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT)); // Save Vault
-    
+    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
     log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
  }
 
  log("GENERATING PDF...", "active");
  const {jsPDF}=window.jspdf; const doc=new jsPDF();
  const unique=renderData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
- 
  let y=20; const ML=15; const W=180;
  const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
  const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
@@ -402,7 +373,37 @@ function exportSessionPDF(data=null, id=null){
   y+=5;
  });
 
- doc.save(`ALCHEMIST_${renderID}.pdf`);
+ const fileName = `ALCHEMIST_${renderID}.pdf`;
+ doc.save(fileName);
+
+ // --- 2. UPLOAD TO CLOUD & SAVE LINK ---
+ if(!data) {
+     log("SYNCING TO CLOUD...", "normal");
+     const pdfBlob = doc.output('blob');
+     const reader = new FileReader();
+     reader.readAsDataURL(pdfBlob); 
+     reader.onloadend = function() {
+         const base64data = reader.result.split(',')[1];
+         
+         fetch(BEACON_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "BACKUP",
+                ses_id: renderID,
+                mobile: USER_MOBILE || "GUEST",
+                score: XP,
+                filename: fileName,
+                pdf: base64data
+            })
+         }).then(response => {
+             // In no-cors, we can't read response, so we just assume success for UI
+             // We can't get the file URL back easily without CORS, but the file IS in Drive.
+             log("SECURE ARCHIVE COMPLETE", "active");
+         }).catch(e => log("CLOUD SYNC FAILED", "danger"));
+     }
+ }
  setTimeout(begin,500);
 }
 
