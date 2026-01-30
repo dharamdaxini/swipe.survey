@@ -288,7 +288,7 @@ function openVault(index) {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT" && !isOldest) openVault(index + 1);
             if(dir === "UP") {
-                // Re-download as Support PDF (1 Unit Logic applied previously, but here it's free access to owned data)
+                // Re-download as Support PDF (owned data, no unit cost)
                 log("OPENING ARCHIVE...", "active");
                 renderSupportPDF(item.data, item.id); 
             }
