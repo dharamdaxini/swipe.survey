@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v139.0</title>
+<title>Alchemist | Kinetic v139.2</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -61,13 +62,13 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | CONNECTED CORE v139.0
+   VIA.STACK | CONNECTED CORE v139.2
    ========================================= */
 
 // --- CONFIGURATION ---
-// I have appended '/exec' to your URL to ensure the Web App trigger fires correctly
+// YOUR SPECIFIC GOOGLE SCRIPT DEPLOYMENT (Web App)
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
-const WA_NUMBER = "916351537770"; // YOUR BUSINESS NUMBER (Replace if needed)
+const WA_NUMBER = "916351537770"; // YOUR BUSINESS NUMBER
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
 // --- STATE ---
@@ -93,12 +94,12 @@ function log(msg, type="normal") {
 
 /* ================= BACKEND LOGIC (BEACON) ================= */
 function generateSessionID() {
-    // 1. Generate ID
+    // 1. Generate ID (SES_XXXXX)
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     CURRENT_SES_ID = `SES_${hash}`;
     localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
     
-    // 2. Fire Beacon
+    // 2. Fire Beacon to Google Sheet
     sendBeacon();
     log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
 }
@@ -108,10 +109,10 @@ function sendBeacon() {
     
     log("UPLINKING DATA...", "normal");
     
-    // 3. Send to Google Sheet
+    // 3. Send Payload
     fetch(BEACON_URL, {
         method: "POST",
-        mode: "no-cors", // Critical for Google Apps Script
+        mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             ses_id: CURRENT_SES_ID,
@@ -223,13 +224,7 @@ function startQuiz(){
 
 function nextQ(){
  // Trigger Beacon at 50%
- const totalEstimate = VOLUME_LIMIT || SESSION_ALL.length + POOL.length;
- const currentProgress = SESSION_ALL.length;
- 
- // Logic: If not sent, and we have done at least 5 questions or 50% of pool
- if(!CURRENT_SES_ID && currentProgress >= 3){ 
-     generateSessionID(); 
- }
+ if(!CURRENT_SES_ID && SESSION_ALL.length > 0 && POOL.length <= SESSION_ALL.length){ generateSessionID(); }
 
  if(!POOL.length){ if(WRONG.length){ review(); return; } report(); return; }
  const d=POOL.shift();
@@ -290,8 +285,9 @@ function handleDownloadRequest(){
                     window.open(url, '_blank'); 
                 }
                 if(dir === "DOWN") {
-                    // 3. Manual Loop Close (Client Side)
-                    const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):");
+                    // 3. Manual Loop Close (Client Side) - UPDATED TEXT HERE
+                    const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):\n\nEnter your mobile number here...");
+                    
                     if(mob && mob.length >= 10) {
                         localStorage.setItem("USER_MOBILE", mob);
                         USER_MOBILE = mob;
