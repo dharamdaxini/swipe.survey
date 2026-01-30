@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final v137.18</title>
+<title>Alchemist | Final v137.17</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -367,6 +367,7 @@ function exportMenu(){
 
 function showUnlockCard() {
     log("GATEWAY LOCKED", "primary");
+    // NO NEWLINES IN HTML STRING - THIS FIXES THE RENDERING BUG
     const html = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;width:100%;text-align:center;"><div style="margin-bottom:15px;filter:drop-shadow(0 0 15px rgba(255,214,0,0.4));"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ffd600" stroke-width="1.5"><path d="M12 17h.01M12 14v-3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg></div><div style="font-family:'Crimson Text',serif;font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:5px;">UNLOCK SUPPORT PDF</div><div style="font-family:'Inter',sans-serif;font-size:0.8rem;color:#888;text-align:center;margin-bottom:25px;max-width:250px;">Pay ₹1 to access full Academy Analysis</div><a href="https://wa.me/916351537770?text=Support%20PDF%20Unlock" target="_blank" onclick="setTimeout(()=>{renderSupportPDF(SESSION_ALL)},3000)" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 32px;background:#25D366;color:#000;font-family:'Inter',sans-serif;font-weight:800;font-size:0.9rem;border-radius:50px;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,0.4);transition:transform 0.1s;"><span>DOWNLOAD NOW</span></a><div style="margin-top:15px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:#444;">SECURE WHATSAPP GATEWAY</div></div>`;
 
     card(html, { down: "BACK" }, dir => { if(dir === "DOWN") exportMenu(); });
@@ -513,92 +514,77 @@ function renderSupportPDF(data){
     setTimeout(exportMenu, 1000); 
 }
 
-/* ================= DATA ADAPTER (NEW) ================= */
-function normalizeQuestion(d){
-  // Detect NEW vs OLD
-  const isNew = d.Question_Short || d.Question_Full;
-
-  const qText =
-    d.Question_Short ||
-    d.Question_Full ||
-    d.q ||
-    "";
-
-  const up = d.Option_UP || d.u || "";
-  const left = d.Option_LEFT || d.l || "";
-  const right = d.Option_RIGHT || d.r || "";
-
-  let correct = d.Correct_Direction || d.Correct_Option || d.correct || "";
-
-  // Normalize correctness to VALUE
-  if (correct === "UP" || correct === "A") correct = up;
-  if (correct === "LEFT" || correct === "B") correct = left;
-  if (correct === "RIGHT" || correct === "C") correct = right;
-
-  return {
-    id: d.Question_ID || d.id,
-    set: d.set || "DEFAULT",
-    dom: d.dom || "GENERAL",
-    topic: d.topic || "",
-    q: qText,
-    u: up,
-    l: left,
-    r: right,
-    correct: correct,
-    logic: d.Logic_OneLine || d.Concept_Explanation || d.logic || "",
-    hint: d.Hint_OneLine || d.hint || "",
-    trap: d.Trap_OneLine || d.trap || "",
-    step1: d.step1 || "",
-    step2: d.step2 || ""
-  };
-}
-
 /* ================= ROBUST DATA BOOT ================= */
 async function init(){
   log("SYSTEM BOOT", "active");
+
   let loaded = false;
 
-  // 1. Local Bridge
+  // 1️⃣ Try localStorage FIRST (Bridge)
   try {
     const localData = localStorage.getItem(MASTER_KEY);
-    if(localData){
+    if(localData && localData.length > 10){
       RAW_DATA = JSON.parse(localData);
       loaded = true;
       log("LOCAL BRIDGE CONNECTED", "primary");
     }
-  } catch(e){}
+  } catch(e){
+    RAW_DATA = [];
+  }
 
-  // 2. Repo Fetch
+  // 2️⃣ Try master.json with timeout (Repo)
   if(!loaded){
     log("FETCHING MASTER...", "normal");
-    try{
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 3000);
 
-      const r = await fetch("./master.json",{
-        cache:"no-store",
-        signal: controller.signal
-      });
-      if(r.ok){
-        RAW_DATA = await r.json();
-        loaded = true;
-        log("MASTER LOADED", "primary");
-      }
-    }catch(e){
-      log("MASTER FETCH FAILED", "primary");
+    try {  
+      const controller = new AbortController();  
+      setTimeout(() => controller.abort(), 3000); // HARD STOP  
+
+      const r = await fetch('./master.json', {  
+        cache: "no-store",  
+        signal: controller.signal  
+      });  
+
+      if(r.ok){  
+        RAW_DATA = await r.json();  
+        loaded = true;  
+        log("MASTER LOADED", "primary");  
+      }  
+    } catch(e){  
+      log("MASTER FETCH FAILED", "normal");  
     }
   }
 
-  // 3. Normalize using new Adapter
-  RAW_DATA = (RAW_DATA || [])
-    .map(normalizeQuestion)
-    .filter(d => d.id && d.q && d.u);
+  // 3️⃣ Normalize
+  RAW_DATA = (RAW_DATA || []).map(d => ({
+    id: d.id,
+    set: d.set || "DEFAULT",
+    dom: d.dom || "GENERAL",
+    topic: d.topic || "",
+    q: d.q,
+    u: d.u,
+    l: d.l,
+    r: d.r,
+    correct: d.correct,
+    logic: d.logic || "",
+    hint: d.hint || "",
+    trap: d.trap || "",
+    step1: d.step1 || d.s1 || "",
+    step2: d.step2 || d.s2 || ""
+  })).filter(d => d.id && d.q && d.u);
 
+  // 4️⃣ HARD FAIL SAFE
   if(!RAW_DATA.length){
-    card("NO DATA FOUND\nPush via Admin", {down:"RETRY"}, () => location.reload());
+    log("NO DATA FOUND", "primary");
+    card(
+      "NO DATA FOUND\n\nPush data via Admin",
+      { down: "RETRY" },
+      () => location.reload()
+    );
     return;
   }
 
+  // 5️⃣ SUCCESS
   log(`DATA READY (${RAW_DATA.length})`, "active");
   begin();
 }
