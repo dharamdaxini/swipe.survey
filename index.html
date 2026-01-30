@@ -4,7 +4,7 @@
   <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Vault v138.0</title>
+<title>Alchemist | Kinetic v136.46</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -99,8 +99,11 @@ body{
   position:absolute; inset:0; 
   display:flex; align-items:center; justify-content:center;
   background:#000; 
-  font-family:var(--font-sans); font-weight:900; font-size:1.8rem; 
-  text-transform:uppercase; letter-spacing:1px;
+  font-family:var(--font-sans); 
+  font-weight:900; 
+  font-size:1.8rem; 
+  text-transform:uppercase; 
+  letter-spacing:1px;
   text-align:center; padding:40px;
   opacity:0; pointer-events:none; 
   transition:opacity 0.15s ease;
@@ -146,17 +149,19 @@ let POOL = [], WRONG = [], XP = 0;
 let SESSION_ALL = [], VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
 
-/* --- NEW: UNIT & VAULT STATE --- */
+/* --- UPGRADE: CREDITS & VAULT --- */
 let CREDITS = 10;
-let VAULT = []; // Stores {id, date, score, data}
+let VAULT = [];
 
 /* ================= LOGGER ENGINE ================= */
 function log(msg, type="normal") {
     const l1 = document.getElementById("log-1");
     const l2 = document.getElementById("log-2");
     const l3 = document.getElementById("log-3");
+    
     l1.innerText = l2.innerText; l1.className = l2.className;
     l2.innerText = l3.innerText; l2.className = "log-line"; 
+    
     l3.innerText = `> ${msg}`;
     l3.className = type === "active" ? "log-line active" : 
                    type === "primary" ? "log-line primary" : 
@@ -186,6 +191,14 @@ function shuffle(array) {
   }
   return array;
 }
+
+/* ================= UI ================= */
+const UI = {
+  stack: document.getElementById("stack"),
+  id: document.getElementById("id-ui"),
+  xp: document.getElementById("xp-ui"),
+  bar: document.getElementById("progress-bar")
+};
 
 /* ================= PHYSICS ENGINE ================= */
 class PhysicsController{
@@ -256,41 +269,40 @@ function begin(){
  log("SESSION READY", "active");
  card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP") setPick();
-  if(dir==="DOWN") openVault(0); // Open Vault at newest item
+  if(dir==="DOWN") openVault(0);
  });
 }
 
-/* ================= VAULT SYSTEM (NEW) ================= */
-function openVault(index) {
-    if(VAULT.length === 0) {
-        card("VAULT EMPTY\n\nDownload sessions to fill.", {up:"BACK"}, ()=>begin());
+/* ================= VAULT LOGIC ================= */
+function openVault(index){
+    if(VAULT.length === 0){
+        card("VAULT EMPTY", {up:"BACK"}, ()=>begin());
         return;
     }
 
-    // Wrap index logic
-    if(index < 0) { begin(); return; } // Exit to main menu
-    if(index >= VAULT.length) index = 0; // Loop back to start (optional)
+    // Navigation Bounds
+    if(index < 0) { begin(); return; } // Exit
+    if(index >= VAULT.length) index = 0; // Loop or clamp? User asked for 2nd, 3rd... let's clamp max
 
     const item = VAULT[index];
     const isNewest = (index === 0);
     const isOldest = (index === VAULT.length - 1);
 
-    log(`VAULT: FILE ${index+1}/${VAULT.length}`, "primary");
+    log(`VAULT: ${item.id} [${index+1}/${VAULT.length}]`, "primary");
 
     card(
-        `SESSION ARCHIVE\n${item.id}\n\nSCORE: ${item.score}\nDATE: ${item.date}`,
+        `ARCHIVE\n${item.id}\nScore: ${item.score}\nDate: ${item.date}`,
         {
-            up: "ANALYZE", // Generates Support PDF
-            left: isNewest ? "MENU" : "PREV", // Left from start = exit
+            up: "OPEN PDF", 
+            left: isNewest ? "EXIT" : "PREV", 
             right: isOldest ? "" : "NEXT"
         },
-        (dir) => {
+        dir => {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT" && !isOldest) openVault(index + 1);
             if(dir === "UP") {
-                // Re-download as Support PDF (owned data, no unit cost)
                 log("OPENING ARCHIVE...", "active");
-                renderSupportPDF(item.data, item.id); 
+                renderSessionPDF(item.data, item.id);
             }
         }
     );
@@ -402,7 +414,7 @@ function report(){
  const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
  
  card(
-  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nDownload to Vault (-1 Unit)`,
+  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nDownload (-1 Unit)`,
   {down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},
   dir=>{
     if(dir==="DOWN") handleDownload();
@@ -412,39 +424,43 @@ function report(){
  );
 }
 
-/* ================= CREDIT SYSTEM + DOWNLOAD ================= */
-function handleDownload() {
-    if(CREDITS < 1) {
+/* ================= DOWNLOAD & CREDIT LOGIC ================= */
+function handleDownload(){
+    if(CREDITS < 1){
         log("INSUFFICIENT UNITS", "danger");
-        // Shake visual effect or sound could go here
-        return; 
+        return;
     }
 
     CREDITS--;
     log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
 
-    // Add to Vault
-    const entry = {
-        id: `SES_${Date.now().toString().slice(-6)}`,
+    const sessionID = `SES_${Date.now().toString().slice(-5)}`;
+    
+    // Save to Vault
+    VAULT.unshift({
+        id: sessionID,
         date: new Date().toLocaleDateString(),
         score: XP,
         data: [...SESSION_ALL]
-    };
-    
-    VAULT.unshift(entry); // Add to top of stack
-    
-    // Trigger PDF generation
-    renderSessionPDF(SESSION_ALL, entry.id);
+    });
+
+    exportSessionPDF(SESSION_ALL, sessionID);
 }
 
-/* ================= PDF ENGINE (UPDATED) ================= */
-function renderSessionPDF(data, sessionID){
- if(!data.length){alert("No session data");return;}
+/* ================= PDF ENGINE ================= */
+function exportSessionPDF(data, sessionID){
+ if(!data || !data.length){ data = SESSION_ALL; } // Fallback
+ if(!data.length){ alert("No session data"); return; }
+ 
  log("GENERATING PDF...", "active");
  const {jsPDF}=window.jspdf;
  const doc=new jsPDF();
  
- const unique=data; // Assuming pre-filtered or okay with duplicates
+ const seen=new Set();
+ const unique=data.filter(q=>{
+  if(seen.has(q.id)) return false;
+  seen.add(q.id);return true;
+ });
 
  let y=20;
  const ML=15; const W=180;
@@ -520,13 +536,7 @@ function renderSessionPDF(data, sessionID){
  });
 
  doc.save(`ALCHEMIST_${sessionID || Date.now()}.pdf`);
- setTimeout(begin, 500); // Return to menu after download
-}
-
-/* ================= SUPPORT PDF RENDERER (From Vault) ================= */
-// Reusing logic but simpler context
-function renderSupportPDF(data, id){
-    renderSessionPDF(data, id);
+ setTimeout(begin,500);
 }
 
 /* ================= HYBRID BOOT ENGINE ================= */
