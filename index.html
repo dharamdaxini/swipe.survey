@@ -269,43 +269,52 @@ function report(){
 }
 
 /* ================= GATEKEEPER & PDF ================= */
+/* ================= PATCH: GATEKEEPER LOGIC v2.0 ================= */
 function handleDownloadRequest(){
     // 1. Check if user is linked locally
     if(!USER_MOBILE){
         log("IDENTITY UNLINKED", "danger");
         
-        // 2. Pre-fill WhatsApp Message
-        const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}    Enter your mobile number here...${CURRENT_SES_ID}`;
+        // --- STEP A: CAPTURE MOBILE NUMBER (The "Box") ---
+        const userStat = prompt("ENTER YOUR WHATSAPP NUMBER TO LINK:\n(Required to save progress)");
+        
+        // Basic Validation
+        if(!userStat || userStat.length < 10) {
+            log("INVALID INPUT. TRY AGAIN.", "danger");
+            return; // Stop here if no number
+        }
+
+        // --- STEP B: GENERATE PRE-FILLED MESSAGE ---
+        // This creates the "Exact Format" for the Admin Tool
+        const text = `LINK_REQ || ID: ${CURRENT_SES_ID} || MOB: ${userStat}`;
         const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
         
-        card(`ACCOUNT REQUIRED\n\nTo save this PDF, you must link your device.\n\nID: ${CURRENT_SES_ID}`,
-            { up: "LINK VIA WHATSAPP", down: "I HAVE LINKED" },
+        card(`LINKING ACCOUNT...\n\nID: ${CURRENT_SES_ID}\nMOBILE: ${userStat}`,
+            { up: "SEND VERIFICATION", down: "CANCEL" },
             (dir) => {
                 if(dir === "UP") { 
-                    window.open(url, '_blank'); 
+                    // Open WhatsApp with the code pre-filled
+                    window.open(url, '_blank');
+                    
+                    // Save locally
+                    localStorage.setItem("USER_MOBILE", userStat);
+                    USER_MOBILE = userStat;
+                    
+                    log("VERIFICATION SENT", "active");
+                    
+                    // Allow download immediately after sending
+                    setTimeout(() => exportSessionPDF(), 1000); 
                 }
                 if(dir === "DOWN") {
-                    // 3. Manual Loop Close (Client Side) - UPDATED TEXT HERE
-                    const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):\n\nEnter your mobile number here...");
-                    
-                    if(mob && mob.length >= 10) {
-                        localStorage.setItem("USER_MOBILE", mob);
-                        USER_MOBILE = mob;
-                        log("IDENTITY LINKED", "active");
-                        exportSessionPDF();
-                    } else { 
-                        log("INVALID INPUT", "normal");
-                        handleDownloadRequest(); // Re-loop
-                    }
+                    log("LINKING ABORTED", "normal");
                 }
             }
         );
         return;
     }
-    // 4. If linked, download
+    // 4. If already linked, download
     exportSessionPDF();
 }
-
 function exportSessionPDF(data=null, id=null){
  const renderData = data || SESSION_ALL;
  const renderID = id || CURRENT_SES_ID;
