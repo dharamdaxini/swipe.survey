@@ -4,7 +4,7 @@
   <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v136.46</title>
+<title>Alchemist | Vault v138.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -16,7 +16,7 @@
   --border:#222;
   --gold:#ffd600; 
   --green:#2ecc71;
-  --red:#ff4444;
+  --red:#ff4444; 
   --text-white: #ffffff;
   --text-grey: #888888;
   
@@ -99,11 +99,8 @@ body{
   position:absolute; inset:0; 
   display:flex; align-items:center; justify-content:center;
   background:#000; 
-  font-family:var(--font-sans); 
-  font-weight:900; 
-  font-size:1.8rem; 
-  text-transform:uppercase; 
-  letter-spacing:1px;
+  font-family:var(--font-sans); font-weight:900; font-size:1.8rem; 
+  text-transform:uppercase; letter-spacing:1px;
   text-align:center; padding:40px;
   opacity:0; pointer-events:none; 
   transition:opacity 0.15s ease;
@@ -149,19 +146,17 @@ let POOL = [], WRONG = [], XP = 0;
 let SESSION_ALL = [], VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
 
-/* --- UPGRADE: CREDITS & VAULT --- */
+/* --- NEW: UNIT & VAULT STATE --- */
 let CREDITS = 10;
-let VAULT = [];
+let VAULT = []; 
 
 /* ================= LOGGER ENGINE ================= */
 function log(msg, type="normal") {
     const l1 = document.getElementById("log-1");
     const l2 = document.getElementById("log-2");
     const l3 = document.getElementById("log-3");
-    
     l1.innerText = l2.innerText; l1.className = l2.className;
     l2.innerText = l3.innerText; l2.className = "log-line"; 
-    
     l3.innerText = `> ${msg}`;
     l3.className = type === "active" ? "log-line active" : 
                    type === "primary" ? "log-line primary" : 
@@ -191,14 +186,6 @@ function shuffle(array) {
   }
   return array;
 }
-
-/* ================= UI ================= */
-const UI = {
-  stack: document.getElementById("stack"),
-  id: document.getElementById("id-ui"),
-  xp: document.getElementById("xp-ui"),
-  bar: document.getElementById("progress-bar")
-};
 
 /* ================= PHYSICS ENGINE ================= */
 class PhysicsController{
@@ -269,32 +256,32 @@ function begin(){
  log("SESSION READY", "active");
  card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP") setPick();
-  if(dir==="DOWN") openVault(0);
+  if(dir==="DOWN") openVault(0); 
  });
 }
 
-/* ================= VAULT LOGIC ================= */
+/* ================= VAULT SYSTEM (NEW) ================= */
 function openVault(index){
     if(VAULT.length === 0){
         card("VAULT EMPTY", {up:"BACK"}, ()=>begin());
         return;
     }
 
-    // Navigation Bounds
-    if(index < 0) { begin(); return; } // Exit
-    if(index >= VAULT.length) index = 0; // Loop or clamp? User asked for 2nd, 3rd... let's clamp max
+    // Navigation Bounds (Looping not requested, strict walls)
+    if(index < 0) { begin(); return; } 
+    if(index >= VAULT.length) index = VAULT.length - 1;
 
     const item = VAULT[index];
     const isNewest = (index === 0);
     const isOldest = (index === VAULT.length - 1);
 
-    log(`VAULT: ${item.id} [${index+1}/${VAULT.length}]`, "primary");
+    log(`ARCHIVE: ${item.id}`, "primary");
 
     card(
-        `ARCHIVE\n${item.id}\nScore: ${item.score}\nDate: ${item.date}`,
+        `VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
         {
             up: "OPEN PDF", 
-            left: isNewest ? "EXIT" : "PREV", 
+            left: isNewest ? "MENU" : "PREV", 
             right: isOldest ? "" : "NEXT"
         },
         dir => {
@@ -414,7 +401,7 @@ function report(){
  const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
  
  card(
-  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nDownload (-1 Unit)`,
+  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nDownload to Vault (-1 Unit)`,
   {down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},
   dir=>{
     if(dir==="DOWN") handleDownload();
@@ -441,6 +428,7 @@ function handleDownload(){
         id: sessionID,
         date: new Date().toLocaleDateString(),
         score: XP,
+        total: SESSION_ALL.length,
         data: [...SESSION_ALL]
     });
 
