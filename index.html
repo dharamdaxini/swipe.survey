@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Final v137.17</title>
+<title>Alchemist | Vault v138.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -15,6 +16,7 @@
   --border:#222;
   --gold:#ffd600; 
   --green:#2ecc71;
+  --red:#ff4444;
   --text-white: #ffffff;
   --text-grey: #888888;
   
@@ -52,11 +54,11 @@ body{
   text-transform: uppercase;
   min-height: 60px; 
   display: flex; flex-direction: column; justify-content: flex-end;
-  pointer-events: none;
 }
 .log-line { opacity: 0.5; transition: opacity 0.2s; }
 .log-line.active { color: var(--green); opacity: 1; font-weight: 700; }
 .log-line.primary { color: var(--gold); opacity: 1; font-weight: 700; }
+.log-line.danger { color: var(--red); opacity: 1; font-weight: 700; }
 
 /* FLUID STACK ENGINE */
 #stack{
@@ -79,34 +81,26 @@ body{
   overflow: hidden; 
 }
 
-/* MAIN TEXT */
 .card-q{
   font-family:var(--font-serif);
   font-size: clamp(1.4rem, 5vw, 1.9rem); 
   line-height:1.4;
   font-weight:600; text-align:center;
   color: var(--text-white); 
-  width: 100%;
-  max-height: 100%;
-  overflow-y: auto; 
-  word-wrap: break-word;
-  padding: 0 5px; 
+  width: 100%; max-height: 100%; overflow-y: auto; 
+  word-wrap: break-word; padding: 0 5px; 
   display: flex; flex-direction: column; justify-content: center;
 }
 .card-q::-webkit-scrollbar { width: 0px; }
 .card-q sub{ font-size:0.7em; vertical-align:-0.3em; }
 .card-q sup{ font-size:0.7em; vertical-align:0.5em; }
 
-/* SWIPE LABELS */
 .swipe-label{
   position:absolute; inset:0; 
   display:flex; align-items:center; justify-content:center;
   background:#000; 
-  font-family:var(--font-sans); 
-  font-weight:900; 
-  font-size:1.8rem; 
-  text-transform:uppercase; 
-  letter-spacing:1px;
+  font-family:var(--font-sans); font-weight:900; font-size:1.8rem; 
+  text-transform:uppercase; letter-spacing:1px;
   text-align:center; padding:40px;
   opacity:0; pointer-events:none; 
   transition:opacity 0.15s ease;
@@ -149,9 +143,12 @@ let RAW_DATA = [];
 let SET_CURSOR = 0; 
 let ACTIVE_SET = null;
 let POOL = [], WRONG = [], XP = 0;
-let SESSION_ALL = []; 
+let SESSION_ALL = [], VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
-let REVIEW_INDEX = 0;
+
+/* --- NEW: UNIT & VAULT STATE --- */
+let CREDITS = 10;
+let VAULT = []; // Stores {id, date, score, data}
 
 /* ================= LOGGER ENGINE ================= */
 function log(msg, type="normal") {
@@ -162,20 +159,33 @@ function log(msg, type="normal") {
     l2.innerText = l3.innerText; l2.className = "log-line"; 
     l3.innerText = `> ${msg}`;
     l3.className = type === "active" ? "log-line active" : 
-                   type === "primary" ? "log-line primary" : "log-line";
+                   type === "primary" ? "log-line primary" : 
+                   type === "danger" ? "log-line danger" : "log-line";
 }
 
 /* ================= UTILS ================= */
-const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔|\\rightleftharpoons/g,"⇌");
-const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ").trim();
-const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a; };
+function chemText(t){
+  if(!t) return "";
+  return String(t)
+    .replace(/_([0-9]+)/g,"<sub>$1</sub>")
+    .replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>")
+    .replace(/<->|↔|\\rightleftharpoons/g,"⇌");
+}
 
-/* ================= UI ================= */
-const UI = {
-  stack: document.getElementById("stack"),
-  xp: document.getElementById("xp-ui"),
-  bar: document.getElementById("progress-bar")
-};
+function cleanPDF(t){
+  if(!t) return "";
+  return String(t).replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
+}
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
 
 /* ================= PHYSICS ENGINE ================= */
 class PhysicsController{
@@ -190,8 +200,12 @@ class PhysicsController{
   const s=e=>this.startDrag(e.touches?e.touches[0]:e);
   const m=e=>this.move(e.touches?e.touches[0]:e);
   const e2=()=>this.end();
-  el.addEventListener("mousedown",s); window.addEventListener("mousemove",m); window.addEventListener("mouseup",e2);
-  el.addEventListener("touchstart",s,{passive:true}); el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); el.addEventListener("touchend",e2);
+  el.addEventListener("mousedown",s);
+  window.addEventListener("mousemove",m);
+  window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false});
+  el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});
+  el.addEventListener("touchend",e2);
  }
  startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
  move(p){
@@ -223,15 +237,16 @@ class PhysicsController{
 
 /* ================= RENDER LOGIC ================= */
 function card(text,labels,cb){
+ const safeText=chemText(text);
  UI.stack.innerHTML="";
  const el=document.createElement("div");
  el.className="card";
  el.innerHTML=`
-  <div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
-  <div class="swipe-label sl-up">${chemText(labels.up||"")}</div>
-  <div class="swipe-label sl-left">${chemText(labels.left||"")}</div>
-  <div class="swipe-label sl-right">${chemText(labels.right||"")}</div>
-  <div class="swipe-label sl-down">${chemText(labels.down||"")}</div>`;
+  <div class="card-q">${safeText.replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div>
+  <div class="swipe-label sl-left">${chemText(labels.left)||""}</div>
+  <div class="swipe-label sl-right">${chemText(labels.right)||""}</div>
+  <div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
  UI.stack.appendChild(el);
  new PhysicsController(el,{onCommit:cb});
 }
@@ -239,16 +254,55 @@ function card(text,labels,cb){
 /* ================= APP FLOW ================= */
 function begin(){
  log("SESSION READY", "active");
- card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"EXPORT",left:"RAPID",right:"LEARN"},dir=>{
+ card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"MY PDF",left:"RAPID",right:"LEARN"},dir=>{
   if(dir==="UP") setPick();
-  if(dir==="DOWN") exportMenu();
+  if(dir==="DOWN") openVault(0); // Open Vault at newest item
  });
+}
+
+/* ================= VAULT SYSTEM (NEW) ================= */
+function openVault(index) {
+    if(VAULT.length === 0) {
+        card("VAULT EMPTY\n\nDownload sessions to fill.", {up:"BACK"}, ()=>begin());
+        return;
+    }
+
+    // Wrap index logic
+    if(index < 0) { begin(); return; } // Exit to main menu
+    if(index >= VAULT.length) index = 0; // Loop back to start (optional)
+
+    const item = VAULT[index];
+    const isNewest = (index === 0);
+    const isOldest = (index === VAULT.length - 1);
+
+    log(`VAULT: FILE ${index+1}/${VAULT.length}`, "primary");
+
+    card(
+        `SESSION ARCHIVE\n${item.id}\n\nSCORE: ${item.score}\nDATE: ${item.date}`,
+        {
+            up: "ANALYZE", // Generates Support PDF
+            left: isNewest ? "MENU" : "PREV", // Left from start = exit
+            right: isOldest ? "" : "NEXT"
+        },
+        (dir) => {
+            if(dir === "LEFT") openVault(index - 1);
+            if(dir === "RIGHT" && !isOldest) openVault(index + 1);
+            if(dir === "UP") {
+                // Re-download as Support PDF (1 Unit Logic applied previously, but here it's free access to owned data)
+                log("OPENING ARCHIVE...", "active");
+                renderSupportPDF(item.data, item.id); 
+            }
+        }
+    );
 }
 
 function setPick(){
  log("SELECT DATASET", "primary");
  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
- if(sets.length===0) { card("NO DATA FOUND", {down:"RETRY"}, () => location.reload()); return; }
+ if(sets.length===0) { 
+    card("NO DATA FOUND", {down:"RETRY"}, () => location.reload());
+    return; 
+ }
  card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
   if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
   if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
@@ -259,38 +313,42 @@ function setPick(){
 
 function volumePick(){
  log("SET VOLUME", "primary");
- card("QUESTION VOLUME",{up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},dir=>{
-    let limit = null;
-    if(dir==="UP") limit = 10;
-    if(dir==="LEFT") limit = 25;
-    if(dir==="RIGHT") limit = 50;
-    startQuiz(limit);
- });
+ card(
+  `QUESTION VOLUME`,
+  {up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},
+  dir=>{
+    if(dir==="UP") VOLUME_LIMIT=10;
+    if(dir==="LEFT") VOLUME_LIMIT=25;
+    if(dir==="RIGHT") VOLUME_LIMIT=50;
+    if(dir==="DOWN") VOLUME_LIMIT=null;
+    startQuiz();
+  }
+ );
 }
 
-function startQuiz(limit){
- log("INITIATING POOL...", "active");
+function startQuiz(){
+ log("INITIATING QUIZ...", "active");
  let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
  base = shuffle(base); 
- if(limit && limit < base.length) base = base.slice(0, limit);
- 
- POOL=base; WRONG=[]; SESSION_ALL=[...POOL]; XP=0; ATTEMPTED=new Set();
+ if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
+ POOL=base;
+ WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED = new Set();
  nextQ();
 }
 
 function nextQ(){
  if(!POOL.length){
-    if(WRONG.length){ REVIEW_INDEX=0; review(); return; } 
+    if(WRONG.length){ review(); return; } 
     report(); return;
  }
  const d=POOL.shift();
  log(`ID: ${d.id}`, "normal");
- 
+ if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+
  const opts = shuffle([d.u, d.l, d.r]);
  const map = { up: opts[0], left: opts[1], right: opts[2] };
 
  card(d.q, map, dir=>{
-  if(dir==="DOWN"){nextQ();return;}
   let picked = null;
   if(dir==="UP") picked = map.up;
   if(dir==="LEFT") picked = map.left;
@@ -302,290 +360,219 @@ function nextQ(){
   else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
 
   const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
-  if(!isCorrect){ WRONG.push(d); log("OUTCOME: NEGATIVE", "primary"); } 
-  else { if(!ATTEMPTED.has(d.id)){ XP+=1; } log("OUTCOME: POSITIVE", "active"); }
+
+  if(!isCorrect){
+    WRONG.push(d); 
+  } else {
+    if(!ATTEMPTED.has(d.id)){ XP+=1; }
+  }
   
   ATTEMPTED.add(d.id);
   UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
-  const total = SESSION_ALL.length + POOL.length + WRONG.length;
-  UI.bar.style.width = ((SESSION_ALL.length) / (total||1)) * 100 + "%";
+  UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
+  
   nextQ();
  });
 }
 
 function review(){
- if(WRONG.length === 0){ nextQ(); return; }
- if(REVIEW_INDEX >= WRONG.length) REVIEW_INDEX = 0;
-
- const d = WRONG[REVIEW_INDEX]; 
+ if(!WRONG.length){ report(); return; } 
+ const d=WRONG[0]; 
  log("REVIEW MODE", "primary");
- log(`HINT: ${d.hint || "NONE"}`, "normal"); 
+ log(`HINT: ${d.hint ? "ACTIVE" : "NONE"}`, "active");
  
  card(
   `REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,
   {up:"RETRY", down:"SKIP"},
   dir=>{
     if(dir==="UP"){
-        WRONG.splice(REVIEW_INDEX, 1);
+        WRONG.shift();
         POOL.unshift(d);
-        log("RE-INSERTING...", "active");
-        nextQ();
     } else {
-        REVIEW_INDEX = (REVIEW_INDEX + 1) % WRONG.length;
-        log("SKIPPING...", "normal");
-        review();
+        WRONG.shift();
     }
+    nextQ();
   }
  );
 }
 
 function report(){
  log("SESSION COMPLETE", "active");
- const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
+ const total = SESSION_ALL.length;
+ const percent = total > 0 ? Math.round((XP / total) * 100) : 0;
  
- // POINT DOWN TO EXPORT MENU
- card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} (${percent}%)`,{down:"EXPORT", up:"RESTART", left:"MENU"},dir=>{
-    if(dir==="DOWN") exportMenu();
+ card(
+  `SUMMARY\n\n${XP} / ${total} Correct\n(${percent}%)\n\nDownload to Vault (-1 Unit)`,
+  {down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},
+  dir=>{
+    if(dir==="DOWN") handleDownload();
     if(dir==="UP") startQuiz(); 
     if(dir==="LEFT") begin();
+  }
+ );
+}
+
+/* ================= CREDIT SYSTEM + DOWNLOAD ================= */
+function handleDownload() {
+    if(CREDITS < 1) {
+        log("INSUFFICIENT UNITS", "danger");
+        // Shake visual effect or sound could go here
+        return; 
+    }
+
+    CREDITS--;
+    log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
+
+    // Add to Vault
+    const entry = {
+        id: `SES_${Date.now().toString().slice(-6)}`,
+        date: new Date().toLocaleDateString(),
+        score: XP,
+        data: [...SESSION_ALL]
+    };
+    
+    VAULT.unshift(entry); // Add to top of stack
+    
+    // Trigger PDF generation
+    renderSessionPDF(SESSION_ALL, entry.id);
+}
+
+/* ================= PDF ENGINE (UPDATED) ================= */
+function renderSessionPDF(data, sessionID){
+ if(!data.length){alert("No session data");return;}
+ log("GENERATING PDF...", "active");
+ const {jsPDF}=window.jspdf;
+ const doc=new jsPDF();
+ 
+ const unique=data; // Assuming pre-filtered or okay with duplicates
+
+ let y=20;
+ const ML=15; const W=180;
+ const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
+ const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+
+ doc.setFont("times","bold"); doc.setFontSize(16);
+ doc.text(`VIA.STACK // ${sessionID || "SESSION"}`,105,y,{align:"center"});
+ doc.line(ML,y+2,195,y+2); doc.line(ML,y+3,195,y+3);
+ y+=15;
+
+ unique.forEach((d,i)=>{
+  if(y>240){doc.addPage();y=20;}
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+  doc.text(`${d.id} // ${d.dom||"GENERAL"} > ${d.topic||"CONCEPTS"}`,ML,y); y+=5;
+
+  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qText = cleanPDF(d.q);
+  const qLines = doc.splitTextToSize(qText,W);
+  doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+
+  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+
+  const startY=y;
+  
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("OPTIONS",ML,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); 
+  doc.setTextColor(80,80,80); 
+  
+  const optA = `(A) ${cleanPDF(d.u)}`;
+  const optB = `(B) ${cleanPDF(d.l)}`;
+  const optC = `(C) ${cleanPDF(d.r)}`;
+  
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  
+  let maxH = y; y=startY;
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("THEORY & LOGIC",COL_LOG_X,y); y+=4;
+  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT = doc.splitTextToSize(cleanPDF(d.logic||"No logic provided."),COL_LOG_W);
+  doc.text(logT,COL_LOG_X,y); 
+  const col2H = y+(logT.length*4);
+  if(col2H>maxH) maxH=col2H;
+  y=startY;
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150);
+  doc.text("EXECUTION",COL_EXE_X,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  const s1 = `1. ${cleanPDF(d.s1||d.step1||"-")}`;
+  const s2 = `2. ${cleanPDF(d.s2||d.step2||"-")}`;
+  const s1L = doc.splitTextToSize(s1,COL_EXE_W);
+  doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
+  const s2L = doc.splitTextToSize(s2,COL_EXE_W);
+  doc.text(s2L,COL_EXE_X,y);
+  const col3H = y+(s2L.length*4);
+  if(col3H>maxH) maxH=col3H;
+
+  y=maxH+5;
+
+  if(d.trap||d.note){
+    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50);
+    doc.text("DISTRACTOR ANALYSIS:",ML,y);
+    doc.setFont("times","italic"); doc.setTextColor(80);
+    doc.text(cleanPDF(d.trap||d.note),ML+35,y); y+=8;
+  } else {y+=5;}
+  y+=5;
  });
+
+ doc.save(`ALCHEMIST_${sessionID || Date.now()}.pdf`);
+ setTimeout(begin, 500); // Return to menu after download
 }
 
-/* ================= EXPORT MENU ================= */
-function exportMenu(){
-    log("SELECT FORMAT", "primary");
-    card(
-        "VIA.STACK\n\nSELECT OUTPUT FORMAT", 
-        {left:"SESSION PDF", right:"SUPPORT PDF", down:"BACK"}, 
-        dir => {
-            if(dir === "LEFT") renderSessionPDF(SESSION_ALL);
-            if(dir === "RIGHT") showUnlockCard(); 
-            if(dir === "DOWN") report();
-        }
-    );
+/* ================= SUPPORT PDF RENDERER (From Vault) ================= */
+// Reusing logic but simpler context
+function renderSupportPDF(data, id){
+    renderSessionPDF(data, id);
 }
 
-function showUnlockCard() {
-    log("GATEWAY LOCKED", "primary");
-    // NO NEWLINES IN HTML STRING - THIS FIXES THE RENDERING BUG
-    const html = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;width:100%;text-align:center;"><div style="margin-bottom:15px;filter:drop-shadow(0 0 15px rgba(255,214,0,0.4));"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ffd600" stroke-width="1.5"><path d="M12 17h.01M12 14v-3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg></div><div style="font-family:'Crimson Text',serif;font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:5px;">UNLOCK SUPPORT PDF</div><div style="font-family:'Inter',sans-serif;font-size:0.8rem;color:#888;text-align:center;margin-bottom:25px;max-width:250px;">Pay ₹1 to access full Academy Analysis</div><a href="https://wa.me/916351537770?text=Support%20PDF%20Unlock" target="_blank" onclick="setTimeout(()=>{renderSupportPDF(SESSION_ALL)},3000)" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 32px;background:#25D366;color:#000;font-family:'Inter',sans-serif;font-weight:800;font-size:0.9rem;border-radius:50px;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,0.4);transition:transform 0.1s;"><span>DOWNLOAD NOW</span></a><div style="margin-top:15px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:#444;">SECURE WHATSAPP GATEWAY</div></div>`;
-
-    card(html, { down: "BACK" }, dir => { if(dir === "DOWN") exportMenu(); });
-}
-
-/* ================= RENDERER A: SESSION PDF (Worksheet) ================= */
-function renderSessionPDF(data){
-    log("GENERATING SESSION PDF...", "active");
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 20;
-
-    const header = () => {
-        doc.setFont("times", "bold"); doc.setFontSize(16); doc.setTextColor(0);
-        doc.text("ALCHEMIST // SESSION WORKSHEET", 15, 20);
-        doc.setLineWidth(0.5); doc.line(15, 25, 195, 25);
-        y = 35;
-    };
-
-    header();
-
-    data.forEach((d, i) => {
-        if (y > 260) { doc.addPage(); header(); }
-
-        doc.setFont("courier", "bold"); doc.setFontSize(11);
-        doc.text(`Q${i+1} | ${d.id}`, 15, y); 
-        y += 6;
-
-        doc.setFont("times", "normal"); doc.setFontSize(11);
-        const qLines = doc.splitTextToSize(cleanPDF(d.q), 180);
-        doc.text(qLines, 15, y);
-        y += qLines.length * 5 + 2;
-
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(60);
-        doc.text(`(A) ${cleanPDF(d.u)}`, 15, y); y += 5;
-        doc.text(`(B) ${cleanPDF(d.l)}`, 15, y); y += 5;
-        doc.text(`(C) ${cleanPDF(d.r)}`, 15, y); y += 10; 
-        
-        doc.setTextColor(0); 
-    });
-
-    doc.save(`SESSION_PDF_${Date.now()}.pdf`);
-    setTimeout(exportMenu, 1000); 
-}
-
-/* ================= RENDERER B: SUPPORT PDF (Academy) ================= */
-function renderSupportPDF(data){
-    log("GENERATING SUPPORT PDF...", "active");
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 20;
-
-    const ML = 15; const W = 180;
-    const COL_W = { OPT: 45, LOG: 65, EXE: 65 };
-    const COL_X = { OPT: ML, LOG: ML + 45 + 5, EXE: ML + 45 + 65 + 10 };
-
-    data.forEach(d => {
-        const a = (d.correct || "").trim().toUpperCase();
-        if(a === "A" || a === "UP") d.correct = d.u;
-        else if(a === "B" || a === "LEFT") d.correct = d.l;
-        else if(a === "C" || a === "RIGHT") d.correct = d.r;
-    });
-
-    const header = () => {
-        doc.setFont("times", "bold"); doc.setFontSize(16); doc.setTextColor(0);
-        doc.text("ALCHEMIST // ACADEMY REPORT", 105, 15, {align:"center"});
-        doc.setDrawColor(0); doc.setLineWidth(0.5);
-        doc.line(ML, 18, 195, 18); doc.line(ML, 19, 195, 19); 
-        y = 25;
-    };
-
-    header();
-
-    data.forEach((d, i) => {
-        if (y > 230) { doc.addPage(); header(); }
-
-        doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(100);
-        const headerText = `${d.id} // ${d.dom || "GENERAL"} > ${d.topic || "CONCEPTS"}`;
-        doc.text(headerText, ML, y);
-        y += 6;
-
-        doc.setFont("times", "bold"); doc.setFontSize(12); doc.setTextColor(0);
-        const qLines = doc.splitTextToSize(cleanPDF(d.q), W);
-        doc.text(qLines, ML, y);
-        y += (qLines.length * 5) + 4;
-
-        doc.setDrawColor(180); doc.setLineWidth(0.3);
-        doc.line(ML, y, 195, y); doc.line(ML, y+1, 195, y+1);
-        y += 6;
-
-        doc.setFont("helvetica", "bold"); doc.setFontSize(7); doc.setTextColor(150);
-        doc.text("OPTIONS", COL_X.OPT, y);
-        doc.text("THEORY & LOGIC", COL_X.LOG, y);
-        doc.text("EXECUTION", COL_X.EXE, y);
-        y += 5;
-
-        const contentY = y;
-        let maxH = y;
-
-        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(80);
-        let optY = contentY;
-        const optA = doc.splitTextToSize(`(A) ${cleanPDF(d.u)}`, COL_W.OPT);
-        const optB = doc.splitTextToSize(`(B) ${cleanPDF(d.l)}`, COL_W.OPT);
-        const optC = doc.splitTextToSize(`(C) ${cleanPDF(d.r)}`, COL_W.OPT);
-        doc.text(optA, COL_X.OPT, optY); optY += optA.length*4 + 2;
-        doc.text(optB, COL_X.OPT, optY); optY += optB.length*4 + 2;
-        doc.text(optC, COL_X.OPT, optY); optY += optC.length*4 + 2;
-        if(optY > maxH) maxH = optY;
-
-        doc.setFont("times", "italic"); doc.setTextColor(50);
-        const logLines = doc.splitTextToSize(cleanPDF(d.logic) || "Analysis pending.", COL_W.LOG);
-        doc.text(logLines, COL_X.LOG, contentY);
-        const logH = contentY + (logLines.length * 4);
-        if(logH > maxH) maxH = logH;
-
-        doc.setFont("helvetica", "normal"); doc.setTextColor(0);
-        const textS1 = cleanPDF(d.step1);
-        const textS2 = cleanPDF(d.step2);
-        const s1 = `1. ${textS1 || "Identify governing principle."}`;
-        const s2 = `2. ${textS2 || "Apply principle and verify result."}`;
-        
-        const s1L = doc.splitTextToSize(s1, COL_W.EXE);
-        const s2L = doc.splitTextToSize(s2, COL_W.EXE);
-        let exeY = contentY;
-        doc.text(s1L, COL_X.EXE, exeY); exeY += s1L.length*4 + 2;
-        doc.text(s2L, COL_X.EXE, exeY); exeY += s2L.length*4;
-        if(exeY > maxH) maxH = exeY;
-
-        y = maxH + 6;
-
-        if(d.trap && d.trap !== "undefined") {
-            doc.setLineDash([1, 1], 0); doc.setDrawColor(200); doc.line(ML, y, 195, y); doc.setLineDash([]);
-            y += 4;
-            doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(200, 50, 50);
-            doc.text("DISTRACTOR ANALYSIS:", ML, y);
-            doc.setFont("times", "italic"); doc.setTextColor(80);
-            doc.text(cleanPDF(d.trap), ML + 35, y);
-            y += 8;
-        }
-        y += 6; 
-    });
-
-    doc.save(`SUPPORT_PDF_${Date.now()}.pdf`);
-    setTimeout(exportMenu, 1000); 
-}
-
-/* ================= ROBUST DATA BOOT ================= */
+/* ================= HYBRID BOOT ENGINE ================= */
 async function init(){
   log("SYSTEM BOOT", "active");
-
-  let loaded = false;
-
-  // 1️⃣ Try localStorage FIRST (Bridge)
-  try {
-    const localData = localStorage.getItem(MASTER_KEY);
-    if(localData && localData.length > 10){
-      RAW_DATA = JSON.parse(localData);
-      loaded = true;
-      log("LOCAL BRIDGE CONNECTED", "primary");
-    }
-  } catch(e){
-    RAW_DATA = [];
+  
+  const localData = localStorage.getItem(MASTER_KEY);
+  
+  if(localData && localData.length > 10){
+    log("BRIDGE CONNECTED", "primary");
+    try { 
+      RAW_DATA = JSON.parse(localData); 
+      await new Promise(r => setTimeout(r, 600)); 
+    } catch(e) { RAW_DATA = []; }
+  }
+  
+  if(!RAW_DATA.length){
+    log("FETCHING MASTER...");
+    try {
+      const r = await fetch('master.json');
+      if(r.ok){ RAW_DATA = await r.json(); }
+    } catch(e) { }
   }
 
-  // 2️⃣ Try master.json with timeout (Repo)
-  if(!loaded){
-    log("FETCHING MASTER...", "normal");
-
-    try {  
-      const controller = new AbortController();  
-      setTimeout(() => controller.abort(), 3000); // HARD STOP  
-
-      const r = await fetch('./master.json', {  
-        cache: "no-store",  
-        signal: controller.signal  
-      });  
-
-      if(r.ok){  
-        RAW_DATA = await r.json();  
-        loaded = true;  
-        log("MASTER LOADED", "primary");  
-      }  
-    } catch(e){  
-      log("MASTER FETCH FAILED", "normal");  
-    }
-  }
-
-  // 3️⃣ Normalize
-  RAW_DATA = (RAW_DATA || []).map(d => ({
-    id: d.id,
-    set: d.set || "DEFAULT",
-    dom: d.dom || "GENERAL",
-    topic: d.topic || "",
-    q: d.q,
-    u: d.u,
-    l: d.l,
-    r: d.r,
-    correct: d.correct,
-    logic: d.logic || "",
-    hint: d.hint || "",
-    trap: d.trap || "",
-    step1: d.step1 || d.s1 || "",
-    step2: d.step2 || d.s2 || ""
+  // Normalization
+  RAW_DATA = RAW_DATA.map(d => ({
+      id: d.id,
+      set: d.set || "DEFAULT",
+      dom: d.dom || "GENERAL",
+      topic: d.topic || "",
+      q: d.q,
+      u: d.u, l: d.l, r: d.r,
+      correct: d.correct,
+      logic: d.logic || "",
+      hint: d.hint || "",
+      trap: d.trap || "",
+      step1: d.s1 || d.step1 || "",
+      step2: d.s2 || d.step2 || ""
   })).filter(d => d.id && d.q && d.u);
 
-  // 4️⃣ HARD FAIL SAFE
   if(!RAW_DATA.length){
-    log("NO DATA FOUND", "primary");
-    card(
-      "NO DATA FOUND\n\nPush data via Admin",
-      { down: "RETRY" },
-      () => location.reload()
-    );
+    log("DATA ERROR", "active");
+    card("NO DATA FOUND\nPush via Admin", {down:"RETRY"}, () => location.reload());
     return;
   }
 
-  // 5️⃣ SUCCESS
-  log(`DATA READY (${RAW_DATA.length})`, "active");
   begin();
 }
 
