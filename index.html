@@ -275,7 +275,7 @@ function handleDownloadRequest(){
         log("IDENTITY UNLINKED", "danger");
         
         // 2. Pre-fill WhatsApp Message
-        const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}`;
+        const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}    Enter your mobile number here...${CURRENT_SES_ID}`;
         const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
         
         card(`ACCOUNT REQUIRED\n\nTo save this PDF, you must link your device.\n\nID: ${CURRENT_SES_ID}`,
