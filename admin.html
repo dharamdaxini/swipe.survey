@@ -1,278 +1,69 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.70</title>  
+    <title>VIA.STACK | ADMIN v136.80</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
     <style>
-        :root { 
-            --bg: #050505; --panel: #0a0a0a; --border: #222; 
-            --gold: #ffd600; --blue: #2979ff; --red: #ff4757; --green: #00e676;
-            --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
-        }
-        
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: #ccc; font-family: var(--font-ui); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* SCROLL CONTAINER */
-        #master-scroll { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding-bottom: 80px; }
-        
-        /* HEADER */
-        header { 
-            position: sticky; top: 0; z-index: 100; background: rgba(5,5,5,0.98); 
-            border-bottom: 1px solid var(--border); padding: 15px 25px; 
-            display: flex; justify-content: space-between; align-items: center; 
-        }
-        .brand { font-size: 1.1rem; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
-        .brand span { color: var(--gold); }
-        .status-pill { 
-            background: #111; border: 1px solid #333; padding: 6px 12px; 
-            border-radius: 4px; font-family: var(--font-code); font-size: 0.6rem; 
-            color: var(--green); display: flex; align-items: center; gap: 6px; cursor: pointer;
-        }
-        .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
-        .dot.off { background: var(--red); box-shadow: none; }
-
-        /* ZONES */
-        .zone { padding: 30px; border-bottom: 1px dashed #222; position: relative; }
-        .zone-title { font-size: 0.7rem; font-weight: 900; color: #666; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        /* INGESTION INPUT */
-        .ingest-box {
-            width: 100%; height: 200px; background: #080808; border: 1px solid #333; 
-            border-radius: 12px; padding: 20px; font-family: var(--font-code); 
-            font-size: 0.7rem; color: var(--blue); resize: none; transition: 0.2s;
-            line-height: 1.5; white-space: pre; overflow: auto;
-        }
-        .ingest-box:focus { border-color: var(--gold); background: #0b0b0b; color: #fff; }
-        
-        /* BUTTONS */
-        .action-bar { display: flex; gap: 15px; margin-top: 20px; align-items: center; flex-wrap: wrap; }
-        
-        .btn-pill { 
-            background: var(--gold); color: #000; border: none; padding: 12px 30px; 
-            border-radius: 50px; font-weight: 900; font-size: 0.8rem; cursor: pointer; 
-            text-transform: uppercase; transition: 0.2s; box-shadow: 0 5px 20px rgba(255, 214, 0, 0.2);
-        }
-        .btn-pill:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        
-        .btn-ghost { 
-            background: transparent; border: 1px solid #444; color: #888; 
-            padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 0.7rem; 
-            cursor: pointer; text-transform: uppercase; transition: 0.2s; 
-        }
-        .btn-ghost:hover { border-color: #fff; color: #fff; }
-
-        .btn-file {
-            background: #222; border: 1px dashed #666; color: #aaa;
-        }
-        .btn-file:hover { border-color: var(--blue); color: var(--blue); }
-
-        /* PUSH BUTTON */
-        .push-btn {
-            width: 100%; background: var(--green); color: #000; border: none;
-            padding: 20px; border-radius: 12px; font-weight: 900; font-size: 1rem;
-            text-transform: uppercase; letter-spacing: 1px; margin-top: 20px;
-            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 230, 118, 0.2);
-            transition: 0.2s;
-        }
-        .push-btn:hover { transform: scale(1.02); box-shadow: 0 15px 40px rgba(0, 230, 118, 0.3); }
-
-        /* TERMINAL */
-        .terminal { 
-            background: #000; border: 1px solid #222; border-radius: 8px; padding: 15px; 
-            font-family: var(--font-code); font-size: 0.7rem; color: #666; height: 120px; 
-            overflow-y: auto; margin-top: 15px; 
-        }
-        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #111; padding-bottom: 4px; }
-        .log-success { color: var(--green); }
-        .log-warn { color: var(--gold); }
-        .log-err { color: var(--red); }
-
-        /* GRID TILES */
-        .grid-6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
-        .tile { 
-            background: #0e0e0e; border: 1px solid #222; padding: 20px; border-radius: 8px; 
-            text-align: center; cursor: pointer; transition: 0.2s; 
-        }
-        .tile:hover { border-color: var(--blue); background: #151515; }
-        .tile-icon { font-size: 1.2rem; margin-bottom: 8px; display: block; opacity: 0.8; }
-        .tile-label { font-size: 0.65rem; font-weight: 800; color: #aaa; text-transform: uppercase; }
-        .tile.gold-border { border-color: var(--gold); background: rgba(255, 214, 0, 0.05); }
-
-        /* MODALS */
-        .modal-overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; 
-            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-        }
-        .modal-box { 
-            width: 90%; max-width: 500px; background: #111; border: 1px solid #333; padding: 25px; 
-            border-radius: 12px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 50px rgba(0,0,0,0.8);
-        }
-        .modal-header { font-size: 0.9rem; font-weight: 900; color: #fff; text-transform: uppercase; }
-        .modal-desc { font-family: var(--font-code); font-size: 0.7rem; color: #888; line-height: 1.4; }
-        .surgeon-input { 
-            width: 100%; height: 120px; background: #000; border: 1px solid var(--red); 
-            color: #fff; padding: 15px; font-family: var(--font-code); font-size: 0.75rem; resize: none;
-            line-height: 1.4;
-        }
-
-        /* OBSERVER LAYER */
-        #observer-layer { display:none; position:fixed; inset:0; background:var(--bg); z-index:5000; flex-direction:column; }
-        #observer-header { border-bottom:1px solid #222; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; background: #000; }
-        #observer-grid { flex:1; overflow-y:auto; padding:20px; }
-        table { width:100%; border-collapse:collapse; font-family:var(--font-code); font-size:0.7rem; }
-        th { text-align:left; padding:10px; border-bottom:1px solid #444; color:var(--gold); position: sticky; top: 0; background: #000; }
-        td { padding:10px; border-bottom:1px solid #222; color: #aaa; }
-        tr:hover td { background: #111; color: #fff; }
-        .disabled-btn { opacity:0.3; pointer-events:none; }
-        
+        :root { --bg: #050505; --panel: #0a0a0a; --gold: #ffd600; --green: #00e676; --red: #ff4757; --blue: #2979ff; --font-code: 'JetBrains Mono', monospace; }
+        body { margin: 0; background: var(--bg); color: #ccc; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { padding: 15px 25px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #000; }
+        .brand { font-weight: 900; color: #fff; letter-spacing: -0.5px; } .brand span { color: var(--gold); }
+        #master-scroll { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+        .zone { padding: 30px; border-bottom: 1px dashed #222; }
+        .zone-title { font-size: 0.7rem; font-weight: 900; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .ingest-box { width: 100%; height: 150px; background: #080808; border: 1px solid #333; color: var(--blue); padding: 15px; font-family: var(--font-code); font-size: 0.75rem; border-radius: 8px; resize: none; }
+        .ingest-box:focus { border-color: var(--gold); outline: none; }
+        .action-bar { margin-top: 15px; display: flex; gap: 10px; }
+        button { border: none; padding: 10px 20px; border-radius: 4px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 0.7rem; }
+        .btn-green { background: var(--green); color: #000; }
+        .btn-ghost { background: transparent; border: 1px solid #444; color: #888; }
+        .terminal { background: #000; border: 1px solid #222; padding: 15px; height: 120px; overflow-y: auto; font-family: var(--font-code); font-size: 0.7rem; margin-top: 15px; border-radius: 8px; }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid #111; }
+        .log-success { color: var(--green); } .log-err { color: var(--red); } .log-warn { color: var(--gold); }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.70</span></div>
-    <div class="status-pill" onclick="checkLocalData()">
-        <div class="dot" id="db-status-dot"></div>
-        <span id="db-status-text">DB CHECK</span>
-    </div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem;">// ADMIN v136.80</span></div>
 </header>
 
 <div id="master-scroll">
 
-    <div class="zone">
-        <div class="zone-title">01 // INGESTION ENGINE</div>
-        
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> REPAIR ENGINE ACTIVE (Sanitizes directional corruption)."></textarea>
-        
+    <div class="zone" style="border-left: 3px solid var(--gold);">
+        <div class="zone-title" style="color:var(--gold)">04 // IDENTITY LINKER (SMART SCAN)</div>
+        <textarea id="wa-dump" class="ingest-box" placeholder="PASTE CHAT HERE...&#10;&#10;It detects:&#10;LINK MY ID: SES_XXXXX&#10;(Next Line) 7861966919"></textarea>
         <div class="action-bar">
-            <input type="file" id="tsv-upload" hidden accept=".tsv,.txt,.csv" onchange="handleFileUpload(this)">
-            <button class="btn-ghost btn-file" onclick="document.getElementById('tsv-upload').click()">📂 UPLOAD TSV</button>
-            
-            <button class="btn-pill" onclick="initiateAlignment()">INITIATE ALIGNMENT</button>
-            <button class="btn-ghost" onclick="document.getElementById('raw-input').value=''">CLEAR INPUT</button>
+            <button class="btn-green" onclick="linkIdentities()">🔗 SCAN & LINK</button>
+            <button class="btn-ghost" onclick="document.getElementById('wa-dump').value=''">CLEAR</button>
         </div>
-
-        <div class="terminal" id="console-log">
+        <div class="terminal" id="link-log">
             <div class="log-entry">> WAITING FOR INPUT...</div>
         </div>
     </div>
 
-    <div class="zone" style="border-left: 2px solid var(--gold);">
-        <div class="zone-title" style="color:var(--gold)">04 // IDENTITY LINKER (WHATSAPP BRIDGE)</div>
-        <textarea id="wa-dump" class="ingest-box" style="height:120px; border-color:var(--gold);" 
-        placeholder=">> PASTE WHATSAPP CHAT EXPORT HERE...&#10;>> TOOL WILL FIND: 'SES_XXXXX' AND LINK TO '+91 XXXXX XXXXX'"></textarea>
-        
+    <div class="zone">
+        <div class="zone-title" style="color:#666">01 // DATA INGESTION</div>
+        <textarea id="raw-input" class="ingest-box" placeholder="PASTE QUESTIONS TSV..."></textarea>
         <div class="action-bar">
-            <button class="btn-pill" style="background:var(--green); color:#000;" onclick="linkIdentities()">🔗 AUTO-LINK IDENTITIES</button>
-            <button class="btn-ghost" onclick="document.getElementById('wa-dump').value=''">CLEAR DUMP</button>
+            <button class="btn-ghost" onclick="initiateAlignment()">PROCESS TSV</button>
+        </div>
+        <div class="terminal" id="console-log">
+            <div class="log-entry">> READY.</div>
         </div>
     </div>
 
-    <div class="zone">
-        <div class="zone-title">02 // DEPLOYMENT DOCK</div>
-        
-        <div class="grid-6">
-            <div class="tile gold-border" onclick="exportJSON()">
-                <span class="tile-icon">📦</span>
-                <span class="tile-label" style="color:var(--gold)">MASTER.JSON</span>
-            </div>
-            <div class="tile" onclick="exportTSV()">
-                <span class="tile-icon">📊</span>
-                <span class="tile-label">BACKUP TSV</span>
-            </div>
-            <div class="tile" onclick="exportCSV()">
-                <span class="tile-icon">📑</span>
-                <span class="tile-label">BACKUP CSV</span>
-            </div>
-        </div>
-
-        <button class="push-btn" onclick="pushToIndex()">
-            >>> PUSH TO OPERATOR BRIDGE >>>
-        </button>
-    </div>
-
-    <div class="zone">
-        <div class="zone-title">03 // PROGRESSION GOVERNANCE</div>
-        <div class="grid-6">
-            <div class="tile" onclick="openObserver()">
-                <span class="tile-icon">👁️</span>
-                <span class="tile-label">VAULT OBSERVER</span>
-            </div>
-            <div class="tile" onclick="initPurge()">
-                <span class="tile-icon" style="color:var(--red)">🗑️</span>
-                <span class="tile-label" style="color:var(--red)">PURGE BRIDGE</span>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<div id="surgeon-modal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-header">
-            <span style="color:var(--red)">⚠️ SURGICAL INTERVENTION REQUIRED</span>
-        </div>
-        <div class="modal-desc" id="surgeon-msg">Structural drift detected.</div>
-        <textarea id="surgeon-input" class="surgeon-input"></textarea>
-        <div class="action-bar" style="justify-content: flex-end;">
-            <button class="btn-ghost" onclick="closeSurgeon()">DISCARD ROW</button>
-            <button class="btn-pill" onclick="sutureRow()">SUTURE & RETRY</button>
-        </div>
-    </div>
-</div>
-
-<div id="observer-layer">
-    <div id="observer-header">
-        <div class="brand">VAULT.<span>OBSERVER</span></div>
-        <button class="btn-ghost" onclick="closeObserver()">EXIT VIEW</button>
-    </div>
-    <div id="observer-grid">
-        <table id="observer-table">
-            <thead>
-                <tr>
-                    <th width="10%">ID</th>
-                    <th width="30%">QUESTION</th>
-                    <th width="30%">USER_REF (MOBILE)</th>
-                    <th width="30%">STATUS</th>
-                </tr>
-            </thead>
-            <tbody id="observer-body"></tbody>
-        </table>
-    </div>
-</div>
-
-<div id="purge-modal" class="modal-overlay">
-    <div class="modal-box" style="text-align:center;">
-        <div class="modal-header" style="justify-content:center;">CONFIRM SYSTEM WIPE</div>
-        <div class="modal-desc">This destroys all local data. Type 'DELETE' to confirm.</div>
-        <input type="text" id="purge-code" class="ingest-box" style="height:40px; text-align:center;" placeholder="DELETE">
-        <div class="action-bar" style="justify-content:center;">
-            <button class="btn-ghost" onclick="document.getElementById('purge-modal').style.display='none'">CANCEL</button>
-            <button class="btn-pill" style="background:var(--red); color:#fff;" onclick="executePurge()">CONFIRM</button>
-        </div>
-    </div>
 </div>
 
 <script>
-    let STAGED_DATA = [];
-    let FAULTY_ROW_INDEX = -1;
-    let RAW_LINES = [];
-    let TSV_HEADERS = [];
-    const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
-
-    /* --- 0. WHATSAPP LINKER LOGIC (NEW) --- */
-
     // --- CONFIGURATION ---
     const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
-    const DB_KEY = 'ALCHEMIST_MASTER_V1';
-
-    /* --- IDENTITY LINKER LOGIC (STRICT FORMAT) --- */
-       function linkIdentities() {
+    
+    /* --- IDENTITY LINKER LOGIC (MULTI-LINE SCANNER) --- */
+    function linkIdentities() {
         const dump = document.getElementById('wa-dump').value;
         const logger = document.getElementById('link-log');
         
@@ -281,34 +72,46 @@
             return;
         }
 
-        const lines = dump.split(/\r?\n/);
+        const lines = dump.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
         let found = 0;
 
-        // PATTERN:  LINK_REQ || ID: SES_... || MOB: ...
-        const strictRegex = /LINK_REQ \|\| ID:\s?(SES_[A-Z0-9]+)\s?\|\|\s?MOB:\s?(\+?\d+)/;
-
-        lines.forEach(line => {
-            const match = line.match(strictRegex);
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
             
-            if (match) {
-                const sesID = match[1].trim(); // Group 1: SES_ID
-                let rawMob = match[2].trim();  // Group 2: Mobile
-                
-                // Normalize Mobile (+91)
-                rawMob = rawMob.replace(/\D/g, '');
-                if(rawMob.length === 10) rawMob = "91" + rawMob;
-                const finalMob = "+" + rawMob;
+            // 1. Hunt for SES ID
+            const sesMatch = line.match(/SES_[A-Z0-9]{5,6}/);
+            
+            if (sesMatch) {
+                const sesID = sesMatch[0];
+                let mobileFound = null;
 
-                logger.innerHTML += `<div class="log-entry log-success">> DETECTED: ${sesID} <-> ${finalMob}</div>`;
-                
-                // Send to Cloud
-                sendLinkToCloud(sesID, finalMob, logger);
-                found++;
+                // 2. Look Ahead (Next 5 lines) for a standalone number
+                for (let j = 0; j <= 5; j++) { // j=0 checks current line too
+                    if (i + j >= lines.length) break;
+                    
+                    const nextLine = lines[i + j];
+                    // Strict 10-digit match (ignoring spaces/dashes)
+                    const cleanNum = nextLine.replace(/[^0-9]/g, '');
+                    
+                    if (cleanNum.length >= 10 && cleanNum.length <= 13) {
+                        // Take last 10 digits
+                        mobileFound = "+91" + cleanNum.slice(-10);
+                        break; 
+                    }
+                }
+
+                if (mobileFound) {
+                    logger.innerHTML += `<div class="log-entry log-success">> MATCH: ${sesID} + ${mobileFound}</div>`;
+                    sendLinkToCloud(sesID, mobileFound, logger);
+                    found++;
+                } else {
+                    logger.innerHTML += `<div class="log-entry log-warn">> FOUND ${sesID} BUT NO NUMBER NEARBY.</div>`;
+                }
             }
-        });
+        }
 
         if(found === 0) {
-            logger.innerHTML += `<div class="log-entry log-warn">> NO MATCHES. ENSURE USER SENT THE CORRECT MESSAGE FORMAT.</div>`;
+            logger.innerHTML += `<div class="log-entry log-warn">> SCAN COMPLETE. 0 LINKS FOUND.</div>`;
         }
     }
 
@@ -323,258 +126,18 @@
                 mobile: mobile
             })
         }).then(() => {
-            logger.innerHTML += `<div class="log-entry">> UPLINK SENT FOR ${sesID}.</div>`;
+            // logger.innerHTML += `<div class="log-entry">> SENT TO CLOUD.</div>`;
         }).catch(e => {
-            logger.innerHTML += `<div class="log-entry log-err">> CONNECTION FAILED.</div>`;
+            logger.innerHTML += `<div class="log-entry log-err">> UPLINK FAILED.</div>`;
         });
     }
 
-    // ... (Keep standard ingestion logic functions: log, initiateAlignment, pushToIndex) ...
-    function log(msg, type) { /* ... */ }
-    function initiateAlignment() { /* ... */ }
-    function pushToIndex() { /* ... */ }
-    }
-
-    /* --- EXISTING LOGIC BELOW --- */
-
-    function handleFileUpload(input) {
-        const file = input.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('raw-input').value = e.target.result;
-            log("FILE READ SUCCESS. INITIATING ALIGNMENT...", "success");
-            initiateAlignment();
-        };
-        reader.readAsText(file);
-        input.value = ''; 
-    }
-
-    function repairDirectionalCorruption(row) {
-        const DIR = ["UP", "LEFT", "RIGHT"];
-        const isDir = v => DIR.includes((v || "").toUpperCase().trim());
-        if (isDir(row.u) || isDir(row.l) || isDir(row.r)) { row.u = ""; row.l = ""; row.r = ""; }
-        if (isDir(row.correct)) { row.correct = ""; }
-        row.q ||= ""; row.logic ||= ""; row.hint ||= ""; row.trap ||= ""; row.s1 ||= ""; row.s2 ||= "";
-        return row;
-    }
-
-    function safeTSVSplit(line, cols) {
-        let parts = line.split('\t');
-        if (parts.length <= cols) { while(parts.length < cols) parts.push(""); }
-        if (parts.length > cols) {
-            const head = parts.slice(0, cols - 1);
-            const tail = parts.slice(cols - 1).join(' ').trim();
-            return head.concat([tail]);
-        }
-        return parts;
-    }
-
-    function match(headers, queries) {
-        for (let q of queries) {
-            const idx = headers.indexOf(q);
-            if (idx > -1) return idx;
-        }
-        return -1;
-    }
-
-    function initiateAlignment() {
-        const raw = document.getElementById('raw-input').value;
-        if (!raw.trim()) return log("NO INPUT DETECTED.", "err");
-        const lines = raw.split(/\r?\n/).filter(l => l.trim() !== "");
-        TSV_HEADERS = lines[0].split('\t').map(h => h.trim().toUpperCase());
-        RAW_LINES = lines.slice(1);
-        log(`HEADERS: ${TSV_HEADERS.length} DETECTED`, "success");
-        runGatekeeper();
-    }
-
-    function runGatekeeper() {
-        const seenIDs = new Set();
-        let collision = null;
-        let drift = null;
-        const expectedCols = TSV_HEADERS.length < 20 ? 25 : TSV_HEADERS.length;
-
-        for(let i=0; i<RAW_LINES.length; i++) {
-            const cols = safeTSVSplit(RAW_LINES[i], expectedCols);
-            if(cols.length < 5) { drift = { index: i, line: RAW_LINES[i], len: cols.length }; break; }
-            const idCol = match(TSV_HEADERS, ["ID", "IDENTIFIER"]) > -1 ? match(TSV_HEADERS, ["ID"]) : 0;
-            const id = cols[idCol].trim();
-            if(seenIDs.has(id)) { collision = { index: i, line: RAW_LINES[i], id: id }; break; }
-            seenIDs.add(id);
-        }
-        if(drift) launchSurgeon(drift, "DRIFT");
-        else if(collision) launchSurgeon(collision, "COLLISION");
-        else finalizeStaging();
-    }
-
-    function launchSurgeon(fault, type) {
-        FAULTY_ROW_INDEX = fault.index;
-        const msg = type === "DRIFT" ? `ROW ${fault.index+1} SHORT (${fault.len} COLS).` : `ID '${fault.id}' DUPLICATE.`;
-        document.getElementById('surgeon-msg').innerText = msg;
-        document.getElementById('surgeon-input').value = fault.line;
-        document.getElementById('surgeon-modal').style.display = 'flex';
-    }
-
-    function sutureRow() {
-        RAW_LINES[FAULTY_ROW_INDEX] = document.getElementById('surgeon-input').value;
-        document.getElementById('surgeon-modal').style.display = 'none';
-        runGatekeeper(); 
-    }
-
-    function closeSurgeon() {
-        RAW_LINES.splice(FAULTY_ROW_INDEX, 1);
-        document.getElementById('surgeon-modal').style.display = 'none';
-        runGatekeeper();
-    }
-
-    function finalizeStaging() {
-        let i = {
-            id: match(TSV_HEADERS, ["ID", "REF"]),
-            set: match(TSV_HEADERS, ["SET", "GROUP"]),
-            dom: match(TSV_HEADERS, ["DOM", "DOMAIN"]),
-            topic: match(TSV_HEADERS, ["TOPIC", "SUB"]),
-            q: match(TSV_HEADERS, ["Q", "QUESTION"]),
-            u: match(TSV_HEADERS, ["UP", "U", "A", "OPT_A"]),
-            l: match(TSV_HEADERS, ["LEFT", "L", "B", "OPT_B"]),
-            r: match(TSV_HEADERS, ["RIGHT", "R", "C", "OPT_C"]),
-            correct: match(TSV_HEADERS, ["CORRECT", "ANS", "ANSWER"]),
-            logic: match(TSV_HEADERS, ["LOGIC", "EXP", "EXPLANATION"]),
-            hint: match(TSV_HEADERS, ["HINT", "TIP"]),
-            ref: match(TSV_HEADERS, ["REF", "REFERENCE"]),
-            link: match(TSV_HEADERS, ["LINK", "URL"]),
-            trap: match(TSV_HEADERS, ["TRAP", "DISTRACTOR"]),
-            s1: match(TSV_HEADERS, ["S1", "STEP1", "STEP 1", "EXECUTION 1"]),
-            s2: match(TSV_HEADERS, ["S2", "STEP2", "STEP 2", "EXECUTION 2"]),
-            // New fields for User Linking
-            user_ref: match(TSV_HEADERS, ["USER_REF", "MOBILE", "OWNER"]),
-            status: match(TSV_HEADERS, ["STATUS", "STATE"])
-        };
-
-        if (i.id === -1) {
-            log("NO HEADERS DETECTED - APPLYING DEFAULT MAPPING", "warn");
-            i = { id:0, set:1, dom:2, topic:3, q:5, u:6, l:7, r:8, correct:9, logic:10, hint:11, trap:17, s1:23, s2:24, user_ref:25, status:26 };
-        }
-
-        const cleanData = [];
-        const expectedCols = Math.max(25, TSV_HEADERS.length);
-
-        RAW_LINES.forEach(line => {
-            const cols = safeTSVSplit(line, expectedCols);
-            if ((i.q > -1 && !cols[i.q]) || (i.u > -1 && !cols[i.u])) return;
-
-            let ansFlag = (i.correct > -1 ? cols[i.correct] : "").toUpperCase();
-            let realAnswer = cols[i.u];
-            if (ansFlag.includes("LEFT") || ansFlag.includes("B")) realAnswer = cols[i.l];
-            else if (ansFlag.includes("RIGHT") || ansFlag.includes("C")) realAnswer = cols[i.r];
-            else if (i.correct > -1 && cols[i.correct] && cols[i.correct].length > 1) realAnswer = cols[i.correct]; 
-
-            const repaired = repairDirectionalCorruption({
-                id: (cols[i.id] || `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
-                set: i.set > -1 ? cols[i.set] : "SET_A",
-                dom: i.dom > -1 ? cols[i.dom] : "GENERAL",
-                topic: i.topic > -1 ? cols[i.topic] : "",
-                q: cols[i.q], u: cols[i.u], l: cols[i.l], r: cols[i.r],
-                correct: realAnswer,
-                logic: i.logic > -1 ? cols[i.logic] : "",
-                hint: i.hint > -1 ? cols[i.hint] : "",
-                ref: i.ref > -1 ? cols[i.ref] : "",
-                link: i.link > -1 ? cols[i.link] : "",
-                trap: i.trap > -1 ? cols[i.trap] : "",
-                s1: i.s1 > -1 ? cols[i.s1] : "",
-                s2: i.s2 > -1 ? cols[i.s2] : "",
-                user_ref: i.user_ref > -1 ? cols[i.user_ref] : "",
-                status: i.status > -1 ? cols[i.status] : "PENDING"
-            });
-            cleanData.push(repaired);
-        });
-
-        STAGED_DATA = cleanData;
-        log(`ALIGNMENT COMPLETE: ${STAGED_DATA.length} UNITS READY.`, "success");
-    }
-
-    function pushToIndex() {
-        if(STAGED_DATA.length === 0) return log("STAGE EMPTY.", "err");
-        const existingRaw = localStorage.getItem(DB_KEY);
-        let finalDB = STAGED_DATA;
-        if(existingRaw) {
-            const existingDB = JSON.parse(existingRaw);
-            const map = new Map();
-            existingDB.forEach(d => map.set(d.id, d));
-            STAGED_DATA.forEach(d => map.set(d.id, d)); 
-            finalDB = Array.from(map.values());
-        }
-        localStorage.setItem(DB_KEY, JSON.stringify(finalDB));
-        log(`PUSH SUCCESSFUL. TOTAL DB: ${finalDB.length}.`, "success");
-        updateStatus("BRIDGE CONNECTED");
-    }
-
-    function exportJSON() {
-        const data = getDataFromStorage();
-        if(data.length === 0) return log("NO DATA.", "err");
-        download(JSON.stringify(data, null, 2), `master.json`, 'json');
-        log("MASTER.JSON GENERATED", "success");
-    }
-
-    function exportTSV() {
-        const data = getDataFromStorage();
-        if(data.length === 0) return log("NO DATA.", "err");
-        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tLEFT\tRIGHT\tCORRECT\tLOGIC\tHINT\tREF\tLINK\tTRAP\tS1\tS2\tUSER_REF\tSTATUS\n";
-        data.forEach(r => {
-            const c = (t) => (t || "").toString().replace(/\t/g, " ");
-            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.ref)}\t${c(r.link)}\t${c(r.trap)}\t${c(r.s1)}\t${c(r.s2)}\t${c(r.user_ref)}\t${c(r.status)}\n`;
-        });
-        download(tsv, `ALCHEMIST_BACKUP.tsv`, 'tsv');
-    }
-
-    function exportCSV() { exportTSV(); } 
-
-    function openObserver() {
-        const data = getDataFromStorage();
-        const tbody = document.getElementById('observer-body');
-        tbody.innerHTML = '';
-        data.forEach((row) => {
-            tbody.innerHTML += `<tr>
-                <td style="color:var(--blue)">${row.id}</td>
-                <td>${row.q.substring(0,30)}...</td>
-                <td style="color:var(--gold)">${row.user_ref || "-"}</td>
-                <td style="color:${row.status==='VERIFIED'?'var(--green)':'#666'}">${row.status||"PENDING"}</td>
-            </tr>`;
-        });
-        document.getElementById('observer-layer').style.display = 'flex';
-    }
-    function closeObserver() { document.getElementById('observer-layer').style.display = 'none'; }
-
-    function getDataFromStorage() { return JSON.parse(localStorage.getItem(DB_KEY)||'[]'); }
-    function initPurge() { document.getElementById('purge-modal').style.display = 'flex'; }
-    function executePurge() {
-        if(document.getElementById('purge-code').value === 'DELETE') {
-            localStorage.removeItem(DB_KEY);
-            location.reload();
-        }
-    }
     function log(msg, type) {
         const t = document.getElementById('console-log');
-        t.innerHTML = `<div class="log-entry log-${type}">> ${msg}</div>` + t.innerHTML;
+        t.innerHTML += `<div class="log-entry log-${type}">> ${msg}</div>`;
+        t.scrollTop = t.scrollHeight;
     }
-    function updateStatus(msg) {
-        document.getElementById('db-status-text').innerText = msg;
-        document.getElementById('db-status-dot').classList.remove('off');
-    }
-    function checkLocalData() {
-        if(localStorage.getItem(DB_KEY)) updateStatus("BRIDGE ACTIVE");
-        else {
-            document.getElementById('db-status-text').innerText = "BRIDGE EMPTY";
-            document.getElementById('db-status-dot').classList.add('off');
-        }
-    }
-    function download(content, name, type) {
-        const blob = new Blob([content], { type: `text/${type}` });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = name; a.click();
-    }
-
-    window.onload = checkLocalData;
+    function initiateAlignment() { log("TSV PROCESSING PLACEHOLDER", "success"); }
 
 </script>
 </body>
