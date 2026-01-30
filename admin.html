@@ -266,52 +266,73 @@
     const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
 
     /* --- 0. WHATSAPP LINKER LOGIC (NEW) --- */
-    function linkIdentities() {
-        const dump = document.getElementById('wa-dump').value;
-        if(!dump.trim()) return log("NO WHATSAPP DUMP FOUND", "err");
 
-        // 1. Regex to find [Time] +91 Mobile ... SES_ID
-        // Loose regex to catch mobile numbers (Indian Format)
-        const mobileRegex = /(?:\+91|91)?[\-\s]?[6-9]\d{4}[\-\s]?\d{5}/g;
-        const sesRegex = /SES_[A-Z0-9]{5,6}/g;
+    // --- CONFIGURATION ---
+    const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
+    const DB_KEY = 'ALCHEMIST_MASTER_V1';
+
+    /* --- IDENTITY LINKER LOGIC (STRICT FORMAT) --- */
+       function linkIdentities() {
+        const dump = document.getElementById('wa-dump').value;
+        const logger = document.getElementById('link-log');
+        
+        if(!dump.trim()) {
+            logger.innerHTML += `<div class="log-entry log-err">> ERROR: EMPTY INPUT.</div>`; 
+            return;
+        }
 
         const lines = dump.split(/\r?\n/);
-        let linkedCount = 0;
-        let db = getDataFromStorage();
-        let updates = 0;
+        let found = 0;
+
+        // PATTERN:  LINK_REQ || ID: SES_... || MOB: ...
+        const strictRegex = /LINK_REQ \|\| ID:\s?(SES_[A-Z0-9]+)\s?\|\|\s?MOB:\s?(\+?\d+)/;
 
         lines.forEach(line => {
-            const sesMatch = line.match(sesRegex);
-            const mobMatch = line.match(mobileRegex);
-
-            if(sesMatch && mobMatch) {
-                const sesID = sesMatch[0];
-                const rawMobile = mobMatch[0].replace(/\D/g, ''); // Clean to pure numbers
-                const finalMobile = "+91" + rawMobile.slice(-10); // Standardize
-
-                // FIND IN DB
-                const record = db.find(r => r.id === sesID || (r.tags && r.tags.includes(sesID)));
+            const match = line.match(strictRegex);
+            
+            if (match) {
+                const sesID = match[1].trim(); // Group 1: SES_ID
+                let rawMob = match[2].trim();  // Group 2: Mobile
                 
-                if(record) {
-                    if(record.user_ref && record.user_ref !== finalMobile) {
-                        log(`CONFLICT: ${sesID} CLAIMED BY ${finalMobile} BUT OWNED BY ${record.user_ref}`, "err");
-                    } else {
-                        record.user_ref = finalMobile;
-                        record.status = "VERIFIED";
-                        linkedCount++;
-                        updates++;
-                    }
-                }
+                // Normalize Mobile (+91)
+                rawMob = rawMob.replace(/\D/g, '');
+                if(rawMob.length === 10) rawMob = "91" + rawMob;
+                const finalMob = "+" + rawMob;
+
+                logger.innerHTML += `<div class="log-entry log-success">> DETECTED: ${sesID} <-> ${finalMob}</div>`;
+                
+                // Send to Cloud
+                sendLinkToCloud(sesID, finalMob, logger);
+                found++;
             }
         });
 
-        if(updates > 0) {
-            localStorage.setItem(DB_KEY, JSON.stringify(db));
-            log(`LINKING COMPLETE: ${linkedCount} IDENTITIES VERIFIED.`, "success");
-            checkLocalData(); // Refresh UI
-        } else {
-            log("NO MATCHING 'SES_ID' FOUND IN DATABASE.", "warn");
+        if(found === 0) {
+            logger.innerHTML += `<div class="log-entry log-warn">> NO MATCHES. ENSURE USER SENT THE CORRECT MESSAGE FORMAT.</div>`;
         }
+    }
+
+    function sendLinkToCloud(sesID, mobile, logger) {
+        fetch(BEACON_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "LINK",
+                ses_id: sesID,
+                mobile: mobile
+            })
+        }).then(() => {
+            logger.innerHTML += `<div class="log-entry">> UPLINK SENT FOR ${sesID}.</div>`;
+        }).catch(e => {
+            logger.innerHTML += `<div class="log-entry log-err">> CONNECTION FAILED.</div>`;
+        });
+    }
+
+    // ... (Keep standard ingestion logic functions: log, initiateAlignment, pushToIndex) ...
+    function log(msg, type) { /* ... */ }
+    function initiateAlignment() { /* ... */ }
+    function pushToIndex() { /* ... */ }
     }
 
     /* --- EXISTING LOGIC BELOW --- */
