@@ -4,204 +4,514 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v144.0 Gold</title>
+<title>Alchemist | Kinetic v144.0 GOLD</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-:root{
- --bg:#000;--card:#0a0a0a;--border:#222;
- --gold:#ffd600;--green:#2ecc71;--red:#ff4444;
- --text-white:#fff;--text-grey:#888;
- --font-serif:'Crimson Text',serif;
- --font-sans:'Inter',sans-serif;
- --font-code:'JetBrains Mono',monospace;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;height:100vh;background:var(--bg);color:var(--text-white);font-family:var(--font-sans);overflow:hidden;display:flex;flex-direction:column}
+/* KINETIC VISUAL CORE */
+:root{ --bg:#000000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --green:#2ecc71; --red:#ff4444; --text-white:#ffffff; --text-grey:#888888; --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
 
-/* HEADER */
-#header{width:90%;margin:25px auto 0;flex-shrink:0}
-.header-meta{display:flex;justify-content:space-between;font-family:var(--font-code);font-size:.75rem;color:#666;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:15px}
-.progress-track{width:100%;height:3px;background:#222;border-radius:2px}
-#progress-bar{height:100%;background:var(--gold);width:0%;transition:width .3s ease;border-radius:2px}
+/* HEADER & LOGS */
+#header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
+.header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:#666; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;}
+.progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
+#progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px;}
 
-/* LOGGER */
-#kinetic-logger{width:90%;margin:15px auto 5px;font-family:var(--font-code);font-size:.8rem;color:#444;line-height:1.4;text-transform:uppercase;min-height:60px;display:flex;flex-direction:column;justify-content:flex-end}
-.log-line{opacity:.4}
-.log-line.active{opacity:1;color:var(--green);font-weight:700}
-.log-line.primary{opacity:1;color:var(--gold);font-weight:700}
-.log-line.danger{opacity:1;color:var(--red);font-weight:700}
+#kinetic-logger{width:90%; margin:15px auto 5px; font-family:var(--font-code); font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase; min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;}
+.log-line{opacity:0.5; transition:opacity 0.2s;} 
+.log-line.active{color:var(--green); opacity:1; font-weight:700;} 
+.log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
+.log-line.danger{color:var(--red); opacity:1; font-weight:700;}
 
-/* STACK */
-#stack{position:relative;width:90%;max-width:420px;height:calc(100vh - 220px - env(safe-area-inset-bottom));margin:10px auto 20px;perspective:1500px;display:flex;align-items:center;justify-content:center}
-.card{position:absolute;width:100%;height:100%;background:var(--card);border-radius:14px;border:1px solid var(--border);padding:35px;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:0 20px 60px rgba(0,0,0,.95);will-change:transform;transform-style:preserve-3d;overflow:hidden}
-.card-q{font-family:var(--font-serif);font-size:clamp(1.4rem,5vw,1.9rem);line-height:1.4;font-weight:600;text-align:center;width:100%;overflow-y:auto}
-.card-q::-webkit-scrollbar{width:0}
-.swipe-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000;font-weight:900;font-size:1.8rem;letter-spacing:1px;opacity:0;pointer-events:none;border-radius:14px;color:var(--text-grey);border:1px solid #333}
+/* PHYSICS STACK */
+#stack{position:relative; width:90%; max-width:420px; height:calc(100vh - 220px - env(safe-area-inset-bottom)); margin:10px auto 20px; perspective:1500px; display:flex; align-items:center; justify-content:center;}
+.card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:14px; border:1px solid var(--border); padding:35px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.95); will-change:transform; transform-style:preserve-3d; overflow:hidden;}
+.card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
+.card-q::-webkit-scrollbar{width:0px;} 
+.card-q sub{font-size:0.7em; vertical-align:-0.3em;} .card-q sup{font-size:0.7em; vertical-align:0.5em;}
+
+.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-family:var(--font-sans); font-weight:900; font-size:1.8rem; text-transform:uppercase; letter-spacing:1px; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.15s ease; border-radius:14px; color:var(--text-grey); border:1px solid #333;}
 </style>
 </head>
-
 <body>
 
 <div id="header">
   <div class="header-meta">
-    <span id="id-ui">VIA.STACK</span>
-    <span id="xp-ui">0</span>
+    <span id="id-ui">VIA.STACK</span> 
+    <span id="xp-ui">0 XP</span>
   </div>
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="kinetic-logger">
-  <div class="log-line" id="log-1">> BOOT</div>
-  <div class="log-line" id="log-2">> ...</div>
-  <div class="log-line active" id="log-3">> READY</div>
+  <div class="log-line" id="log-1">> SYSTEM BOOT</div>
+  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
+  <div class="log-line active" id="log-3">> ...</div>
 </div>
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code);font-size:.9rem;color:#666">INITIALIZING...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING KERNEL v144...</div>
   </div>
 </div>
 
 <script>
+/* =========================================
+   VIA.STACK | KINETIC v144.0-GOLD
+   ========================================= */
+
+// --- CONFIGURATION ---
+const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
+const WA_NUMBER = "919876543210"; 
+const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+
+// --- GITHUB LINK CONFIGURATION ---
+const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
+
 /* ================= GOLD MASTER CONSTANTS ================= */
-const VERSION = "v144.0-GOLD";
-const VAULT_TTL = 86400000;
+const KINETIC_VERSION = "v144.0-GOLD";
+const VAULT_TTL = 86400000; // 24h
 
-const KEY_CREDITS="K1_CREDITS";
-const KEY_DUMPS="K1_DUMPS";
-const KEY_VAULT="K1_VAULT";
+// Canonical Storage Keys
+const KEY_CREDITS = "K1_CREDITS";
+const KEY_DUMPS   = "K1_DUMPS";
+const KEY_VAULT   = "K1_VAULT";
 
-const BEACON_URL="https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec";
-const GITHUB_RAW_URL="https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
+// --- Physics Constants (v144 Kernel) ---
+const ROT_COEFF = 20;
+const COMMIT_RADIUS = 100;
+const LABEL_START = 30;
+const SNAP_TIME = 300;
+const SNAP_CURVE = "cubic-bezier(0.2,0.8,0.2,1)";
 
-/* ================= STATE ================= */
-let RAW_DATA=[],POOL=[],WRONG=[],SESSION_ALL=[];
-let XP=0,SET_CURSOR=0,ACTIVE_SET=null;
-let SESSION_LOG=[],PIVOT_COUNT=0;
-let USER_MOBILE=localStorage.getItem("USER_MOBILE")||null;
-let CURRENT_SES_ID=null;
+// --- STATE ---
+let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
+let SET_CURSOR = 0, ACTIVE_SET = null, XP = 0, VOLUME_LIMIT = null;
+let ATTEMPTED = new Set(); 
 
-/* ECONOMY */
-let CREDITS=parseFloat(localStorage.getItem(KEY_CREDITS)||"10.0");
-let DUMPS=parseInt(localStorage.getItem(KEY_DUMPS)||"0");
+// --- TELEMETRY STATE ---
+let Q_START_TIME = 0;
+let SESSION_LOG = []; 
+let PIVOT_COUNT = 0;
 
-/* VAULT */
-let VAULT=[];
-try{VAULT=JSON.parse(localStorage.getItem(KEY_VAULT)||"[]")}catch(e){VAULT=[]}
+// --- BACKEND & ECONOMIC STATE ---
+let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
+let CURRENT_SES_ID = null;
+let SES_BEACON_SENT = false;
 
-/* ================= LOGGER ================= */
-function log(msg,type="normal"){
- const l1=log_1,l2=log_2,l3=log_3;
- l1.innerText=l2.innerText;l1.className=l2.className;
- l2.innerText=l3.innerText;l2.className="log-line";
- l3.innerText="> "+msg;
- l3.className="log-line "+(type||"");
+let CREDITS = parseFloat(localStorage.getItem(KEY_CREDITS) || "10.0");
+let DUMPS = parseInt(localStorage.getItem(KEY_DUMPS) || "0");
+
+let VAULT = [];
+try {
+  VAULT = JSON.parse(localStorage.getItem(KEY_VAULT) || "[]");
+} catch(e){ VAULT = []; }
+
+/* ================= UTILITIES & LOGGING ================= */
+function log(msg, type="normal") {
+    const l1 = document.getElementById("log-1"), l2 = document.getElementById("log-2"), l3 = document.getElementById("log-3");
+    l1.innerText = l2.innerText; l1.className = l2.className;
+    l2.innerText = l3.innerText; l2.className = "log-line"; 
+    l3.innerText = `> ${msg}`;
+    l3.className = type === "active" ? "log-line active" : type === "primary" ? "log-line primary" : type === "danger" ? "log-line danger" : "log-line";
 }
 
-/* ================= VAULT GC ================= */
+/* ================= VAULT PROTOCOL (v143.1+) ================= */
 function gcVault(){
- const now=Date.now();
- VAULT=VAULT.filter(v=>v.ts&&(now-v.ts)<VAULT_TTL);
- localStorage.setItem(KEY_VAULT,JSON.stringify(VAULT));
+  const now = Date.now();
+  // Filter items younger than TTL
+  const initialLen = VAULT.length;
+  VAULT = VAULT.filter(item => item.ts && (now - item.ts) < VAULT_TTL);
+  
+  // Update storage
+  localStorage.setItem(KEY_VAULT, JSON.stringify(VAULT));
+  
+  if(VAULT.length < initialLen){
+    log(`GC: PRUNED ${initialLen - VAULT.length} ITEMS`, "normal");
+  }
 }
 
-/* ================= PHYSICS KERNEL ================= */
-const ROT_COEFF=20,COMMIT_RADIUS=100,LABEL_START=30,SNAP_TIME=300,SNAP_CURVE="cubic-bezier(0.2,0.8,0.2,1)";
+/* ================= BACKEND LOGIC (TELEMETRY) ================= */
+function generateSessionID() {
+    const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
+    CURRENT_SES_ID = `SES_${hash}`;
+    localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
+    log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
+}
+
+function sendTelemetry() {
+    if(!BEACON_URL) return;
+    
+    const totalLatency = SESSION_LOG.reduce((sum, item) => sum + item.latency, 0);
+    const avgLatency = SESSION_LOG.length > 0 ? Math.round(totalLatency / SESSION_LOG.length) : 0;
+    const accuracy = SESSION_ALL.length > 0 ? Math.round((XP / SESSION_ALL.length) * 100) : 0;
+
+    log("SYNCING TELEMETRY...", "normal");
+    
+    fetch(BEACON_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "TELEMETRY",
+            ses_id: CURRENT_SES_ID,
+            mobile: USER_MOBILE || "GUEST",
+            score: XP,
+            accuracy: accuracy,
+            latency: avgLatency,
+            pivots: PIVOT_COUNT,
+            log: SESSION_LOG
+        })
+    }).then(() => {
+        log("DATA SYNC COMPLETE", "active");
+    }).catch(e => {
+        log("DATA SYNC FAILED", "danger");
+    });
+}
+
+/* ================= PHYSICS & RENDER ================= */
+const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔/g,"⇌");
+const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
 
 class PhysicsController{
- constructor(el,cb){
-  this.el=el;this.cb=cb;this.active=false;this.start={x:0,y:0};
-  el.addEventListener("touchstart",e=>this.s(e.touches[0]),{passive:false});
-  el.addEventListener("touchmove",e=>{if(this.active)e.preventDefault();this.m(e.touches[0])},{passive:false});
-  el.addEventListener("touchend",()=>this.e());
+ constructor(el,cbs){
+  this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+  this.labels={UP:el.querySelector(".sl-up"),LEFT:el.querySelector(".sl-left"),RIGHT:el.querySelector(".sl-right"),DOWN:el.querySelector(".sl-down")};
+  const s=e=>this.startDrag(e.touches?e.touches[0]:e); const m=e=>this.move(e.touches?e.touches[0]:e); const e2=()=>this.end();
+  el.addEventListener("mousedown",s); window.addEventListener("mousemove",m); window.addEventListener("mouseup",e2);
+  el.addEventListener("touchstart",s,{passive:false}); el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); el.addEventListener("touchend",e2);
  }
- s(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
- m(p){
+ startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+ 
+ move(p){
   if(!this.active)return;
-  const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;
+  const dx=p.clientX-this.start.x, dy=p.clientY-this.start.y;
   const d=Math.hypot(dx,dy);
-  this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/ROT_COEFF}deg)`;
- }
- e(){
-  if(!this.active)return;
-  this.active=false;
-  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-  const dx=m.m41,dy=m.m42,d=Math.hypot(dx,dy);
-  if(d>COMMIT_RADIUS)this.cb();
-  else{
-   if(d>LABEL_START)PIVOT_COUNT++;
-   this.el.style.transition=`${SNAP_TIME}ms ${SNAP_CURVE}`;
-   this.el.style.transform="translate(0,0)";
+  
+  // v144 Kernel Physics Logic
+  this.el.style.transform = `translate(${dx}px,${dy}px) rotate(${dx/ROT_COEFF}deg)`;
+
+  Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+  if(d > LABEL_START){
+    const dir=this.dir(dx,dy);
+    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
   }
  }
+
+ end(){
+  if(!this.active)return;
+  this.active=false;
+  const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform); 
+  const dx=m.m41, dy=m.m42;
+  
+  if(Math.hypot(dx,dy) > COMMIT_RADIUS){
+    this.cbs.onCommit(this.dir(dx,dy));
+  } else {
+    // Hesitation / Pivot Tracking
+    if(Math.hypot(dx,dy) > LABEL_START) PIVOT_COUNT++;
+    
+    this.el.style.transition = `${SNAP_TIME}ms ${SNAP_CURVE}`;
+    this.el.style.transform = "translate(0,0)";
+  }
+ }
+ 
+ dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
 }
 
-/* ================= CORE ================= */
-const UI={stack,bar:progress_bar,xp:xp_ui};
-
-function card(text,cb){
- UI.stack.innerHTML="";
- const el=document.createElement("div");
- el.className="card";
- el.innerHTML=`<div class="card-q">${text}</div>`;
- UI.stack.appendChild(el);
- new PhysicsController(el,cb);
+const UI = {stack:document.getElementById("stack"), id:document.getElementById("id-ui"), xp:document.getElementById("xp-ui"), bar:document.getElementById("progress-bar")};
+function card(text,labels,cb){
+ UI.stack.innerHTML=""; const el=document.createElement("div"); el.className="card";
+ el.innerHTML=`<div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
+  <div class="swipe-label sl-up">${chemText(labels.up)||""}</div><div class="swipe-label sl-left">${chemText(labels.left)||""}</div><div class="swipe-label sl-right">${chemText(labels.right)||""}</div><div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
+ UI.stack.appendChild(el); 
+ // TELEMETRY: START TIMER
+ Q_START_TIME = Date.now();
+ new PhysicsController(el,{onCommit:cb});
 }
 
-/* ================= FLOW ================= */
+/* ================= APP FLOW ================= */
 function begin(){
- log("SYSTEM READY "+VERSION,"primary");
- card(`DATA LOADED\n${RAW_DATA.length}`,()=>setPick());
+ if(USER_MOBILE) log(`LOGIN: ${USER_MOBILE} | CREDITS: ${CREDITS}`, "primary");
+ else log("LOGIN: GUEST | CREDITS: " + CREDITS, "normal");
+ card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"VAULT",left:"RAPID",right:"LEARN"},dir=>{
+  if(dir==="UP")setPick(); 
+  if(dir==="DOWN")checkLoginForVault(); 
+ });
+}
+
+function checkLoginForVault(){
+    gcVault(); // enforce TTL on access
+    if(USER_MOBILE && USER_MOBILE.length > 5){ openVault(0); return; }
+    const mob = prompt("SECURE VAULT ACCESS\n\nEnter your Registered Mobile Number to unlock:");
+    if(mob && mob.length >= 10){
+        localStorage.setItem("USER_MOBILE", mob); USER_MOBILE = mob;
+        log(`LOGIN SUCCESS: ${mob}`, "active"); openVault(0);
+    } else { log("ACCESS DENIED", "danger"); begin(); }
+}
+
+function openVault(index){
+    if(VAULT.length === 0){ 
+        card("VAULT EMPTY", {down:"MENU"}, dir => { begin(); });
+        return; 
+    }
+    if(index < 0) { begin(); return; } 
+    if(index >= VAULT.length) index = VAULT.length - 1;
+
+    const item = VAULT[index];
+    const isNewest = (index === 0);
+    const isOldest = (index === VAULT.length - 1);
+    
+    // TIMESTAMP AWARE HEADER
+    const ageHrs = Math.floor((Date.now() - item.ts) / 3600000);
+    
+    log(`ARCHIVE: ${item.id}`, "primary");
+    card(`VAULT // ${item.id}\nSCORE: ${item.score}/${item.total}\nAGE: ${ageHrs}h`,
+        { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
+        dir => {
+            if(dir === "LEFT") openVault(index - 1);
+            if(dir === "RIGHT") openVault(index + 1);
+            if(dir === "UP") {
+                log("OPENING ARCHIVE...", "active");
+                renderSessionPDF(item.data, item.id);
+            }
+        }
+    );
 }
 
 function setPick(){
  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
- card(`SET\n${sets[SET_CURSOR]}`,()=>{ACTIVE_SET=sets[SET_CURSOR];startQuiz()});
+ if(sets.length===0){card("NO DATA FOUND",{down:"RETRY"},()=>location.reload());return;}
+ card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
+  if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
+  if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
+  if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
+  if(dir==="DOWN")begin();
+ });
+}
+
+function volumePick(){
+ card(`QUESTION VOLUME`,{up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},dir=>{
+    if(dir==="UP")VOLUME_LIMIT=10; if(dir==="LEFT")VOLUME_LIMIT=25; if(dir==="RIGHT")VOLUME_LIMIT=50; if(dir==="DOWN")VOLUME_LIMIT=null;
+    startQuiz();
+ });
 }
 
 function startQuiz(){
- XP=0;SESSION_ALL=[];WRONG=[];
- POOL=[...RAW_DATA.filter(d=>d.set===ACTIVE_SET)];
+ log("INITIATING QUIZ...", "active");
+ let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+ base = shuffle(base); 
+ if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
+ POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
+ CURRENT_SES_ID = null; SES_BEACON_SENT = false; 
+ SESSION_LOG = []; PIVOT_COUNT = 0; // RESET TELEMETRY
  nextQ();
 }
 
 function nextQ(){
- if(!POOL.length){report();return}
+ if(!CURRENT_SES_ID && SESSION_ALL.length > 0 && POOL.length <= SESSION_ALL.length){ generateSessionID(); }
+ if(!POOL.length){ if(WRONG.length){ review(); return; } report(); return; }
  const d=POOL.shift();
- SESSION_ALL.push(d);
- card(d.q,()=>{
-  XP++;UI.xp.textContent=XP;
+ log(`ID: ${d.id}`, "normal");
+ if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+ const opts = shuffle([d.u, d.l, d.r]);
+ const map = { up: opts[0], left: opts[1], right: opts[2] };
+ card(d.q, map, dir=>{
+  let picked = null;
+  if(dir==="UP") picked = map.up; if(dir==="LEFT") picked = map.left; if(dir==="RIGHT") picked = map.right;
+  let c = d.correct; if(c==="UP"||c==="A") c=d.u; else if(c==="LEFT"||c==="B") c=d.l; else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+  const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
+  
+  const latency = Date.now() - Q_START_TIME;
+  SESSION_LOG.push({ id: d.id, res: isCorrect ? "WIN" : "LOSS", latency: latency });
+
+  if(!isCorrect){ WRONG.push(d); } else { if(!ATTEMPTED.has(d.id)){ XP+=1; } }
+  ATTEMPTED.add(d.id);
+  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
+  UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
   nextQ();
  });
 }
 
+function review(){
+ if(!WRONG.length){ report(); return; } 
+ const d=WRONG[0]; 
+ log("REVIEW MODE", "primary");
+ card(`REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,{up:"RETRY", down:"SKIP"},dir=>{
+    if(dir==="UP"){ WRONG.shift(); POOL.unshift(d); } else { WRONG.shift(); }
+    nextQ();
+ });
+}
+
 function report(){
- card(`SUMMARY\n${XP}/${SESSION_ALL.length}\nDOWNLOAD PDF`,()=>exportSessionPDF());
+ if(!CURRENT_SES_ID) generateSessionID();
+ const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
+ const statusText = USER_MOBILE ? `USER: ${USER_MOBILE}` : "GUEST (UNLINKED)";
+ card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} Correct\n(${percent}%)\n\nID: ${CURRENT_SES_ID}\n${statusText}`,{down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},dir=>{
+    if(dir==="DOWN") handleDownloadRequest();
+    if(dir==="UP") startQuiz(); 
+    if(dir==="LEFT") begin();
+ });
 }
 
-function exportSessionPDF(){
- if(CREDITS<1){log("NO CREDITS","danger");return}
- CREDITS-=1;DUMPS+=1;
- localStorage.setItem(KEY_CREDITS,CREDITS.toFixed(1));
- localStorage.setItem(KEY_DUMPS,DUMPS);
- VAULT.unshift({id:"SES_"+Date.now(),ts:Date.now(),score:XP,total:SESSION_ALL.length,data:SESSION_ALL});
- gcVault();
- log("PDF GENERATED","active");
+function handleDownloadRequest(){
+    if(!USER_MOBILE){
+        log("IDENTITY UNLINKED", "danger");
+        const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}`;
+        const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+        card(`ACCOUNT REQUIRED\n\nTo save this PDF, you must link your device.\n\nID: ${CURRENT_SES_ID}`,
+            { up: "LINK VIA WHATSAPP", down: "I HAVE LINKED" },
+            (dir) => {
+                if(dir === "UP") { window.open(url, '_blank'); }
+                if(dir === "DOWN") {
+                    const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):");
+                    if(mob && mob.length >= 10) {
+                        localStorage.setItem("USER_MOBILE", mob); USER_MOBILE = mob;
+                        log("IDENTITY LINKED", "active"); report();
+                    } else { log("INVALID INPUT", "normal"); handleDownloadRequest(); }
+                }
+            }
+        );
+        return;
+    }
+    exportSessionPDF();
 }
 
-/* ================= INIT ================= */
+function exportSessionPDF(data=null, id=null){
+  const renderData = data || SESSION_ALL;
+  const renderID = id || CURRENT_SES_ID;
+
+  // --- ECONOMICS & VAULT LOGIC ---
+  if(!data){
+    if(CREDITS < 1){
+      log("INSUFFICIENT CREDITS", "danger");
+      return;
+    }
+    CREDITS -= 1.0;
+    DUMPS += 1;
+
+    localStorage.setItem(KEY_CREDITS, CREDITS.toFixed(1));
+    localStorage.setItem(KEY_DUMPS, DUMPS.toString());
+
+    VAULT.unshift({
+      id: renderID,
+      ts: Date.now(), // v143.1 timestamp
+      score: XP,
+      total: SESSION_ALL.length,
+      data: [...SESSION_ALL]
+    });
+    
+    gcVault(); // Enforce Vault Cap
+    log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
+  }
+
+ log("GENERATING PDF...", "active");
+ 
+ // Existing PDF Renderer
+ const {jsPDF}=window.jspdf; const doc=new jsPDF();
+ const unique=renderData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
+ let y=20; const ML=15; const W=180;
+ const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
+ const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+
+ doc.setFont("times","bold"); doc.setFontSize(16);
+ doc.text(`VIA.STACK // ${renderID}`,105,y,{align:"center"});
+ doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"});
+ doc.line(ML,y+8,195,y+8); y+=15;
+
+ unique.forEach((d,i)=>{
+  if(y>240){doc.addPage();y=20;}
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+  doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
+  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+  
+  const startY=y;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
+  const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  
+  let maxH=y; y=startY;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4;
+  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y);
+  if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4);
+  y=startY;
+  
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  const s1=`1. ${cleanPDF(d.step1||"-")}`; const s2=`2. ${cleanPDF(d.step2||"-")}`;
+  const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
+  const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y);
+  if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
+  
+  y=maxH+5;
+  if(d.trap){
+   doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y);
+   doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8;
+  } else {y+=5;}
+  y+=5;
+ });
+
+ const fileName = `ALCHEMIST_${renderID}.pdf`;
+ doc.save(fileName);
+
+ if(!data) sendTelemetry(); 
+ setTimeout(begin,500);
+}
+
+/* ================= BOOT & MIGRATION ================= */
 async function init(){
- gcVault();
- log("BOOT "+VERSION,"active");
- try{
-  const r=await fetch(GITHUB_RAW_URL);
-  RAW_DATA=await r.json();
- }catch(e){RAW_DATA=[]}
- RAW_DATA=RAW_DATA.filter(d=>d.id&&d.q&&d.u);
- begin();
+  gcVault(); // v143.1 Vault TTL enforcement
+
+  // Legacy migration (one-time)
+  if(localStorage.getItem("USER_CREDITS")){
+    localStorage.setItem(KEY_CREDITS, localStorage.getItem("USER_CREDITS"));
+    localStorage.removeItem("USER_CREDITS");
+  }
+  if(localStorage.getItem("USER_VAULT")){
+    localStorage.removeItem("USER_VAULT"); // legacy vault invalid by design
+  }
+
+  log(`SYSTEM BOOT ${KINETIC_VERSION}`, "active");
+  
+  // 1. CHECK LOCAL STORAGE
+  const localData = localStorage.getItem(MASTER_KEY);
+  if(localData && localData.length > 10){ 
+      try { 
+          RAW_DATA = JSON.parse(localData); 
+          await new Promise(r=>setTimeout(r,600)); 
+      } catch(e){RAW_DATA=[];} 
+  }
+  
+  // 2. FETCH FROM GITHUB IF LOCAL EMPTY
+  if(!RAW_DATA.length){ 
+      try{
+          log("FETCHING GITHUB...", "primary");
+          const r = await fetch(GITHUB_RAW_URL); 
+          if(r.ok) RAW_DATA = await r.json();
+      }catch(e){
+          log("FETCH ERROR", "danger");
+      } 
+  }
+  
+  RAW_DATA = RAW_DATA.map(d=>({
+      id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
+      q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
+      logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", step1:d.s1||d.step1||"", step2:d.s2||d.step2||""
+  })).filter(d=>d.id&&d.q&&d.u);
+
+  if(!RAW_DATA.length){ log("DATA ERROR", "active"); card("NO DATA FOUND", {down:"RETRY"}, ()=>location.reload()); return; }
+  begin();
 }
 init();
 </script>
