@@ -343,86 +343,73 @@ async function fetchMOTD(){
 }
 
 // --- GOD MODE PDF ENGINE (v141.0 Logic in v144.2 Shell) ---
-function exportSessionPDF(data=null,id=null){
-    try {
-        const rData=data||SESSION_ALL; const rID=id||CURRENT_SES_ID;
-        if(!data){
-            if(CREDITS<1){sysLog("LOW FUEL","warn");alert("LOW FUEL");return;}
-            CREDITS--; localStorage.setItem("USER_CREDITS",CREDITS);
-            VAULT.unshift({id:rID, date:new Date().toLocaleDateString(), score:XP, total:SESSION_ALL.length, data:[...SESSION_ALL]});
-            localStorage.setItem("USER_VAULT",JSON.stringify(VAULT));
-        }
-        sysLog("GENERATING...", "active");
+function exportSessionPDF(data=null, id=null){
+ const renderData = data || SESSION_ALL;
+ const renderID = id || CURRENT_SES_ID;
+ 
+ if(!data){ 
+    if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
+    CREDITS--;
+    localStorage.setItem("USER_CREDITS", CREDITS);
+    VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
+    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
+    log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
+ }
 
-        if(!window.jspdf) { alert("PDF ENGINE LOADING... RETRY"); return; }
-        const {jsPDF}=window.jspdf; const doc=new jsPDF();
-        const unique=rData.filter((q,i,self)=>i===self.findIndex(t=>(t && q && t.id===q.id))); // CRASH PROTECTION
-        
-        // --- LAYOUT CONSTANTS (From v141.0) ---
-        let y=20; const ML=15; const W=180;
-        const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
-        const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+ log("GENERATING PDF...", "active");
+ const {jsPDF}=window.jspdf; const doc=new jsPDF();
+ const unique=renderData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
+ let y=20; const ML=15; const W=180;
+ const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
+ const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
 
-        // HEADER
-        doc.setFont("times","bold"); doc.setFontSize(16);
-        doc.text(`VIA.STACK // ${rID}`,105,y,{align:"center"});
-        doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"});
-        doc.line(ML,y+8,195,y+8); y+=15;
+ doc.setFont("times","bold"); doc.setFontSize(16);
+ doc.text(`VIA.STACK // ${renderID}`,105,y,{align:"center"});
+ doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"});
+ doc.line(ML,y+8,195,y+8); y+=15;
 
-        unique.forEach((d,i)=>{
-            if(!d || !d.q) return; // Skip broken
-            if(y>240){doc.addPage();y=20;}
-            
-            // ID & DOMAIN
-            doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
-            doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
-            
-            // QUESTION
-            doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
-            const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
-            doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
-            
-            // COLUMNS START
-            const startY=y;
-            
-            // 1. OPTIONS (LEFT)
-            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4;
-            doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
-            const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
-            doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
-            doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
-            doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
-            
-            let maxH=y; y=startY; // Reset Y for next col
-            
-            // 2. THEORY (MIDDLE)
-            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4;
-            doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
-            const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y);
-            if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4);
-            y=startY; // Reset Y for next col
-            
-            // 3. EXECUTION (RIGHT)
-            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4;
-            doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
-            const s1=`1. ${cleanPDF(d.step1||d.s1||"-")}`; const s2=`2. ${cleanPDF(d.step2||d.s2||"-")}`;
-            const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
-            const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y);
-            if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
-            
-            y=maxH+5;
-            
-            // TRAP
-            if(d.trap){
-                doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
-                doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y);
-                doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8;
-            } else {y+=5;}
-            y+=5;
-        });
+ unique.forEach((d,i)=>{
+  if(y>240){doc.addPage();y=20;}
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+  doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
+  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+  
+  const startY=y;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
+  const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  
+  let maxH=y; y=startY;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4;
+  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y);
+  if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4);
+  y=startY;
+  
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  const s1=`1. ${cleanPDF(d.step1||"-")}`; const s2=`2. ${cleanPDF(d.step2||"-")}`;
+  const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
+  const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y);
+  if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
+  
+  y=maxH+5;
+  if(d.trap){
+    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y);
+    doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8;
+  } else {y+=5;}
+  y+=5;
+ });
 
-        const fn=`ALCHEMIST_${rID}.pdf`; doc.save(fn);
-        
+ const fileName = `ALCHEMIST_${renderID}.pdf`;
+ doc.save(fileName);
+
         // BACKUP BLOB
         if(!data){
             const blob=doc.output('blob'); const r=new FileReader(); r.readAsDataURL(blob);
