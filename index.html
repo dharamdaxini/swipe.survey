@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v144.1</title>
+<title>Alchemist | Kinetic v144.2</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -88,10 +88,9 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v144.1 (OMNI-LINK)
+   VIA.STACK | KINETIC v144.2 (ARMORED)
    ========================================= */
 
-// --- UPDATED BEACON URL ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbzSxk_so64KtqwpvzvJSyTv2JydsD91BJEyl5jIKlzDopXRW-DOSoXbutfIARSDEiFE/exec"; 
 const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
@@ -139,8 +138,6 @@ function renderGameCard(text,labels,cb){
 
 function renderVaultCard(id, text, labels, cb){
     UI.vault.innerHTML=""; const el=document.createElement("div"); el.className="card vault-card";
-    
-    // THE SAFE ZONE: Event Stop Propagation for Viewer Link
     el.innerHTML=`
         <div class="card-q">
             ${chemText(text).replace(/\n/g,"<br>")}
@@ -162,7 +159,6 @@ function openViewer(id) {
     window.open(url, '_blank');
 }
 
-// --- APP STATE MANAGER ---
 function switchStack(mode){
     if(mode === "GAME"){
         UI.vault.classList.remove("active"); UI.game.classList.add("active");
@@ -229,21 +225,14 @@ function showVaultCard(){
 // --- OMNI-SET LOGIC ---
 function setPick(){
     const sets = [...new Set(RAW_DATA.map(d=>d.set))];
-    // INJECT THE OMNI-SET CARD
     sets.unshift("MIXED: ALL");
-
     renderGameCard(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
         if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
         if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
         if(dir==="UP"){
             const selected = sets[SET_CURSOR];
-            if(selected === "MIXED: ALL") {
-                ACTIVE_SET = "ALL";
-                nicLog("OMNI-SET");
-            } else {
-                ACTIVE_SET = selected;
-                nicLog(ACTIVE_SET);
-            }
+            if(selected === "MIXED: ALL") { ACTIVE_SET = "ALL"; nicLog("OMNI-SET"); } 
+            else { ACTIVE_SET = selected; nicLog(ACTIVE_SET); }
             volumePick();
         }
         if(dir==="DOWN")begin();
@@ -255,11 +244,7 @@ function volumePick(){renderGameCard(`VOLUME`,{up:"10 Q",left:"25 Q",right:"50 Q
 function startQuiz(){
     sysLog("SEQUENCE START", "active");
     let base = [];
-    if(ACTIVE_SET === "ALL") {
-        base = [...RAW_DATA]; // OMNI-SET: CLONE EVERYTHING
-    } else {
-        base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
-    }
+    if(ACTIVE_SET === "ALL") base = [...RAW_DATA]; else base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
     base = shuffle(base); 
     if(VOLUME_LIMIT&&VOLUME_LIMIT<base.length) base=base.slice(0,VOLUME_LIMIT);
     POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
@@ -348,13 +333,16 @@ function sendTelemetry(){
     if(!BEACON_URL)return;
     const avgLat = SESSION_LOG.length>0 ? Math.round(SESSION_LOG.reduce((a,b)=>a+b.latency,0)/SESSION_LOG.length) : 0;
     const acc = SESSION_ALL.length>0 ? Math.round((XP/SESSION_ALL.length)*100) : 0;
-    fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"TELEMETRY",ses_id:CURRENT_SES_ID,mobile:USER_MOBILE||"GUEST",score:XP,accuracy:acc,latency:avgLat,pivots:PIVOT_COUNT,credits:CREDITS,log:SESSION_LOG})}).catch(e=>sysLog("SYNC FAILED","danger"));
+    // SAFE FETCH: Won't crash if backend is slow
+    fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"TELEMETRY",ses_id:CURRENT_SES_ID,mobile:USER_MOBILE||"GUEST",score:XP,accuracy:acc,latency:avgLat,pivots:PIVOT_COUNT,credits:CREDITS,log:SESSION_LOG})})
+    .catch(e=>sysLog("SYNC FAILED","danger"));
 }
 
 async function fetchMOTD(){
     try{const r=await fetch(BEACON_URL);const d=await r.json();if(d.motd)sysLog(d.motd,"warn");}catch(e){}
 }
 
+// --- ARMORED PDF ENGINE ---
 function exportSessionPDF(data=null,id=null){
     try {
         const rData=data||SESSION_ALL; const rID=id||CURRENT_SES_ID;
@@ -368,32 +356,45 @@ function exportSessionPDF(data=null,id=null){
 
         if(!window.jspdf) { alert("PDF ENGINE LOADING... RETRY"); return; }
         const {jsPDF}=window.jspdf; const doc=new jsPDF();
-        const unique=rData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
+        
+        // UNIQUE FILTER & CRASH PREVENTION
+        const unique = rData.filter((q,i,self)=>i===self.findIndex(t=>(t && q && t.id===q.id)));
+        
         let y=20; const ML=15; const W=180;
         doc.setFont("times","bold");doc.setFontSize(16);
         doc.text(`VIA.STACK // ${rID}`,105,y,{align:"center"}); y+=15;
         
         unique.forEach(d=>{
-            if(!d) return;
+            // SAFETY CHECK: Skip corrupted questions
+            if(!d || !d.q) return; 
+
             if(y>260){doc.addPage();y=20;}
             doc.setFont("helvetica","normal"); doc.setFontSize(11);
-            const qText = cleanPDF(d.q || "Data Error");
+            
+            // CLEAN TEXT
+            const qText = cleanPDF(d.q);
             const lines = doc.splitTextToSize(qText, W);
             doc.text(lines, ML, y);
             y += (lines.length * 6) + 10;
         });
 
         const fn=`ALCHEMIST_${rID}.pdf`; doc.save(fn);
+        
         if(!data){
             const blob=doc.output('blob'); const r=new FileReader(); r.readAsDataURL(blob);
             r.onloadend=function(){
                 const b64=r.result.split(',')[1];
-                fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"BACKUP",ses_id:rID,mobile:USER_MOBILE||"GUEST",score:XP,filename:fn,pdf:b64})}).catch(e=>sysLog("CLOUD ERROR","danger"));
+                fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"BACKUP",ses_id:rID,mobile:USER_MOBILE||"GUEST",score:XP,filename:fn,pdf:b64})})
+                .catch(e=>sysLog("CLOUD ERROR","danger"));
                 sendTelemetry();
             }
         }
         setTimeout(begin,1000);
-    } catch(e) { sysLog("PDF FAILED", "danger"); }
+    } catch(e) { 
+        console.error(e);
+        sysLog("PDF FAILED", "danger");
+        alert("PDF ERROR. Data preserved in Vault.");
+    }
 }
 
 async function init(){
