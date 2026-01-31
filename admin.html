@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v145.0</title>  
+    <title>VIA.STACK | ADMIN v145.1</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v145.0</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v145.1</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -147,7 +147,7 @@
     <div class="zone">
         <div class="zone-title">01 // INGESTION ENGINE</div>
         
-        <textarea id="raw-input" class="ingest-box" placeholder=">> PASTE RAW TSV (WITH HEADERS) HERE...&#10;>> AUTO-DETECTS COLUMNS (ID, Q, UP, S1, S2, etc).&#10;>> REPAIR ENGINE ACTIVE (Sanitizes directional corruption)."></textarea>
+        <textarea id="raw-input" class="ingest-box" placeholder="PASTE DATA HERE...">Question_ID	Set_Code	Domain	Subdomain	Difficulty	Question_Text	Correct_Answer	Distractor_1	Distractor_2	Correct_Direction	Explanation_Long	Explanation_Short	Topic_Label	Reference_Book	Tags	Reserved_Empty	Reference_Link	Trap_Explanation	Creation_Date	Version	Active_Flag	Deprecated_Flag	Reasoning_Step_1	Reasoning_Step_2	Status</textarea>
         
         <div class="action-bar">
             <input type="file" id="tsv-upload" hidden accept=".tsv,.txt,.csv" onchange="handleFileUpload(this)">
@@ -187,10 +187,6 @@
             <div class="tile" onclick="exportTSV()">
                 <span class="tile-icon">📊</span>
                 <span class="tile-label">BACKUP TSV</span>
-            </div>
-            <div class="tile" onclick="exportCSV()">
-                <span class="tile-icon">📑</span>
-                <span class="tile-label">BACKUP CSV</span>
             </div>
         </div>
 
@@ -267,68 +263,43 @@
     let RAW_LINES = [];
     let TSV_HEADERS = [];
     
-    // --- UPDATED CONFIG ---
+    // CONFIG
     const BEACON_URL = "https://script.google.com/macros/s/AKfycbzSxk_so64KtqwpvzvJSyTv2JydsD91BJEyl5jIKlzDopXRW-DOSoXbutfIARSDEiFE/exec"; 
     const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
 
-    /* --- IDENTITY LINKER LOGIC (STRICT FORMAT) --- */
+    /* --- IDENTITY LINKER LOGIC --- */
     function linkIdentities() {
         const dump = document.getElementById('wa-dump').value;
         const logger = document.getElementById('link-log');
-        
-        if(!dump.trim()) {
-            logger.innerHTML += `<div class="log-entry log-err">> ERROR: EMPTY INPUT.</div>`; 
-            return;
-        }
+        if(!dump.trim()) { logger.innerHTML += `<div class="log-entry log-err">> ERROR: EMPTY INPUT.</div>`; return; }
 
         const lines = dump.split(/\r?\n/);
         let found = 0;
-
-        // PATTERN:  LINK_REQ || ID: SES_... || MOB: ...
-        // Looks for "SES_" followed by ID, and "MOB:" followed by number
         const strictRegex = /(SES_[A-Z0-9]+).*?(\+?\d{10,})/;
 
         lines.forEach(line => {
             const match = line.match(strictRegex);
-            
             if (match) {
-                const sesID = match[1].trim(); // Group 1: SES_ID
-                let rawMob = match[2].trim();  // Group 2: Mobile
-                
-                // Normalize Mobile (+91)
-                rawMob = rawMob.replace(/\D/g, '');
+                const sesID = match[1].trim(); 
+                let rawMob = match[2].trim().replace(/\D/g, '');
                 if(rawMob.length === 10) rawMob = "91" + rawMob;
-                if(rawMob.length > 12) rawMob = rawMob.slice(-12); // Take last 12 digits
+                if(rawMob.length > 12) rawMob = rawMob.slice(-12);
                 const finalMob = "+" + rawMob;
 
                 logger.innerHTML += `<div class="log-entry log-success">> DETECTED: ${sesID} <-> ${finalMob}</div>`;
-                
-                // Send to Cloud
                 sendLinkToCloud(sesID, finalMob, logger);
                 found++;
             }
         });
-
-        if(found === 0) {
-            logger.innerHTML += `<div class="log-entry log-warn">> NO MATCHES. TRY FORMAT: 'SES_X99... 9876543210'</div>`;
-        }
+        if(found === 0) logger.innerHTML += `<div class="log-entry log-warn">> NO MATCHES.</div>`;
     }
 
     function sendLinkToCloud(sesID, mobile, logger) {
         fetch(BEACON_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "LINK",
-                ses_id: sesID,
-                mobile: mobile
-            })
-        }).then(() => {
-            logger.innerHTML += `<div class="log-entry">> UPLINK SENT FOR ${sesID}.</div>`;
-        }).catch(e => {
-            logger.innerHTML += `<div class="log-entry log-err">> CONNECTION FAILED.</div>`;
-        });
+            method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "LINK", ses_id: sesID, mobile: mobile })
+        }).then(() => logger.innerHTML += `<div class="log-entry">> UPLINK SENT.</div>`)
+          .catch(e => logger.innerHTML += `<div class="log-entry log-err">> ERROR.</div>`);
     }
 
     /* --- INGESTION LOGIC --- */
@@ -349,7 +320,7 @@
         const DIR = ["UP", "LEFT", "RIGHT"];
         const isDir = v => DIR.includes((v || "").toUpperCase().trim());
         if (isDir(row.u) || isDir(row.l) || isDir(row.r)) { row.u = ""; row.l = ""; row.r = ""; }
-        if (isDir(row.correct)) { row.correct = ""; }
+        if (isDir(row.correct)) { row.correct = "UP"; } // Default to UP if corrupted
         row.q ||= ""; row.logic ||= ""; row.hint ||= ""; row.trap ||= ""; row.s1 ||= ""; row.s2 ||= "";
         return row;
     }
@@ -367,7 +338,7 @@
 
     function match(headers, queries) {
         for (let q of queries) {
-            const idx = headers.indexOf(q);
+            const idx = headers.indexOf(q.toUpperCase()); // Case insensitive match
             if (idx > -1) return idx;
         }
         return -1;
@@ -387,12 +358,13 @@
         const seenIDs = new Set();
         let collision = null;
         let drift = null;
-        const expectedCols = TSV_HEADERS.length < 20 ? 25 : TSV_HEADERS.length;
+        // Adjust expected cols for the new 25-col format
+        const expectedCols = Math.max(25, TSV_HEADERS.length);
 
         for(let i=0; i<RAW_LINES.length; i++) {
             const cols = safeTSVSplit(RAW_LINES[i], expectedCols);
             if(cols.length < 5) { drift = { index: i, line: RAW_LINES[i], len: cols.length }; break; }
-            const idCol = match(TSV_HEADERS, ["ID", "IDENTIFIER"]) > -1 ? match(TSV_HEADERS, ["ID"]) : 0;
+            const idCol = match(TSV_HEADERS, ["QUESTION_ID", "ID", "IDENTIFIER"]) > -1 ? match(TSV_HEADERS, ["QUESTION_ID", "ID"]) : 0;
             const id = cols[idCol].trim();
             if(seenIDs.has(id)) { collision = { index: i, line: RAW_LINES[i], id: id }; break; }
             seenIDs.add(id);
@@ -423,31 +395,29 @@
     }
 
     function finalizeStaging() {
+        // MAPPING: New Header Names -> Internal Keys
         let i = {
-            id: match(TSV_HEADERS, ["ID", "REF"]),
-            set: match(TSV_HEADERS, ["SET", "GROUP"]),
-            dom: match(TSV_HEADERS, ["DOM", "DOMAIN"]),
-            topic: match(TSV_HEADERS, ["TOPIC", "SUB"]),
-            q: match(TSV_HEADERS, ["Q", "QUESTION"]),
-            u: match(TSV_HEADERS, ["UP", "U", "A", "OPT_A"]),
-            l: match(TSV_HEADERS, ["LEFT", "L", "B", "OPT_B"]),
-            r: match(TSV_HEADERS, ["RIGHT", "R", "C", "OPT_C"]),
-            correct: match(TSV_HEADERS, ["CORRECT", "ANS", "ANSWER"]),
-            logic: match(TSV_HEADERS, ["LOGIC", "EXP", "EXPLANATION"]),
-            hint: match(TSV_HEADERS, ["HINT", "TIP"]),
-            ref: match(TSV_HEADERS, ["REF", "REFERENCE"]),
-            link: match(TSV_HEADERS, ["LINK", "URL"]),
-            trap: match(TSV_HEADERS, ["TRAP", "DISTRACTOR"]),
-            s1: match(TSV_HEADERS, ["S1", "STEP1", "STEP 1", "EXECUTION 1"]),
-            s2: match(TSV_HEADERS, ["S2", "STEP2", "STEP 2", "EXECUTION 2"]),
+            id: match(TSV_HEADERS, ["QUESTION_ID", "ID", "REF"]),
+            set: match(TSV_HEADERS, ["SET_CODE", "SET", "GROUP"]),
+            dom: match(TSV_HEADERS, ["DOMAIN", "DOM"]),
+            topic: match(TSV_HEADERS, ["SUBDOMAIN", "TOPIC", "SUB"]),
+            level: match(TSV_HEADERS, ["DIFFICULTY", "LEVEL"]),
+            q: match(TSV_HEADERS, ["QUESTION_TEXT", "Q", "QUESTION"]),
+            u: match(TSV_HEADERS, ["CORRECT_ANSWER", "UP", "U", "A"]),
+            l: match(TSV_HEADERS, ["DISTRACTOR_1", "LEFT", "L", "B"]),
+            r: match(TSV_HEADERS, ["DISTRACTOR_2", "RIGHT", "R", "C"]),
+            correct: match(TSV_HEADERS, ["CORRECT_DIRECTION", "CORRECT", "ANS"]),
+            logic: match(TSV_HEADERS, ["EXPLANATION_LONG", "LOGIC", "EXP"]),
+            hint: match(TSV_HEADERS, ["EXPLANATION_SHORT", "HINT", "TIP"]),
+            tags: match(TSV_HEADERS, ["TAGS", "TOPIC_LABEL"]),
+            ref: match(TSV_HEADERS, ["REFERENCE_BOOK", "REF"]),
+            link: match(TSV_HEADERS, ["REFERENCE_LINK", "LINK", "URL"]),
+            trap: match(TSV_HEADERS, ["TRAP_EXPLANATION", "TRAP"]),
+            s1: match(TSV_HEADERS, ["REASONING_STEP_1", "S1", "STEP1"]),
+            s2: match(TSV_HEADERS, ["REASONING_STEP_2", "S2", "STEP2"]),
             user_ref: match(TSV_HEADERS, ["USER_REF", "MOBILE", "OWNER"]),
             status: match(TSV_HEADERS, ["STATUS", "STATE"])
         };
-
-        if (i.id === -1) {
-            log("NO HEADERS DETECTED - APPLYING DEFAULT MAPPING", "warn");
-            i = { id:0, set:1, dom:2, topic:3, q:5, u:6, l:7, r:8, correct:9, logic:10, hint:11, trap:17, s1:23, s2:24, user_ref:25, status:26 };
-        }
 
         const cleanData = [];
         const expectedCols = Math.max(25, TSV_HEADERS.length);
@@ -456,19 +426,21 @@
             const cols = safeTSVSplit(line, expectedCols);
             if ((i.q > -1 && !cols[i.q]) || (i.u > -1 && !cols[i.u])) return;
 
-            let ansFlag = (i.correct > -1 ? cols[i.correct] : "").toUpperCase();
-            let realAnswer = cols[i.u];
-            if (ansFlag.includes("LEFT") || ansFlag.includes("B")) realAnswer = cols[i.l];
-            else if (ansFlag.includes("RIGHT") || ansFlag.includes("C")) realAnswer = cols[i.r];
-            else if (i.correct > -1 && cols[i.correct] && cols[i.correct].length > 1) realAnswer = cols[i.correct]; 
+            // Logic: Map Correct Answer to U, Distractors to L/R.
+            // If Correct_Direction exists, we use it, otherwise default to UP.
+            let dir = "UP";
+            if (i.correct > -1 && cols[i.correct]) dir = cols[i.correct];
 
             const repaired = repairDirectionalCorruption({
                 id: (cols[i.id] || `GEN_${Math.random().toString(36).substr(2,5)}`).trim(),
                 set: i.set > -1 ? cols[i.set] : "SET_A",
                 dom: i.dom > -1 ? cols[i.dom] : "GENERAL",
                 topic: i.topic > -1 ? cols[i.topic] : "",
-                q: cols[i.q], u: cols[i.u], l: cols[i.l], r: cols[i.r],
-                correct: realAnswer,
+                q: cols[i.q], 
+                u: cols[i.u], // Correct Answer
+                l: cols[i.l], // Distractor 1
+                r: cols[i.r], // Distractor 2
+                correct: dir, // "UP" or explicit direction
                 logic: i.logic > -1 ? cols[i.logic] : "",
                 hint: i.hint > -1 ? cols[i.hint] : "",
                 ref: i.ref > -1 ? cols[i.ref] : "",
@@ -512,10 +484,10 @@
     function exportTSV() {
         const data = getDataFromStorage();
         if(data.length === 0) return log("NO DATA.", "err");
-        let tsv = "ID\tSET\tDOM\tTOPIC\tLEVEL\tQ\tUP\tLEFT\tRIGHT\tCORRECT\tLOGIC\tHINT\tREF\tLINK\tTRAP\tS1\tS2\tUSER_REF\tSTATUS\n";
+        let tsv = "Question_ID\tSet_Code\tDomain\tSubdomain\tDifficulty\tQuestion_Text\tCorrect_Answer\tDistractor_1\tDistractor_2\tCorrect_Direction\tExplanation_Long\tExplanation_Short\tTopic_Label\tReference_Book\tTags\tReserved_Empty\tReference_Link\tTrap_Explanation\tCreation_Date\tVersion\tActive_Flag\tDeprecated_Flag\tReasoning_Step_1\tReasoning_Step_2\tStatus\n";
         data.forEach(r => {
             const c = (t) => (t || "").toString().replace(/\t/g, " ");
-            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t${c(r.ref)}\t${c(r.link)}\t${c(r.trap)}\t${c(r.s1)}\t${c(r.s2)}\t${c(r.user_ref)}\t${c(r.status)}\n`;
+            tsv += `${c(r.id)}\t${c(r.set)}\t${c(r.dom)}\t${c(r.topic)}\t1\t${c(r.q)}\t${c(r.u)}\t${c(r.l)}\t${c(r.r)}\t${c(r.correct)}\t${c(r.logic)}\t${c(r.hint)}\t\t${c(r.ref)}\t\t\t${c(r.link)}\t${c(r.trap)}\t\t\t\t\t${c(r.s1)}\t${c(r.s2)}\t${c(r.status)}\n`;
         });
         download(tsv, `ALCHEMIST_BACKUP.tsv`, 'tsv');
     }
