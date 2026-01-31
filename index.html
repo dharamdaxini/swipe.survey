@@ -32,20 +32,17 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 .log-line.warn { color: var(--gold); opacity: 1; }
 .log-line.danger { color: var(--red); opacity: 1; font-weight: 700; }
 
-/* --- PHYSICS STACK (SHARED) --- */
+/* --- PHYSICS STACK --- */
 .stack-container{position:absolute; inset:0; top:120px; width:90%; max-width:420px; height:calc(100vh - 220px); margin:0 auto; perspective:1500px; display:flex; align-items:center; justify-content:center; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 10;}
 .stack-container.active { pointer-events: all; opacity: 1; z-index: 20; }
 
 .card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:14px; border:1px solid var(--border); padding:35px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.95); will-change:transform; transform-style:preserve-3d; overflow:hidden;}
-
-/* Vault Card Styling */
 .card.vault-card { border-color: #333; background: #080808; }
 .card.vault-card .card-q { font-family: var(--font-code); letter-spacing: -1px; }
 
 .card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
 .swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-family:var(--font-sans); font-weight:900; font-size:1.8rem; text-transform:uppercase; letter-spacing:1px; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.15s ease; border-radius:14px; color:var(--text-grey); border:1px solid #333;}
 
-/* --- VIEWER LINK BUTTON --- */
 .viewer-btn {
     margin-top: 20px; padding: 10px 20px; 
     border: 1px solid var(--cyan); color: var(--cyan); 
@@ -88,9 +85,10 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v144.2 (GOD MODE PDF)
+   VIA.STACK | KINETIC v144.2 (DIRECT LINK)
    ========================================= */
 
+// --- CONFIGURATION ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbzSxk_so64KtqwpvzvJSyTv2JydsD91BJEyl5jIKlzDopXRW-DOSoXbutfIARSDEiFE/exec"; 
 const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
@@ -138,8 +136,7 @@ function renderGameCard(text,labels,cb){
 
 function renderVaultCard(id, text, labels, cb){
     UI.vault.innerHTML=""; const el=document.createElement("div"); el.className="card vault-card";
-    
-    // SAFE ZONE BUTTON
+    // SAFE ZONE BUTTON INTEGRATED
     el.innerHTML=`
         <div class="card-q">
             ${chemText(text).replace(/\n/g,"<br>")}
@@ -155,20 +152,11 @@ function renderVaultCard(id, text, labels, cb){
     UI.vault.appendChild(el); new PhysicsController(el,{onCommit:cb});
 }
 
-function openViewer(id) {
-    if(!id) return;
-    const url = `${VIEWER_URL}?sid=${id}`;
-    window.open(url, '_blank');
-}
+function openViewer(id) { if(!id) return; const url = `${VIEWER_URL}?sid=${id}`; window.open(url, '_blank'); }
 
 function switchStack(mode){
-    if(mode === "GAME"){
-        UI.vault.classList.remove("active"); UI.game.classList.add("active");
-        nicLog("READY");
-    } else {
-        UI.game.classList.remove("active"); UI.vault.classList.add("active");
-        nicLog("ARCHIVE");
-    }
+    if(mode === "GAME"){ UI.vault.classList.remove("active"); UI.game.classList.add("active"); nicLog("READY"); } 
+    else { UI.game.classList.remove("active"); UI.vault.classList.add("active"); nicLog("ARCHIVE"); }
 }
 
 // --- GAME FLOW ---
@@ -184,20 +172,15 @@ function begin(){
 // --- VAULT FLOW ---
 function openVault(){
     if(VAULT.length===0){ sysLog("VAULT EMPTY", "warn"); setTimeout(begin, 500); return; }
-    VAULT_CURSOR = 0; 
-    switchStack("VAULT");
-    showVaultCard();
+    VAULT_CURSOR = 0; switchStack("VAULT"); showVaultCard();
 }
 
 function showVaultCard(){
     if(VAULT_CURSOR >= VAULT.length) { sysLog("END OF VAULT", "active"); begin(); return; }
-    
     const v = VAULT[VAULT_CURSOR];
     const pc = Math.round((v.score/v.total)*100);
     const scrapVal = (v.total * 0.05).toFixed(1);
-    
     const displayText = `${v.id}\n\n${pc}%\n${v.date}`;
-    
     renderVaultCard(v.id, displayText, {right:`RELOAD (-1)`, left:`DUMP (+${scrapVal})`, up:"NEXT", down:"CLOSE"}, dir => {
         if(dir === "DOWN") begin();
         if(dir === "UP") { VAULT_CURSOR++; showVaultCard(); }
@@ -205,20 +188,14 @@ function showVaultCard(){
             if(CREDITS < 1) { alert("INSUFFICIENT FUEL"); showVaultCard(); return; }
             if(confirm(`RELOAD ${v.id}?\nCOST: -1.0 FUEL`)){
                 CREDITS--; localStorage.setItem("USER_CREDITS", CREDITS);
-                sysLog("SPENT: 1.0", "warn");
-                switchStack("GAME"); 
-                exportSessionPDF(v.data, v.id);
+                sysLog("SPENT: 1.0", "warn"); switchStack("GAME"); exportSessionPDF(v.data, v.id);
             } else { showVaultCard(); }
         }
         if(dir === "LEFT") {
             if(confirm(`SCAVENGE ${v.id}?\nREWARD: +${scrapVal} FUEL`)){
-                VAULT.splice(VAULT_CURSOR, 1);
-                localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
-                CREDITS = parseFloat((CREDITS + parseFloat(scrapVal)).toFixed(1));
-                if(CREDITS > MAX_CREDITS) CREDITS = MAX_CREDITS;
-                localStorage.setItem("USER_CREDITS", CREDITS);
-                sysLog(`GAINED: +${scrapVal}`, "active");
-                showVaultCard(); 
+                VAULT.splice(VAULT_CURSOR, 1); localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
+                CREDITS = parseFloat((CREDITS + parseFloat(scrapVal)).toFixed(1)); if(CREDITS > MAX_CREDITS) CREDITS = MAX_CREDITS;
+                localStorage.setItem("USER_CREDITS", CREDITS); sysLog(`GAINED: +${scrapVal}`, "active"); showVaultCard(); 
             } else { showVaultCard(); }
         }
     });
@@ -226,15 +203,13 @@ function showVaultCard(){
 
 // --- OMNI-SET LOGIC ---
 function setPick(){
-    const sets = [...new Set(RAW_DATA.map(d=>d.set))];
-    sets.unshift("MIXED: ALL");
+    const sets = [...new Set(RAW_DATA.map(d=>d.set))]; sets.unshift("MIXED: ALL");
     renderGameCard(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
         if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
         if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
         if(dir==="UP"){
             const selected = sets[SET_CURSOR];
-            if(selected === "MIXED: ALL") { ACTIVE_SET = "ALL"; nicLog("OMNI-SET"); } 
-            else { ACTIVE_SET = selected; nicLog(ACTIVE_SET); }
+            if(selected === "MIXED: ALL") { ACTIVE_SET = "ALL"; nicLog("OMNI-SET"); } else { ACTIVE_SET = selected; nicLog(ACTIVE_SET); }
             volumePick();
         }
         if(dir==="DOWN")begin();
@@ -245,38 +220,30 @@ function volumePick(){renderGameCard(`VOLUME`,{up:"10 Q",left:"25 Q",right:"50 Q
 
 function startQuiz(){
     sysLog("SEQUENCE START", "active");
-    let base = [];
-    if(ACTIVE_SET === "ALL") base = [...RAW_DATA]; else base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
-    base = shuffle(base); 
-    if(VOLUME_LIMIT&&VOLUME_LIMIT<base.length) base=base.slice(0,VOLUME_LIMIT);
+    let base = []; if(ACTIVE_SET === "ALL") base = [...RAW_DATA]; else base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
+    base = shuffle(base); if(VOLUME_LIMIT&&VOLUME_LIMIT<base.length) base=base.slice(0,VOLUME_LIMIT);
     POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
-    CURRENT_SES_ID=null; SESSION_LOG=[]; PIVOT_COUNT=0;
-    nextQ();
+    CURRENT_SES_ID=null; SESSION_LOG=[]; PIVOT_COUNT=0; nextQ();
 }
 
 function nextQ(){
     if(!CURRENT_SES_ID&&SESSION_ALL.length>0) generateSessionID();
     if(!POOL.length){ if(WRONG.length){review();return;} report();return; }
-    const d=POOL.shift(); 
-    nicLog(d.topic || d.dom || "GENERIC"); 
+    const d=POOL.shift(); nicLog(d.topic || d.dom || "GENERIC"); 
     if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d);
     const opts=shuffle([d.u,d.l,d.r]); const map={up:opts[0],left:opts[1],right:opts[2]};
     renderGameCard(d.q, map, dir=>{
         let picked=null; if(dir==="UP")picked=map.up;if(dir==="LEFT")picked=map.left;if(dir==="RIGHT")picked=map.right;
         let c=d.correct; if(c==="UP"||c==="A")c=d.u;else if(c==="LEFT"||c==="B")c=d.l;else if(c==="RIGHT"||c==="R"||c==="C")c=d.r;
         const isCorrect=String(picked).trim().toLowerCase()===String(c).trim().toLowerCase();
-        const lat=Date.now()-Q_START_TIME;
-        SESSION_LOG.push({id:d.id, res:isCorrect?"WIN":"LOSS", latency:lat});
+        const lat=Date.now()-Q_START_TIME; SESSION_LOG.push({id:d.id, res:isCorrect?"WIN":"LOSS", latency:lat});
         if(!isCorrect) WRONG.push(d); else if(!ATTEMPTED.has(d.id)) XP++;
         ATTEMPTED.add(d.id);
-        UI.xp.textContent=`${XP}/${SESSION_ALL.length}`;
-        UI.bar.style.width=((SESSION_ALL.length-POOL.length)/SESSION_ALL.length)*100+"%";
-        nextQ();
+        UI.xp.textContent=`${XP}/${SESSION_ALL.length}`; UI.bar.style.width=((SESSION_ALL.length-POOL.length)/SESSION_ALL.length)*100+"%"; nextQ();
     });
 }
 function review(){
-    if(!WRONG.length){report();return;}
-    const d=WRONG[0]; sysLog("REVIEW MODE", "warn");
+    if(!WRONG.length){report();return;} const d=WRONG[0]; sysLog("REVIEW MODE", "warn");
     renderGameCard(`REVIEW\n\n${d.logic||"Observe logic."}`,{up:"RETRY",down:"SKIP"},dir=>{
         if(dir==="UP"){WRONG.shift();POOL.unshift(d);}else{WRONG.shift();} nextQ();
     });
@@ -284,47 +251,23 @@ function review(){
 
 function report(){
     if(!CURRENT_SES_ID) generateSessionID();
-    const pc=Math.round((XP/SESSION_ALL.length)*100)||0;
-    const dumpVal = (SESSION_ALL.length * 0.05).toFixed(1);
-
+    const pc=Math.round((XP/SESSION_ALL.length)*100)||0; const dumpVal = (SESSION_ALL.length * 0.05).toFixed(1);
     let dLabel="DOWNLOAD PDF"; let dAction=handleDownloadRequest;
-    if(CREDITS >= 10) {
-        dLabel="SUPPORT ALCHEMIST";
-        dAction=() => {
-            const txt = `REQ_PDF || SES: ${CURRENT_SES_ID} || "Limit Reached"`;
-            window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(txt)}`,'_blank');
-        }
-    }
-
+    if(CREDITS >= 10) { dLabel="SUPPORT ALCHEMIST"; dAction=() => { const txt = `REQ_PDF || SES: ${CURRENT_SES_ID} || "Limit Reached"`; window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(txt)}`,'_blank'); } }
     renderGameCard(`SUMMARY\n\n${XP}/${SESSION_ALL.length} (${pc}%)\nID: ${CURRENT_SES_ID}`,
-    {down:dLabel, up:"RESTART", right:`DUMP (+${dumpVal})`, left:"MENU"}, 
-    dir=>{
-        if(dir==="DOWN") dAction();
-        if(dir==="UP") startQuiz();
-        if(dir==="LEFT") begin();
-        if(dir==="RIGHT") {
-            CREDITS = parseFloat((CREDITS + parseFloat(dumpVal)).toFixed(1));
-            if(CREDITS > MAX_CREDITS) CREDITS = MAX_CREDITS;
-            localStorage.setItem("USER_CREDITS", CREDITS);
-            sysLog(`RECYCLED: +${dumpVal}`, "active");
-            sendTelemetry(); 
-            setTimeout(begin, 800);
-        }
+    {down:dLabel, up:"RESTART", right:`DUMP (+${dumpVal})`, left:"MENU"}, dir=>{
+        if(dir==="DOWN") dAction(); if(dir==="UP") startQuiz(); if(dir==="LEFT") begin();
+        if(dir==="RIGHT") { CREDITS = parseFloat((CREDITS + parseFloat(dumpVal)).toFixed(1)); if(CREDITS > MAX_CREDITS) CREDITS = MAX_CREDITS; localStorage.setItem("USER_CREDITS", CREDITS); sysLog(`RECYCLED: +${dumpVal}`, "active"); sendTelemetry(); setTimeout(begin, 800); }
     });
 }
 
 function handleDownloadRequest(){
     if(!USER_MOBILE){
-        const txt=`REGISTERING.\nLINK ID: ${CURRENT_SES_ID}`;
-        const url=`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(txt)}`;
+        const txt=`REGISTERING.\nLINK ID: ${CURRENT_SES_ID}`; const url=`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(txt)}`;
         renderGameCard(`LINK ACCOUNT\n\nID: ${CURRENT_SES_ID}`,{up:"LINK WHATSAPP",down:"I HAVE LINKED"},dir=>{
             if(dir==="UP")window.open(url,'_blank');
-            if(dir==="DOWN"){
-                const m=prompt("ENTER MOBILE:");
-                if(m&&m.length>=10){localStorage.setItem("USER_MOBILE",m);USER_MOBILE=m;report();}
-            }
-        });
-        return;
+            if(dir==="DOWN"){ const m=prompt("ENTER MOBILE:"); if(m&&m.length>=10){localStorage.setItem("USER_MOBILE",m);USER_MOBILE=m;report();} }
+        }); return;
     }
     exportSessionPDF();
 }
@@ -338,103 +281,64 @@ function sendTelemetry(){
     fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"TELEMETRY",ses_id:CURRENT_SES_ID,mobile:USER_MOBILE||"GUEST",score:XP,accuracy:acc,latency:avgLat,pivots:PIVOT_COUNT,credits:CREDITS,log:SESSION_LOG})}).catch(e=>sysLog("SYNC FAILED","danger"));
 }
 
-async function fetchMOTD(){
-    try{const r=await fetch(BEACON_URL);const d=await r.json();if(d.motd)sysLog(d.motd,"warn");}catch(e){}
-}
+async function fetchMOTD(){ try{const r=await fetch(BEACON_URL);const d=await r.json();if(d.motd)sysLog(d.motd,"warn");}catch(e){} }
 
-// --- GOD MODE PDF ENGINE (v141.0 Logic in v144.2 Shell) ---
-function exportSessionPDF(data=null, id=null){
- const renderData = data || SESSION_ALL;
- const renderID = id || CURRENT_SES_ID;
- 
- if(!data){ 
-    if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
-    CREDITS--;
-    localStorage.setItem("USER_CREDITS", CREDITS);
-    VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
-    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
-    log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
- }
+// --- GOD MODE PDF ENGINE ---
+function exportSessionPDF(data=null,id=null){
+    try {
+        const rData=data||SESSION_ALL; const rID=id||CURRENT_SES_ID;
+        if(!data){ if(CREDITS<1){sysLog("LOW FUEL","warn");alert("LOW FUEL");return;} CREDITS--; localStorage.setItem("USER_CREDITS",CREDITS); VAULT.unshift({id:rID, date:new Date().toLocaleDateString(), score:XP, total:SESSION_ALL.length, data:[...SESSION_ALL]}); localStorage.setItem("USER_VAULT",JSON.stringify(VAULT)); }
+        sysLog("GENERATING...", "active");
+        if(!window.jspdf) { alert("PDF ENGINE LOADING... RETRY"); return; }
+        const {jsPDF}=window.jspdf; const doc=new jsPDF();
+        const unique=rData.filter((q,i,self)=>i===self.findIndex(t=>(t && q && t.id===q.id)));
+        
+        let y=20; const ML=15; const W=180;
+        const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
+        const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
 
- log("GENERATING PDF...", "active");
- const {jsPDF}=window.jspdf; const doc=new jsPDF();
- const unique=renderData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
- let y=20; const ML=15; const W=180;
- const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
- const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+        doc.setFont("times","bold"); doc.setFontSize(16); doc.text(`VIA.STACK // ${rID}`,105,y,{align:"center"}); doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"}); doc.line(ML,y+8,195,y+8); y+=15;
 
- doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text(`VIA.STACK // ${renderID}`,105,y,{align:"center"});
- doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"});
- doc.line(ML,y+8,195,y+8); y+=15;
-
- unique.forEach((d,i)=>{
-  if(y>240){doc.addPage();y=20;}
-  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
-  doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
-  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
-  const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
-  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
-  
-  const startY=y;
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
-  const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
-  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
-  
-  let maxH=y; y=startY;
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4;
-  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
-  const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y);
-  if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4);
-  y=startY;
-  
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
-  const s1=`1. ${cleanPDF(d.step1||"-")}`; const s2=`2. ${cleanPDF(d.step2||"-")}`;
-  const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
-  const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y);
-  if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
-  
-  y=maxH+5;
-  if(d.trap){
-    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
-    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y);
-    doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8;
-  } else {y+=5;}
-  y+=5;
- });
-
- const fileName = `ALCHEMIST_${renderID}.pdf`;
- doc.save(fileName);
-
-        // BACKUP BLOB
-        if(!data){
-            const blob=doc.output('blob'); const r=new FileReader(); r.readAsDataURL(blob);
-            r.onloadend=function(){
-                const b64=r.result.split(',')[1];
-                fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"BACKUP",ses_id:rID,mobile:USER_MOBILE||"GUEST",score:XP,filename:fn,pdf:b64})})
-                .catch(e=>sysLog("CLOUD ERROR","danger"));
-                sendTelemetry();
-            }
-        }
+        unique.forEach((d,i)=>{
+            if(!d || !d.q) return; if(y>240){doc.addPage();y=20;}
+            doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100); doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
+            doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0); const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3; doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+            const startY=y;
+            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
+            const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
+            doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2; doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2; doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+            let maxH=y; y=startY; 
+            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4; doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50); const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y); if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4); y=startY; 
+            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0); const s1=`1. ${cleanPDF(d.step1||d.s1||"-")}`; const s2=`2. ${cleanPDF(d.step2||d.s2||"-")}`; const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2; const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y); if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
+            y=maxH+5;
+            if(d.trap){ doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4; doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y); doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8; } else {y+=5;} y+=5;
+        });
+        const fn=`ALCHEMIST_${rID}.pdf`; doc.save(fn);
+        if(!data){ const blob=doc.output('blob'); const r=new FileReader(); r.readAsDataURL(blob); r.onloadend=function(){ const b64=r.result.split(',')[1]; fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"BACKUP",ses_id:rID,mobile:USER_MOBILE||"GUEST",score:XP,filename:fn,pdf:b64})}).catch(e=>sysLog("CLOUD ERROR","danger")); sendTelemetry(); } }
         setTimeout(begin,1000);
-    } catch(e) { 
-        console.error(e);
-        sysLog("PDF FAILED", "danger");
-        alert("PDF ERROR. Data preserved in Vault.");
-    }
+    } catch(e) { console.error(e); sysLog("PDF FAILED", "danger"); alert("PDF ERROR. Data preserved in Vault."); }
 }
 
 async function init(){
     sysLog("SYSTEM BOOT", "active"); fetchMOTD();
+    
+    // 1. CHECK LOCAL STORAGE (PRIORITY)
     const ld=localStorage.getItem(MASTER_KEY);
-    if(ld&&ld.length>10)try{RAW_DATA=JSON.parse(ld);await new Promise(r=>setTimeout(r,600));}catch(e){RAW_DATA=[];}
-    if(!RAW_DATA.length)try{const r=await fetch('master.json');if(r.ok)RAW_DATA=await r.json();}catch(e){}
+    if(ld&&ld.length>10) try{ RAW_DATA=JSON.parse(ld); } catch(e){ RAW_DATA=[]; }
+    
+    // 2. FETCH JSON (FALLBACK / HYBRID)
+    if(!RAW_DATA.length) {
+        try {
+            const r = await fetch('master.json');
+            if(r.ok) RAW_DATA = await r.json();
+        } catch(e) { console.log("JSON FETCH FAILED"); }
+    }
+
+    // 3. NORMALIZE
     RAW_DATA=RAW_DATA.map(d=>({id:d.id,set:d.set||"DEFAULT",dom:d.dom||"GEN",topic:d.topic||"",q:d.q,u:d.u,l:d.l,r:d.r,correct:d.correct,logic:d.logic||"",hint:d.hint||"",trap:d.trap||"",step1:d.s1||d.step1||"",step2:d.s2||d.step2||""})).filter(d=>d.id&&d.q&&d.u);
+    
     if(!RAW_DATA.length){sysLog("DATA ERR","warn");renderGameCard("NO DATA",{down:"RETRY"},()=>location.reload());return;}
+    
     begin();
 }
 init();
