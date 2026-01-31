@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v144.0 GOLD</title>
+<title>Alchemist | Kinetic v144.2 HYBRID</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -15,13 +15,13 @@
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
 
-/* HEADER & LOGS */
+/* HEADER & LOGS - PATCH 11 (SCALE) */
 #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
 .header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:#666; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;}
 .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
 #progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease; border-radius:2px;}
 
-#kinetic-logger{width:90%; margin:15px auto 5px; font-family:var(--font-code); font-size:0.8rem; color:#444; line-height:1.4; text-transform:uppercase; min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;}
+#kinetic-logger{width:90%; margin:15px auto 5px; font-family:var(--font-code); font-size:0.8rem; color:#444; line-height:1.8; text-transform:uppercase; min-height:60px; display:flex; flex-direction:column; justify-content:flex-end;}
 .log-line{opacity:0.5; transition:opacity 0.2s;} 
 .log-line.active{color:var(--green); opacity:1; font-weight:700;} 
 .log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
@@ -53,15 +53,32 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
   <div class="log-line active" id="log-3">> ...</div>
 </div>
 
+<div id="ghost-layer"
+     style="
+       position:absolute;
+       inset:0;
+       z-index:5;
+       display:flex;
+       align-items:center;
+       justify-content:center;
+       opacity:0;
+       pointer-events:none;
+       font-family:var(--font-serif);
+       font-size:1.1rem;
+       color:#aaa;
+       text-align:center;
+       padding:40px;">
+</div>
+
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING KERNEL v144...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING HYBRID KERNEL...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v144.0-GOLD
+   VIA.STACK | KINETIC v144.2 HYBRID
    ========================================= */
 
 // --- CONFIGURATION ---
@@ -74,6 +91,11 @@ const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.sur
 
 /* ================= GOLD MASTER CONSTANTS ================= */
 const KINETIC_VERSION = "v144.0-GOLD";
+
+/* ===== PATCH 1: ENGINE MODES ===== */
+const MODE_STRICT_SCHEMA = false;   // v136.76 legacy TSV parser (Set TRUE to use TSV)
+const MODE_LEGACY_UI     = true;    // v144.2 HUD + physics (Set TRUE for Ghost Layer)
+
 const VAULT_TTL = 86400000; // 24h
 
 // Canonical Storage Keys
@@ -81,12 +103,12 @@ const KEY_CREDITS = "K1_CREDITS";
 const KEY_DUMPS   = "K1_DUMPS";
 const KEY_VAULT   = "K1_VAULT";
 
-// --- Physics Constants (v144 Kernel) ---
-const ROT_COEFF = 20;
-const COMMIT_RADIUS = 100;
-const LABEL_START = 30;
-const SNAP_TIME = 300;
-const SNAP_CURVE = "cubic-bezier(0.2,0.8,0.2,1)";
+// --- Physics Constants (PATCH 6: v144.2 OVERRIDE) ---
+const ROT_COEFF     = MODE_LEGACY_UI ? 22 : 20;
+const COMMIT_RADIUS = MODE_LEGACY_UI ? 115 : 100;
+const LABEL_START   = 30;
+const SNAP_TIME     = MODE_LEGACY_UI ? 400 : 300;
+const SNAP_CURVE    = "cubic-bezier(0.2,0.8,0.2,1)";
 
 // --- STATE ---
 let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
@@ -118,6 +140,33 @@ function log(msg, type="normal") {
     l2.innerText = l3.innerText; l2.className = "log-line"; 
     l3.innerText = `> ${msg}`;
     l3.className = type === "active" ? "log-line active" : type === "primary" ? "log-line primary" : type === "danger" ? "log-line danger" : "log-line";
+}
+
+/* ================= PATCH 2: STRICT SCHEMA PARSER (v136.76) ================= */
+/*
+ Expected input: TSV text OR Array< Array<string> >
+ Enforces EXACT 25 columns.
+ Silently drops invalid rows.
+*/
+function parseStrictSchema(rawText){
+  const rows = rawText.split("\n");
+  const out = [];
+
+  for(const row of rows){
+    const cols = row.split("\t");
+    if(cols.length !== 25) continue;
+
+    out.push({
+      id: cols[0],
+      q: cols[5],
+      u: cols[6],
+      l: cols[7],
+      r: cols[8],
+      correct: cols[9],
+      logic: cols[11] || ""
+    });
+  }
+  return out;
 }
 
 /* ================= VAULT PROTOCOL (v143.1+) ================= */
@@ -178,6 +227,20 @@ const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/
 const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
 
+const UI = {stack:document.getElementById("stack"), id:document.getElementById("id-ui"), xp:document.getElementById("xp-ui"), bar:document.getElementById("progress-bar")};
+
+// PATCH 9: GHOST LAYER LOGIC
+const GHOST = document.getElementById("ghost-layer");
+function updateGhost(dy, text){
+  if(!MODE_LEGACY_UI) return;
+  if(dy > 50){
+    GHOST.innerText = text || "";
+    GHOST.style.opacity = Math.min((dy - 50) / 100, 1);
+  } else {
+    GHOST.style.opacity = 0;
+  }
+}
+
 class PhysicsController{
  constructor(el,cbs){
   this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
@@ -193,13 +256,24 @@ class PhysicsController{
   const dx=p.clientX-this.start.x, dy=p.clientY-this.start.y;
   const d=Math.hypot(dx,dy);
   
-  // v144 Kernel Physics Logic
-  this.el.style.transform = `translate(${dx}px,${dy}px) rotate(${dx/ROT_COEFF}deg)`;
+  // PATCH 4: LINEAR PHYSICS MODE (v136.76)
+  if(MODE_STRICT_SCHEMA){
+    this.el.style.transform = `translate(${dx}px,${dy}px) rotate(${dx * 0.05}deg)`;
+  } else {
+    this.el.style.transform = `translate(${dx}px,${dy}px) rotate(${dx/ROT_COEFF}deg)`;
+  }
+
+  // PATCH 10: GHOST LAYER HOOK
+  updateGhost(dy, this.el.querySelector(".card-q")?.innerText);
 
   Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
   if(d > LABEL_START){
     const dir=this.dir(dx,dy);
-    this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));
+    // PATCH 7: LABEL OPACITY CAP
+    const cap = MODE_LEGACY_UI ? 0.5 : 1;
+    this.labels[dir] && (
+      this.labels[dir].style.opacity = Math.min(d / 120, cap)
+    );
   }
  }
 
@@ -209,9 +283,19 @@ class PhysicsController{
   const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform); 
   const dx=m.m41, dy=m.m42;
   
+  // Reset Ghost
+  if(MODE_LEGACY_UI) GHOST.style.opacity = 0;
+
   if(Math.hypot(dx,dy) > COMMIT_RADIUS){
     this.cbs.onCommit(this.dir(dx,dy));
   } else {
+    // PATCH 5: DISABLE SNAP ANIMATION IN STRICT MODE
+    if(MODE_STRICT_SCHEMA){
+      this.el.style.transition = "none";
+      this.el.style.transform = "translate(0,0)";
+      return;
+    }
+
     // Hesitation / Pivot Tracking
     if(Math.hypot(dx,dy) > LABEL_START) PIVOT_COUNT++;
     
@@ -223,7 +307,6 @@ class PhysicsController{
  dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
 }
 
-const UI = {stack:document.getElementById("stack"), id:document.getElementById("id-ui"), xp:document.getElementById("xp-ui"), bar:document.getElementById("progress-bar")};
 function card(text,labels,cb){
  UI.stack.innerHTML=""; const el=document.createElement("div"); el.className="card";
  el.innerHTML=`<div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
@@ -488,9 +571,17 @@ async function init(){
   const localData = localStorage.getItem(MASTER_KEY);
   if(localData && localData.length > 10){ 
       try { 
+          // Try parse as JSON first
           RAW_DATA = JSON.parse(localData); 
           await new Promise(r=>setTimeout(r,600)); 
-      } catch(e){RAW_DATA=[];} 
+      } catch(e){
+        // If JSON fail, try strict schema if enabled
+        if(MODE_STRICT_SCHEMA){
+             RAW_DATA = parseStrictSchema(localData);
+        } else {
+             RAW_DATA=[];
+        }
+      } 
   }
   
   // 2. FETCH FROM GITHUB IF LOCAL EMPTY
@@ -498,7 +589,15 @@ async function init(){
       try{
           log("FETCHING GITHUB...", "primary");
           const r = await fetch(GITHUB_RAW_URL); 
-          if(r.ok) RAW_DATA = await r.json();
+          // PATCH 3: INGESTION BRANCHING
+          if(r.ok){
+            if(MODE_STRICT_SCHEMA){
+              const text = await r.text();
+              RAW_DATA = parseStrictSchema(text);
+            } else {
+              RAW_DATA = await r.json();
+            }
+          }
       }catch(e){
           log("FETCH ERROR", "danger");
       } 
