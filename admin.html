@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VIA.STACK | ADMIN v136.70</title>  
+    <title>VIA.STACK | ADMIN v145.0</title>  
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
@@ -135,7 +135,7 @@
 <body>
 
 <header>
-    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v136.70</span></div>
+    <div class="brand">VIA.<span>STACK</span> <span style="font-weight:400; color:#666; font-size:0.7rem; margin-left:10px;">// ADMIN v145.0</span></div>
     <div class="status-pill" onclick="checkLocalData()">
         <div class="dot" id="db-status-dot"></div>
         <span id="db-status-text">DB CHECK</span>
@@ -170,6 +170,9 @@
         <div class="action-bar">
             <button class="btn-pill" style="background:var(--green); color:#000;" onclick="linkIdentities()">🔗 AUTO-LINK IDENTITIES</button>
             <button class="btn-ghost" onclick="document.getElementById('wa-dump').value=''">CLEAR DUMP</button>
+        </div>
+        <div class="terminal" id="link-log" style="height:80px; margin-top:10px;">
+            <div class="log-entry">> WAITING FOR CHAT DUMP...</div>
         </div>
     </div>
 
@@ -263,16 +266,13 @@
     let FAULTY_ROW_INDEX = -1;
     let RAW_LINES = [];
     let TSV_HEADERS = [];
+    
+    // --- UPDATED CONFIG ---
+    const BEACON_URL = "https://script.google.com/macros/s/AKfycbzSxk_so64KtqwpvzvJSyTv2JydsD91BJEyl5jIKlzDopXRW-DOSoXbutfIARSDEiFE/exec"; 
     const DB_KEY = 'ALCHEMIST_MASTER_V1'; 
 
-    /* --- 0. WHATSAPP LINKER LOGIC (NEW) --- */
-
-    // --- CONFIGURATION ---
-    const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
-    const DB_KEY = 'ALCHEMIST_MASTER_V1';
-
     /* --- IDENTITY LINKER LOGIC (STRICT FORMAT) --- */
-       function linkIdentities() {
+    function linkIdentities() {
         const dump = document.getElementById('wa-dump').value;
         const logger = document.getElementById('link-log');
         
@@ -285,7 +285,8 @@
         let found = 0;
 
         // PATTERN:  LINK_REQ || ID: SES_... || MOB: ...
-        const strictRegex = /LINK_REQ \|\| ID:\s?(SES_[A-Z0-9]+)\s?\|\|\s?MOB:\s?(\+?\d+)/;
+        // Looks for "SES_" followed by ID, and "MOB:" followed by number
+        const strictRegex = /(SES_[A-Z0-9]+).*?(\+?\d{10,})/;
 
         lines.forEach(line => {
             const match = line.match(strictRegex);
@@ -297,6 +298,7 @@
                 // Normalize Mobile (+91)
                 rawMob = rawMob.replace(/\D/g, '');
                 if(rawMob.length === 10) rawMob = "91" + rawMob;
+                if(rawMob.length > 12) rawMob = rawMob.slice(-12); // Take last 12 digits
                 const finalMob = "+" + rawMob;
 
                 logger.innerHTML += `<div class="log-entry log-success">> DETECTED: ${sesID} <-> ${finalMob}</div>`;
@@ -308,7 +310,7 @@
         });
 
         if(found === 0) {
-            logger.innerHTML += `<div class="log-entry log-warn">> NO MATCHES. ENSURE USER SENT THE CORRECT MESSAGE FORMAT.</div>`;
+            logger.innerHTML += `<div class="log-entry log-warn">> NO MATCHES. TRY FORMAT: 'SES_X99... 9876543210'</div>`;
         }
     }
 
@@ -329,14 +331,7 @@
         });
     }
 
-    // ... (Keep standard ingestion logic functions: log, initiateAlignment, pushToIndex) ...
-    function log(msg, type) { /* ... */ }
-    function initiateAlignment() { /* ... */ }
-    function pushToIndex() { /* ... */ }
-    }
-
-    /* --- EXISTING LOGIC BELOW --- */
-
+    /* --- INGESTION LOGIC --- */
     function handleFileUpload(input) {
         const file = input.files[0];
         if(!file) return;
@@ -445,7 +440,6 @@
             trap: match(TSV_HEADERS, ["TRAP", "DISTRACTOR"]),
             s1: match(TSV_HEADERS, ["S1", "STEP1", "STEP 1", "EXECUTION 1"]),
             s2: match(TSV_HEADERS, ["S2", "STEP2", "STEP 2", "EXECUTION 2"]),
-            // New fields for User Linking
             user_ref: match(TSV_HEADERS, ["USER_REF", "MOBILE", "OWNER"]),
             status: match(TSV_HEADERS, ["STATUS", "STATE"])
         };
