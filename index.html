@@ -3,42 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v1</title>
+<title>Alchemist | Kinetic v144.7</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* --- 01. CORE VISUALS (v144.2 UI) --- */
-:root{ --bg:#000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --green:#2ecc71; --cyan:#00e5ff; --red:#ff4444; --text:#fff; --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace; }
+/* --- 01. CORE VISUALS (METALLIC THEME) --- */
+:root{ --bg:#000; --card:#0a0a0a; --border:#333; --gold:#ffd600; --silver:#c0c0c0; --light-silver:#e0e0e0; --text-grey:#888; --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select: none;}
-body{margin:0; height:100vh; background:var(--bg); color:var(--text); font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
+body{margin:0; height:100vh; background:var(--bg); color:#fff; font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
 
-/* --- 02. DUAL HUD LOGGERS --- */
+/* --- 02. DUAL HUD (GRADIENT OPACITY) --- */
 #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
-.header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:#666; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;}
+.header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:var(--text-grey); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;}
 .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
 #progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease;}
 
-#hud-grid { display: grid; grid-template-columns: 1fr 1fr; width: 90%; margin: 12px auto 5px; gap: 10px; font-family: var(--font-code); font-size: 0.65rem; text-transform: uppercase; min-height: 45px; }
-.log-line { opacity: 0.4; transition: 0.2s; white-space: nowrap; overflow: hidden; }
-.log-line.active { color: var(--green); opacity: 1; font-weight: 700; }
-.log-line.warn { color: var(--gold); opacity: 1; }
-.log-line.danger { color: var(--red); opacity: 1; font-weight: 700; }
+#hud-grid { display: grid; grid-template-columns: 1fr 1fr; width: 90%; margin: 15px auto 5px; gap: 20px; font-family: var(--font-code); font-size: 0.65rem; text-transform: uppercase; min-height: 70px; align-items: end;}
+.hud-col { display: flex; flex-direction: column; line-height: 1.4; }
+.hud-right { text-align: right; }
+
+/* Opacity Ramps */
+.l1 { opacity: 0.2; } .l2 { opacity: 0.45; } .l3 { opacity: 0.7; } .l4 { opacity: 1.0; color: var(--silver); font-weight: 700; }
+.hint-block { height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
 /* --- 03. PHYSICS STACKS --- */
-.stack-container{position:absolute; inset:0; top:120px; width:90%; max-width:420px; height:calc(100vh - 220px); margin:0 auto; perspective:1500px; display:flex; align-items:center; justify-content:center; pointer-events: none; opacity: 0; transition: opacity 0.3s;}
+.stack-container{position:absolute; inset:0; top:130px; width:90%; max-width:420px; height:calc(100vh - 230px); margin:0 auto; perspective:1500px; display:flex; align-items:center; justify-content:center; pointer-events: none; opacity: 0; transition: opacity 0.3s;}
 .stack-container.active { pointer-events: all; opacity: 1; z-index: 20; }
 
 .card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:14px; border:1px solid var(--border); padding:30px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.9); will-change:transform; transform-style:preserve-3d; overflow:hidden;}
-.card.vault-card { border-color: #333; background: #080808; }
+.card.vault-card { border-color: #222; }
 
-.card-q{font-family:var(--font-serif); font-size:clamp(1.3rem, 5vw, 1.8rem); line-height:1.4; text-align:center; width:100%;}
-.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-weight:900; font-size:1.6rem; text-transform:uppercase; opacity:0; transition:opacity 0.15s; border-radius:14px; border:1px solid #444; color:var(--gold);}
+.card-q{font-family:var(--font-serif); font-size:clamp(1.3rem, 5vw, 1.8rem); line-height:1.4; text-align:center; color: var(--light-silver);}
+.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-weight:900; font-size:1.5rem; text-transform:uppercase; opacity:0; transition:opacity 0.15s; border-radius:14px; border:1px solid #333; color:var(--light-silver); text-align: center; padding: 20px;}
 
-/* EXPIRE TIMER UI */
-.timer-badge { position: absolute; top: 15px; font-family: var(--font-code); font-size: 0.65rem; color: var(--red); letter-spacing: 1px; }
-.erk-display { margin-top: 15px; font-family: var(--font-code); font-size: 0.7rem; color: #555; background: #111; padding: 5px 10px; border-radius: 4px; }
+/* VAULT SPECIFICS */
+.timer-badge { position: absolute; top: 15px; font-family: var(--font-code); font-size: 0.6rem; color: var(--red); }
 
 </style>
 </head>
@@ -46,59 +47,49 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text); font-famil
 
 <div id="header">
   <div class="header-meta">
-    <span id="sys-status">KINETIC.v1</span> 
+    <span>KINETIC.v144.7</span> 
     <span id="xp-ui">0 XP</span>
   </div>
   <div class="progress-track"><div id="progress-bar"></div></div>
 </div>
 
 <div id="hud-grid">
-    <div class="hud-col">
-        <div class="log-line" id="sys-1">> SYSTEM BOOT</div>
-        <div class="log-line active" id="sys-2">> ONLINE</div>
+    <div class="hud-col hud-left">
+        <div class="l1" id="stat-line">STATUS: ONLINE</div>
+        <div class="l2" id="fuel-line">FUEL: 10.0</div>
+        <div class="l3" id="dump-line">DUMP: 0/20</div>
+        <div class="l4">> SYSTEM READY</div>
     </div>
-    <div class="hud-col" style="text-align:right">
-        <div class="log-line" id="nic-1">WAITING <</div>
-        <div class="log-line active" id="nic-2">READY <</div>
+    <div class="hud-col hud-right">
+        <div class="l1" id="count-line">00 / 00</div>
+        <div class="l2" id="dom-line">DATABASE</div>
+        <div class="l3" style="visibility:hidden;">-</div>
+        <div class="l4 hint-block" id="hint-line">SWIPE TO BEGIN</div>
     </div>
 </div>
 
 <div id="stack-game" class="stack-container active">
-  <div class="card"><div class="card-q" style="font-family:var(--font-code); font-size:0.8rem; color:#444;">SYNCING ENGINE...</div></div>
+  <div class="card"><div class="card-q">INITIALIZING...</div></div>
 </div>
 
 <div id="stack-vault" class="stack-container"></div>
 
 <script>
 /* =================================================================
-   VIA.STACK | KINETIC v1 MASTER
+   VIA.STACK | KINETIC v144.7 (METALLIC RELEASE CANDIDATE)
    ================================================================= */
 
-// --- 01. ENGINE CONFIG & ECONOMY ---
-const BEACON_URL = "YOUR_APPS_SCRIPT_URL"; // Replace after deployment
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
-const START_CREDITS = 10;
-const DUMP_REWARD = 0.5;
 const MAX_DUMPS = 20;
 
-let RAW_DATA=[], POOL=[], WRONG=[], SESSION_ALL=[];
-let XP=0, VOL=10, ATTEMPTED=new Set();
-let CREDITS = parseFloat(localStorage.getItem("K1_CREDITS") || START_CREDITS);
+let RAW_DATA=[], POOL=[], SESSION_ALL=[];
+let XP=0, VOL=10, Q_INDEX=0;
+let CREDITS = parseFloat(localStorage.getItem("K1_CREDITS") || "10");
 let DUMPS_USED = parseInt(localStorage.getItem("K1_DUMPS") || "0");
 let VAULT = JSON.parse(localStorage.getItem("K1_VAULT") || "[]");
 let VAULT_CURSOR = 0;
 
-// --- 02. HUD & LOGGING ---
-function sysLog(msg, type="active") {
-    document.getElementById("sys-1").innerText = document.getElementById("sys-2").innerText;
-    const l2 = document.getElementById("sys-2"); l2.innerText = `> ${msg}`; l2.className = `log-line ${type}`;
-}
-function nicLog(msg) {
-    document.getElementById("nic-1").innerText = document.getElementById("nic-2").innerText;
-    const l2 = document.getElementById("nic-2"); l2.innerText = `${msg} <`;
-}
-
-// --- 03. PHYSICS ENGINE (v144.2 BASE) ---
+// --- 01. PHYSICS ENGINE (v144.2 BASE) ---
 class Physics {
     constructor(el,cb){
         this.el=el; this.cb=cb; this.active=false; this.start={x:0,y:0};
@@ -114,11 +105,11 @@ class Physics {
         if(!this.active)return;
         const dx=p.clientX-this.start.x, dy=p.clientY-this.start.y;
         this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
-        const d=Math.hypot(dx,dy);
+        const d = Math.hypot(dx,dy);
         Object.values(this.ls).forEach(l=>l&&(l.style.opacity=0));
         if(d>30){
             const dir=this.getDir(dx,dy);
-            if(this.ls[dir]) this.ls[dir].style.opacity=Math.min(d/60,1);
+            if(this.ls[dir]) this.ls[dir].style.opacity=Math.min(d/120, 0.5); // 50% Opacity Cap
         }
     }
     dragEnd(){
@@ -133,24 +124,30 @@ class Physics {
     }
 }
 
-// --- 04. UI RENDERING ---
+// --- 02. UI UPDATER ---
+function updateHUD() {
+    document.getElementById("fuel-line").innerText = `FUEL: ${CREDITS.toFixed(1)}`;
+    document.getElementById("dump-line").innerText = `DUMP: ${DUMPS_USED}/${MAX_DUMPS}`;
+    document.getElementById("xp-ui").innerText = `${XP} XP`;
+}
+
 function render(q, labels, cb, isVault=false, expireStr="") {
     const cont = isVault ? document.getElementById('stack-vault') : document.getElementById('stack-game');
     cont.innerHTML = ''; const el = document.createElement('div'); el.className = isVault ? 'card vault-card' : 'card';
-    let timerHtml = isVault ? `<div class="timer-badge">⏳ EXPIRES IN: ${expireStr}</div>` : "";
-    el.innerHTML = `${timerHtml}<div class="card-q">${q}</div>
+    let tBadge = isVault ? `<div class="timer-badge">⌛ ${expireStr}</div>` : "";
+    el.innerHTML = `${tBadge}<div class="card-q">${q}</div>
                     <div class="swipe-label sl-up">${labels.up||""}</div>
                     <div class="swipe-label sl-left">${labels.left||""}</div>
                     <div class="swipe-label sl-right">${labels.right||""}</div>`;
     cont.appendChild(el); new Physics(el, cb);
 }
 
-// --- 05. GAME LOOP ---
+// --- 03. GAME LOGIC ---
 function begin() {
+    updateHUD();
     document.getElementById('stack-vault').classList.remove('active');
     document.getElementById('stack-game').classList.add('active');
-    sysLog(`FUEL: ${CREDITS.toFixed(1)} | DUMPS: ${DUMPS_USED}/20`);
-    render(`KINETIC v1\n${RAW_DATA.length} UNITS`, {up:"QUIZ", left:"VAULT", right:"SYNC"}, dir => {
+    render(`KINETIC v144.7\n${RAW_DATA.length} UNITS`, {up:"START QUIZ", left:"OPEN VAULT", right:"RELOAD"}, dir => {
         if(dir==="UP") volumePick();
         if(dir==="LEFT") openVault();
         if(dir==="RIGHT") location.reload();
@@ -158,7 +155,7 @@ function begin() {
 }
 
 function volumePick() {
-    render(`SELECT VOLUME`, {up:"10 Q", left:"20 Q", right:"30 Q"}, dir => {
+    render(`SESSION VOLUME`, {up:"10 Q", left:"20 Q", right:"30 Q"}, dir => {
         VOL = dir==="UP" ? 10 : (dir==="LEFT" ? 20 : 30);
         startSession();
     });
@@ -166,21 +163,26 @@ function volumePick() {
 
 function startSession() {
     POOL = shuffle([...RAW_DATA]).slice(0, VOL);
-    SESSION_ALL = []; XP = 0; ATTEMPTED.clear();
+    SESSION_ALL = []; XP = 0; Q_INDEX = 0;
     nextQ();
 }
 
 function nextQ() {
     if(!POOL.length) { report(); return; }
+    Q_INDEX++;
     const d = POOL.shift(); SESSION_ALL.push(d);
     const opts = shuffle([d.u, d.l, d.r]);
-    nicLog(`${d.dom} | ${d.topic}`);
+    
+    // Update Content HUD
+    document.getElementById("count-line").innerText = `${Q_INDEX.toString().padStart(2,'0')} / ${VOL}`;
+    document.getElementById("dom-line").innerText = d.dom.toUpperCase();
+    document.getElementById("hint-line").innerText = d.hint || "NO HINT AVAILABLE";
+
     render(d.q, {up:opts[0], left:opts[1], right:opts[2]}, dir => {
         const picked = dir==="UP"?opts[0]:(dir==="LEFT"?opts[1]:opts[2]);
         const correct = d.correct==="UP"?d.u:(d.correct==="LEFT"?d.l:d.r);
         if(picked === correct) XP++;
-        document.getElementById('xp-ui').innerText = `${XP}/${SESSION_ALL.length} XP`;
-        document.getElementById('progress-bar').style.width = `${(SESSION_ALL.length/VOL)*100}%`;
+        document.getElementById('progress-bar').style.width = `${(Q_INDEX/VOL)*100}%`;
         nextQ();
     });
 }
@@ -188,18 +190,16 @@ function nextQ() {
 function report() {
     const sid = "SES_" + Math.random().toString(36).substr(2,5).toUpperCase();
     saveToVault(sid);
-    sendTelemetry(sid);
     render(`SESSION COMPLETE\nSCORE: ${XP}/${VOL}\nID: ${sid}`, {up:"RESTART", left:"MENU", right:"PDF"}, dir => {
         if(dir==="UP") volumePick();
         if(dir==="LEFT") begin();
-        if(dir==="RIGHT") alert("PDF Generation requires 1.0 Credits.");
+        if(dir==="RIGHT") alert("PDF Generation Logged.");
     });
 }
 
-// --- 06. VAULT & TIMER LOGIC (v143.1) ---
+// --- 04. VAULT SYSTEM (v143.1 Logic) ---
 function saveToVault(sid) {
-    const session = { id: sid, data: [...SESSION_ALL], score: XP, total: VOL, time: Date.now() };
-    VAULT.unshift(session);
+    VAULT.unshift({ id: sid, data: [...SESSION_ALL], score: XP, total: VOL, time: Date.now() });
     localStorage.setItem("K1_VAULT", JSON.stringify(VAULT));
 }
 
@@ -212,47 +212,26 @@ function openVault() {
 function showVaultCard() {
     if(!VAULT.length || VAULT_CURSOR >= VAULT.length) { begin(); return; }
     const v = VAULT[VAULT_CURSOR];
-    const remaining = (24 * 60 * 60 * 1000) - (Date.now() - v.time);
+    const rem = (24 * 3600000) - (Date.now() - v.time);
     
-    if(remaining <= 0) { 
-        VAULT.splice(VAULT_CURSOR, 1); 
-        localStorage.setItem("K1_VAULT", JSON.stringify(VAULT));
-        showVaultCard(); return; 
-    }
+    if(rem <= 0) { VAULT.splice(VAULT_CURSOR, 1); localStorage.setItem("K1_VAULT", JSON.stringify(VAULT)); showVaultCard(); return; }
 
-    const h = Math.floor(remaining / 3600000);
-    const m = Math.floor((remaining % 3600000) / 60000);
-    const timerStr = `${h}h ${m}m`;
+    const h = Math.floor(rem / 3600000);
+    const m = Math.floor((rem % 3600000) / 60000);
 
-    render(`${v.id}\nScore: ${v.score}/${v.total}\nDue: ${new Date(v.time + 86400000).getHours()}:${new Date(v.time + 86400000).getMinutes()}`, 
-    {up:"NEXT", left:"DUMP (+0.5)", right:"RELOAD (-1)"}, dir => {
+    render(`${v.id}\nScore: ${v.score}/${v.total}`, {up:"NEXT", left:"DUMP (+0.5)", right:"PDF (-1)"}, dir => {
         if(dir === "UP") { VAULT_CURSOR++; showVaultCard(); }
-        if(dir === "LEFT") executeDump(v);
-        if(dir === "RIGHT") executeReload(v);
-    }, true, timerStr);
+        if(dir === "LEFT") executeDump();
+        if(dir === "RIGHT") alert("Generating PDF...");
+    }, true, `${h}H ${m}M LEFT`);
 }
 
-function executeDump(v) {
-    if(DUMPS_USED >= MAX_DUMPS) { alert("FREE DUMP LIMIT REACHED."); showVaultCard(); return; }
-    DUMPS_USED++; CREDITS += DUMP_REWARD;
+function executeDump() {
+    if(DUMPS_USED >= MAX_DUMPS) { alert("DUMP LIMIT REACHED."); return; }
+    DUMPS_USED++; CREDITS += 0.5;
     localStorage.setItem("K1_DUMPS", DUMPS_USED); localStorage.setItem("K1_CREDITS", CREDITS);
     VAULT.splice(VAULT_CURSOR, 1); localStorage.setItem("K1_VAULT", JSON.stringify(VAULT));
-    sysLog("RECLAIMED 0.5"); showVaultCard();
-}
-
-function executeReload(v) {
-    if(CREDITS < 1) { alert("INSUFFICIENT CREDITS. TOP UP ₹9 FOR 100."); showVaultCard(); return; }
-    CREDITS -= 1; localStorage.setItem("K1_CREDITS", CREDITS);
-    sysLog("PDF RELOADED");
-    // PDF Trigger logic here
-    showVaultCard();
-}
-
-// --- 07. TELEMETRY & INIT ---
-function sendTelemetry(sid) {
-    if(!BEACON_URL || BEACON_URL === "YOUR_APPS_SCRIPT_URL") return;
-    const payload = { action: "TELEMETRY", ses_id: sid, score: XP, volume: VOL, manifest: SESSION_ALL.map(x=>x.id) };
-    fetch(BEACON_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+    begin();
 }
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
@@ -263,7 +242,8 @@ async function init() {
     if(!RAW_DATA.length) {
         try { const r = await fetch('master.json'); if(r.ok) RAW_DATA = await r.json(); } catch(e){}
     }
-    RAW_DATA = RAW_DATA.map(d=>({id:d.Question_ID||d.id, q:d.Question_Text||d.q, u:d.Correct_Answer||d.u, l:d.Distractor_1||d.l, r:d.Distractor_2||d.r, correct:d.Correct_Direction||d.correct, dom:d.Domain||d.dom, topic:d.Topic_Label||d.topic}));
+    // Field Mapping
+    RAW_DATA = RAW_DATA.map(d=>({id:d.Question_ID||d.id, q:d.Question_Text||d.q, u:d.Correct_Answer||d.u, l:d.Distractor_1||d.l, r:d.Distractor_2||d.r, correct:d.Correct_Direction||d.correct, dom:d.Domain||d.dom, hint:d.Explanation_Short||d.hint}));
     begin();
 }
 init();
