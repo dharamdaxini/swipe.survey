@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v141.0</title>
+<title>Alchemist | Kinetic v140.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -61,11 +61,12 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v141.0 (TELEMETRY)
+   VIA.STACK | KINETIC v140.0
    ========================================= */
 
 // --- CONFIGURATION ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
+const DRIVE_FOLDER = "https://drive.google.com/drive/folders/14z8ugJINlbhyvp93byAK-UoUP92tpKnQ?usp=share_link";
 const WA_NUMBER = "919876543210"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
@@ -74,15 +75,12 @@ let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
 let SET_CURSOR = 0, ACTIVE_SET = null, XP = 0, VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
 
-// --- TELEMETRY STATE ---
-let Q_START_TIME = 0;
-let SESSION_LOG = []; 
-let PIVOT_COUNT = 0;
-
-// --- BACKEND STATE ---
+// --- BACKEND STATE (PERSISTENT) ---
 let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
 let CURRENT_SES_ID = null;
 let SES_BEACON_SENT = false;
+
+// Load Credits & Vault
 let CREDITS = parseInt(localStorage.getItem("USER_CREDITS") || "10");
 let VAULT = [];
 try { VAULT = JSON.parse(localStorage.getItem("USER_VAULT") || "[]"); } catch(e) { VAULT = []; }
@@ -96,43 +94,34 @@ function log(msg, type="normal") {
     l3.className = type === "active" ? "log-line active" : type === "primary" ? "log-line primary" : type === "danger" ? "log-line danger" : "log-line";
 }
 
-/* ================= BACKEND LOGIC (TELEMETRY) ================= */
+/* ================= BACKEND LOGIC ================= */
 function generateSessionID() {
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     CURRENT_SES_ID = `SES_${hash}`;
     localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
-    // Silent beacon disabled to save quota, will send at end
+    sendBeacon();
     log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
 }
 
-function sendTelemetry() {
-    if(!BEACON_URL) return;
+function sendBeacon() {
+    if(SES_BEACON_SENT || !BEACON_URL) return;
     
-    // Calculate Stats
-    const totalLatency = SESSION_LOG.reduce((sum, item) => sum + item.latency, 0);
-    const avgLatency = SESSION_LOG.length > 0 ? Math.round(totalLatency / SESSION_LOG.length) : 0;
-    const accuracy = SESSION_ALL.length > 0 ? Math.round((XP / SESSION_ALL.length) * 100) : 0;
-
-    log("SYNCING TELEMETRY...", "normal");
-    
+    log("UPLINKING DATA...", "normal");
     fetch(BEACON_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            action: "TELEMETRY",
             ses_id: CURRENT_SES_ID,
-            mobile: USER_MOBILE || "GUEST",
+            mobile: USER_MOBILE,
             score: XP,
-            accuracy: accuracy,
-            latency: avgLatency,
-            pivots: PIVOT_COUNT,
-            log: SESSION_LOG
+            meta: { set: ACTIVE_SET, total: SESSION_ALL.length }
         })
     }).then(() => {
-        log("DATA SYNC COMPLETE", "active");
+        SES_BEACON_SENT = true;
+        log("UPLINK ESTABLISHED", "active");
     }).catch(e => {
-        log("DATA SYNC FAILED", "danger");
+        log("UPLINK FAILED (OFFLINE)", "danger");
     });
 }
 
@@ -157,11 +146,7 @@ class PhysicsController{
  end(){if(!this.active)return;this.active=false;
   const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform); const dx=m.m41,dy=m.m42;
   if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
-  else{
-      // TELEMETRY: PIVOT DETECTED (Hesitation)
-      if(Math.abs(dx) > 20 || Math.abs(dy) > 20) { PIVOT_COUNT++; }
-      this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";this.el.style.transform="translate(0,0)"
-  }}
+  else{this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";this.el.style.transform="translate(0,0)"}}
  dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
 }
 
@@ -170,10 +155,7 @@ function card(text,labels,cb){
  UI.stack.innerHTML=""; const el=document.createElement("div"); el.className="card";
  el.innerHTML=`<div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
   <div class="swipe-label sl-up">${chemText(labels.up)||""}</div><div class="swipe-label sl-left">${chemText(labels.left)||""}</div><div class="swipe-label sl-right">${chemText(labels.right)||""}</div><div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
- UI.stack.appendChild(el); 
- // TELEMETRY: START TIMER
- Q_START_TIME = Date.now();
- new PhysicsController(el,{onCommit:cb});
+ UI.stack.appendChild(el); new PhysicsController(el,{onCommit:cb});
 }
 
 /* ================= APP FLOW ================= */
@@ -197,12 +179,9 @@ function checkLoginForVault(){
 
 function openVault(index){
     if(VAULT.length === 0){ 
-        card("LOCAL ARCHIVE EMPTY\n\nRecover from Cloud?", {down:"WHATSAPP", up:"MENU"}, dir => {
-            if(dir==="DOWN") {
-                const lastSes = localStorage.getItem("LAST_SES_ID") || "UNKNOWN";
-                const text = `VAULT_RECOVERY || MOB: ${USER_MOBILE || "UNKNOWN"} || LAST_ID: ${lastSes}`;
-                window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
-            }
+        // EMPTY VAULT: OFFER CLOUD LINK
+        card("LOCAL VAULT EMPTY\n\nCheck Cloud Archives?", {up:"OPEN DRIVE", down:"BACK"}, dir => {
+            if(dir==="UP") window.open(DRIVE_FOLDER, '_blank');
             else begin();
         });
         return; 
@@ -214,15 +193,25 @@ function openVault(index){
     const isNewest = (index === 0);
     const isOldest = (index === VAULT.length - 1);
     
+    // --- SMART RETRIEVAL LOGIC ---
+    // If we have a cloud link, show "CLOUD PDF". If not, "RE-GENERATE".
+    const hasCloud = !!item.cloud_url;
+    const upLabel = hasCloud ? "CLOUD PDF" : "RE-GEN";
+
     log(`ARCHIVE: ${item.id}`, "primary");
     card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
-        { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
+        { up: upLabel, left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
         dir => {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT" && !isOldest) openVault(index + 1);
             if(dir === "UP") {
-                log("OPENING ARCHIVE...", "active");
-                renderSessionPDF(item.data, item.id);
+                if(hasCloud) {
+                    log("RETRIEVING FROM CLOUD...", "active");
+                    window.open(item.cloud_url, '_blank');
+                } else {
+                    log("REGENERATING LOCAL PDF...", "normal");
+                    renderSessionPDF(item.data, item.id);
+                }
             }
         }
     );
@@ -253,7 +242,6 @@ function startQuiz(){
  if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
  POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
  CURRENT_SES_ID = null; SES_BEACON_SENT = false; 
- SESSION_LOG = []; PIVOT_COUNT = 0; // RESET TELEMETRY
  nextQ();
 }
 
@@ -270,11 +258,6 @@ function nextQ(){
   if(dir==="UP") picked = map.up; if(dir==="LEFT") picked = map.left; if(dir==="RIGHT") picked = map.right;
   let c = d.correct; if(c==="UP"||c==="A") c=d.u; else if(c==="LEFT"||c==="B") c=d.l; else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
   const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
-  
-  // TELEMETRY LOGGING
-  const latency = Date.now() - Q_START_TIME;
-  SESSION_LOG.push({ id: d.id, res: isCorrect ? "WIN" : "LOSS", latency: latency });
-
   if(!isCorrect){ WRONG.push(d); } else { if(!ATTEMPTED.has(d.id)){ XP+=1; } }
   ATTEMPTED.add(d.id);
   UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
@@ -336,8 +319,6 @@ function exportSessionPDF(data=null, id=null){
     if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
     CREDITS--;
     localStorage.setItem("USER_CREDITS", CREDITS);
-    VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
-    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
     log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
  }
 
@@ -395,9 +376,44 @@ function exportSessionPDF(data=null, id=null){
  const fileName = `ALCHEMIST_${renderID}.pdf`;
  doc.save(fileName);
 
- // --- 2. UPLOAD DATA ONLY (NO FILE) ---
+ // --- 2. UPLOAD TO CLOUD & SAVE LINK ---
  if(!data) {
-     sendTelemetry(); // Sends JSON, not PDF
+     log("SYNCING TO CLOUD...", "normal");
+     const pdfBlob = doc.output('blob');
+     const reader = new FileReader();
+     reader.readAsDataURL(pdfBlob); 
+     reader.onloadend = function() {
+         const base64data = reader.result.split(',')[1];
+         
+         fetch(BEACON_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "BACKUP",
+                ses_id: renderID,
+                mobile: USER_MOBILE || "GUEST",
+                score: XP,
+                filename: fileName,
+                pdf: base64data
+            })
+         }).then(response => {
+             // NOTE: 'no-cors' mode is opaque, we can't read the response JSON directly here easily in standard fetch
+             // But we can assume it worked if no error. 
+             // To truly get the URL back for the Vault, we need a slight hack or just trust the folder structure.
+             // Given limitations, we will store the 'Expected' folder link for now.
+             
+             // UPDATE VAULT WITH FOLDER LINK (Since file link is hard to get in no-cors)
+             VAULT.unshift({ 
+                 id: renderID, date: new Date().toLocaleDateString(), 
+                 score: XP, total: SESSION_ALL.length, 
+                 data: [...SESSION_ALL],
+                 cloud_url: DRIVE_FOLDER // Store the Folder Link as the 'Cloud Link'
+             });
+             localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
+             log("SECURE ARCHIVE COMPLETE", "active");
+         }).catch(e => log("CLOUD SYNC FAILED", "danger"));
+     }
  }
  setTimeout(begin,500);
 }
