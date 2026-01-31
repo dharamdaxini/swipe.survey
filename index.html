@@ -3,120 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v144.7</title>
+<title>Alchemist | Kinetic v145.0</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* --- 01. CORE VISUALS (METALLIC THEME) --- */
-:root{ --bg:#000; --card:#0a0a0a; --border:#333; --gold:#ffd600; --silver:#c0c0c0; --light-silver:#e0e0e0; --text-grey:#888; --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace; }
+/* --- CORE RESTORATION --- */
+:root{ --bg:#000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --silver:#c0c0c0; --font-code:'JetBrains Mono',monospace; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select: none;}
-body{margin:0; height:100vh; background:var(--bg); color:#fff; font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
+body{margin:0; height:100vh; background:var(--bg); color:#fff; font-family:'Inter',sans-serif; overflow:hidden; display:flex; flex-direction:column;}
 
-/* --- 02. DUAL HUD (GRADIENT OPACITY) --- */
-#header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
-.header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:var(--text-grey); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;}
-.progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
-#progress-bar{height:100%; background:var(--gold); width:0%; transition:width 0.4s ease;}
+/* --- HEADER & XP --- */
+#header{width:90%; margin:25px auto 0; z-index:100;}
+.xp-row{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.85rem; color:#666; text-transform:uppercase;}
+#progress-bar{height:2px; background:var(--gold); width:0%; transition:width 0.4s ease; margin-top:10px;}
+.track{width:100%; height:2px; background:#1a1a1a; margin-top:2px;}
 
-#hud-grid { display: grid; grid-template-columns: 1fr 1fr; width: 90%; margin: 15px auto 5px; gap: 20px; font-family: var(--font-code); font-size: 0.65rem; text-transform: uppercase; min-height: 70px; align-items: end;}
-.hud-col { display: flex; flex-direction: column; line-height: 1.4; }
+/* --- METALLIC HUD (BIGGER AS PER VIDEO) --- */
+#hud-grid { 
+    display: grid; grid-template-columns: 1fr 1fr; width: 90%; 
+    margin: 20px auto 5px; font-family: var(--font-code); 
+    font-size: 0.75rem; line-height: 1.8; 
+}
+.hud-col { display: flex; flex-direction: column; }
 .hud-right { text-align: right; }
 
-/* Opacity Ramps */
-.l1 { opacity: 0.2; } .l2 { opacity: 0.45; } .l3 { opacity: 0.7; } .l4 { opacity: 1.0; color: var(--silver); font-weight: 700; }
-.hint-block { height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* OPACITY RAMPS (35/70/80) */
+.h1 { opacity: 0.35; } .h2 { opacity: 0.70; } .h3 { opacity: 0.80; color: var(--silver); }
 
-/* --- 03. PHYSICS STACKS --- */
-.stack-container{position:absolute; inset:0; top:130px; width:90%; max-width:420px; height:calc(100vh - 230px); margin:0 auto; perspective:1500px; display:flex; align-items:center; justify-content:center; pointer-events: none; opacity: 0; transition: opacity 0.3s;}
-.stack-container.active { pointer-events: all; opacity: 1; z-index: 20; }
+/* --- LIVE LOG LINE (BOTTOM) --- */
+#live-log { width: 90%; margin: 5px auto; font-family: var(--font-code); font-size: 0.7rem; color: #666; }
+#live-log .active { color: var(--gold); }
 
-.card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:14px; border:1px solid var(--border); padding:30px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.9); will-change:transform; transform-style:preserve-3d; overflow:hidden;}
-.card.vault-card { border-color: #222; }
+/* --- GHOST HUD (HIDDEN BEHIND) --- */
+#ghost-layer {
+    position: absolute; inset: 0; top: 220px; width: 85%; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    z-index: 5; opacity: 0; transition: opacity 0.2s;
+}
+.ghost-text { width: 45%; font-family: var(--font-code); font-size: 0.7rem; color: var(--silver); line-height: 1.5; }
 
-.card-q{font-family:var(--font-serif); font-size:clamp(1.3rem, 5vw, 1.8rem); line-height:1.4; text-align:center; color: var(--light-silver);}
-.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-weight:900; font-size:1.5rem; text-transform:uppercase; opacity:0; transition:opacity 0.15s; border-radius:14px; border:1px solid #333; color:var(--light-silver); text-align: center; padding: 20px;}
-
-/* VAULT SPECIFICS */
-.timer-badge { position: absolute; top: 15px; font-family: var(--font-code); font-size: 0.6rem; color: var(--red); }
-
+/* --- THE STACK (VIDEO PHYSICS) --- */
+.stack-container{position:absolute; inset:0; top:155px; width:92%; max-width:440px; height:calc(100vh - 280px); margin:0 auto; perspective:1200px; z-index: 20;}
+.card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:20px; border:1px solid var(--border); padding:40px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.95); will-change:transform;}
+.card-q{font-family:'Crimson Text',serif; font-size:1.7rem; text-align:center; color: #fff; line-height: 1.4;}
+.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-weight:900; font-size:1.6rem; text-transform:uppercase; opacity:0; transition:opacity 0.15s; border-radius:20px; color:var(--silver); text-align: center; border: 1px solid #333;}
 </style>
 </head>
 <body>
 
 <div id="header">
-  <div class="header-meta">
-    <span>KINETIC.v144.7</span> 
+  <div class="xp-row">
+    <span>VIA.STACK</span>
     <span id="xp-ui">0 XP</span>
   </div>
-  <div class="progress-track"><div id="progress-bar"></div></div>
+  <div id="progress-bar"></div>
+  <div class="track"></div>
 </div>
 
 <div id="hud-grid">
-    <div class="hud-col hud-left">
-        <div class="l1" id="stat-line">STATUS: ONLINE</div>
-        <div class="l2" id="fuel-line">FUEL: 10.0</div>
-        <div class="l3" id="dump-line">DUMP: 0/20</div>
-        <div class="l4">> SYSTEM READY</div>
+    <div class="hud-col">
+        <div class="h1" id="l1">[ ONLINE ]</div>
+        <div class="h2" id="l2">[ FUEL: 10.0 ]</div>
+        <div class="h3" id="l3">[ DUMP: 0/20 ]</div>
     </div>
     <div class="hud-col hud-right">
-        <div class="l1" id="count-line">00 / 00</div>
-        <div class="l2" id="dom-line">DATABASE</div>
-        <div class="l3" style="visibility:hidden;">-</div>
-        <div class="l4 hint-block" id="hint-line">SWIPE TO BEGIN</div>
+        <div class="h1" id="r1">00 / 00</div>
+        <div class="h2" id="r2">PHYSICAL CHEMISTRY</div>
+        <div class="h3" id="r3">SOLUTIONS</div>
     </div>
 </div>
 
-<div id="stack-game" class="stack-container active">
-  <div class="card"><div class="card-q">INITIALIZING...</div></div>
+<div id="live-log">
+    <span class="active">> SELECT DATASET</span>
 </div>
 
-<div id="stack-vault" class="stack-container"></div>
+<div id="ghost-layer">
+    <div class="ghost-text" id="g-law">CORE LAW: PEEK TO VIEW</div>
+    <div class="ghost-text" style="text-align:right" id="g-hint">HINT: PEEK TO VIEW</div>
+</div>
+
+<div id="stack-game" class="stack-container">
+    <div class="card"><div class="card-q">DATA LOADED<br>20 UNITS</div></div>
+</div>
 
 <script>
-/* =================================================================
-   VIA.STACK | KINETIC v144.7 (METALLIC RELEASE CANDIDATE)
-   ================================================================= */
+let Q_IDX = 0, VOL = 10, XP = 0;
 
-const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
-const MAX_DUMPS = 20;
-
-let RAW_DATA=[], POOL=[], SESSION_ALL=[];
-let XP=0, VOL=10, Q_INDEX=0;
-let CREDITS = parseFloat(localStorage.getItem("K1_CREDITS") || "10");
-let DUMPS_USED = parseInt(localStorage.getItem("K1_DUMPS") || "0");
-let VAULT = JSON.parse(localStorage.getItem("K1_VAULT") || "[]");
-let VAULT_CURSOR = 0;
-
-// --- 01. PHYSICS ENGINE (v144.2 BASE) ---
 class Physics {
-    constructor(el,cb){
-        this.el=el; this.cb=cb; this.active=false; this.start={x:0,y:0};
-        this.ls={UP:el.querySelector('.sl-up'), LEFT:el.querySelector('.sl-left'), RIGHT:el.querySelector('.sl-right')};
-        const s=e=>this.dragStart(e.touches?e.touches[0]:e);
-        const m=e=>this.dragMove(e.touches?e.touches[0]:e);
-        const e2=()=>this.dragEnd();
-        el.addEventListener('mousedown',s); window.addEventListener('mousemove',m); window.addEventListener('mouseup',e2);
-        el.addEventListener('touchstart',s); el.addEventListener('touchmove',ev=>{if(this.active)ev.preventDefault();m(ev.touches[0])},{passive:false}); el.addEventListener('touchend',e2);
+    constructor(el, cb) {
+        this.el = el; this.cb = cb; this.active = false; this.start = {x:0, y:0};
+        this.ghost = document.getElementById('ghost-layer');
+        const s = e => this.dragStart(e.touches ? e.touches[0] : e);
+        const m = e => this.dragMove(e.touches ? e.touches[0] : e);
+        const e2 = () => this.dragEnd();
+        el.addEventListener('mousedown', s); window.addEventListener('mousemove', m); window.addEventListener('mouseup', e2);
+        el.addEventListener('touchstart', s); el.addEventListener('touchmove', ev => {if(this.active) ev.preventDefault(); this.dragMove(ev.touches[0])}, {passive:false}); el.addEventListener('touchend', e2);
     }
-    dragStart(p){this.active=true; this.start={x:p.clientX, y:p.clientY}; this.el.style.transition="none";}
-    dragMove(p){
-        if(!this.active)return;
-        const dx=p.clientX-this.start.x, dy=p.clientY-this.start.y;
-        this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/20}deg)`;
-        const d = Math.hypot(dx,dy);
-        Object.values(this.ls).forEach(l=>l&&(l.style.opacity=0));
-        if(d>30){
-            const dir=this.getDir(dx,dy);
-            if(this.ls[dir]) this.ls[dir].style.opacity=Math.min(d/120, 0.5); // 50% Opacity Cap
+    dragStart(p) { this.active = true; this.start = {x:p.clientX, y:p.clientY}; this.el.style.transition = "none"; }
+    dragMove(p) {
+        if(!this.active) return;
+        const dx = p.clientX - this.start.x, dy = p.clientY - this.start.y;
+        this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/22}deg)`;
+        
+        // GHOST REVEAL ON DOWN-PEEK
+        if(dy > 50) this.ghost.style.opacity = Math.min((dy-50)/100, 1);
+        else this.ghost.style.opacity = 0;
+
+        const d = Math.hypot(dx, dy);
+        const ls = {UP:this.el.querySelector('.sl-up'), LEFT:this.el.querySelector('.sl-left'), RIGHT:this.el.querySelector('.sl-right')};
+        Object.values(ls).forEach(l => {if(l) l.style.opacity = 0;});
+        if(d > 40) {
+            const dir = this.getDir(dx, dy);
+            if(ls[dir]) ls[dir].style.opacity = Math.min(d/120, 0.5);
         }
     }
-    dragEnd(){
-        if(!this.active)return; this.active=false;
-        const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);
-        if(Math.hypot(m.m41, m.m42)>100) this.cb(this.getDir(m.m41,m.m42));
-        else { this.el.style.transition="0.3s cubic-bezier(0.2,0.8,0.2,1)"; this.el.style.transform="translate(0,0)"; }
+    dragEnd() {
+        if(!this.active) return; this.active = false;
+        this.ghost.style.opacity = 0;
+        const m = new WebKitCSSMatrix(getComputedStyle(this.el).transform);
+        if(Math.hypot(m.m41, m.m42) > 115) this.cb(this.getDir(m.m41, m.m42));
+        else { this.el.style.transition = "0.4s cubic-bezier(0.2, 0.8, 0.2, 1)"; this.el.style.transform = "translate(0,0)"; }
     }
     getDir(x,y){
         const a=(Math.atan2(-y,x)*180/Math.PI+360)%360;
@@ -124,129 +132,53 @@ class Physics {
     }
 }
 
-// --- 02. UI UPDATER ---
-function updateHUD() {
-    document.getElementById("fuel-line").innerText = `FUEL: ${CREDITS.toFixed(1)}`;
-    document.getElementById("dump-line").innerText = `DUMP: ${DUMPS_USED}/${MAX_DUMPS}`;
-    document.getElementById("xp-ui").innerText = `${XP} XP`;
+function updateLiveLog(msg) {
+    document.getElementById('live-log').innerHTML = `<span class="active">> ${msg}</span>`;
 }
 
-function render(q, labels, cb, isVault=false, expireStr="") {
-    const cont = isVault ? document.getElementById('stack-vault') : document.getElementById('stack-game');
-    cont.innerHTML = ''; const el = document.createElement('div'); el.className = isVault ? 'card vault-card' : 'card';
-    let tBadge = isVault ? `<div class="timer-badge">⌛ ${expireStr}</div>` : "";
-    el.innerHTML = `${tBadge}<div class="card-q">${q}</div>
-                    <div class="swipe-label sl-up">${labels.up||""}</div>
-                    <div class="swipe-label sl-left">${labels.left||""}</div>
-                    <div class="swipe-label sl-right">${labels.right||""}</div>`;
-    cont.appendChild(el); new Physics(el, cb);
-}
-
-// --- 03. GAME LOGIC ---
-function begin() {
-    updateHUD();
-    document.getElementById('stack-vault').classList.remove('active');
-    document.getElementById('stack-game').classList.add('active');
-    render(`KINETIC v144.7\n${RAW_DATA.length} UNITS`, {up:"START QUIZ", left:"OPEN VAULT", right:"RELOAD"}, dir => {
-        if(dir==="UP") volumePick();
-        if(dir==="LEFT") openVault();
-        if(dir==="RIGHT") location.reload();
-    });
-}
-
-function volumePick() {
-    render(`SESSION VOLUME`, {up:"10 Q", left:"20 Q", right:"30 Q"}, dir => {
-        VOL = dir==="UP" ? 10 : (dir==="LEFT" ? 20 : 30);
-        startSession();
-    });
-}
-
-function startSession() {
-    POOL = shuffle([...RAW_DATA]).slice(0, VOL);
-    SESSION_ALL = []; XP = 0; Q_INDEX = 0;
-    nextQ();
-}
-
-function nextQ() {
-    if(!POOL.length) { report(); return; }
-    Q_INDEX++;
-    const d = POOL.shift(); SESSION_ALL.push(d);
-    const opts = shuffle([d.u, d.l, d.r]);
+function render(d) {
+    const cont = document.getElementById('stack-game');
+    cont.innerHTML = '';
+    const el = document.createElement('div'); el.className = 'card';
+    el.innerHTML = `<div class="card-q">${d.q}</div>
+                    <div class="swipe-label sl-up">${d.u}</div>
+                    <div class="swipe-label sl-left">${d.l}</div>
+                    <div class="swipe-label sl-right">${d.r}</div>`;
     
-    // Update Content HUD
-    document.getElementById("count-line").innerText = `${Q_INDEX.toString().padStart(2,'0')} / ${VOL}`;
-    document.getElementById("dom-line").innerText = d.dom.toUpperCase();
-    document.getElementById("hint-line").innerText = d.hint || "NO HINT AVAILABLE";
-
-    render(d.q, {up:opts[0], left:opts[1], right:opts[2]}, dir => {
-        const picked = dir==="UP"?opts[0]:(dir==="LEFT"?opts[1]:opts[2]);
-        const correct = d.correct==="UP"?d.u:(d.correct==="LEFT"?d.l:d.r);
-        if(picked === correct) XP++;
-        document.getElementById('progress-bar').style.width = `${(Q_INDEX/VOL)*100}%`;
-        nextQ();
-    });
-}
-
-function report() {
-    const sid = "SES_" + Math.random().toString(36).substr(2,5).toUpperCase();
-    saveToVault(sid);
-    render(`SESSION COMPLETE\nSCORE: ${XP}/${VOL}\nID: ${sid}`, {up:"RESTART", left:"MENU", right:"PDF"}, dir => {
-        if(dir==="UP") volumePick();
-        if(dir==="LEFT") begin();
-        if(dir==="RIGHT") alert("PDF Generation Logged.");
-    });
-}
-
-// --- 04. VAULT SYSTEM (v143.1 Logic) ---
-function saveToVault(sid) {
-    VAULT.unshift({ id: sid, data: [...SESSION_ALL], score: XP, total: VOL, time: Date.now() });
-    localStorage.setItem("K1_VAULT", JSON.stringify(VAULT));
-}
-
-function openVault() {
-    document.getElementById('stack-game').classList.remove('active');
-    document.getElementById('stack-vault').classList.add('active');
-    VAULT_CURSOR = 0; showVaultCard();
-}
-
-function showVaultCard() {
-    if(!VAULT.length || VAULT_CURSOR >= VAULT.length) { begin(); return; }
-    const v = VAULT[VAULT_CURSOR];
-    const rem = (24 * 3600000) - (Date.now() - v.time);
+    // HUD Sync
+    document.getElementById('r1').innerText = `${Q_IDX.toString().padStart(2,'0')} / ${VOL}`;
+    document.getElementById('r2').innerText = d.dom || "PHYSICAL CHEMISTRY";
+    document.getElementById('r3').innerText = d.topic || "SOLUTIONS";
     
-    if(rem <= 0) { VAULT.splice(VAULT_CURSOR, 1); localStorage.setItem("K1_VAULT", JSON.stringify(VAULT)); showVaultCard(); return; }
-
-    const h = Math.floor(rem / 3600000);
-    const m = Math.floor((rem % 3600000) / 60000);
-
-    render(`${v.id}\nScore: ${v.score}/${v.total}`, {up:"NEXT", left:"DUMP (+0.5)", right:"PDF (-1)"}, dir => {
-        if(dir === "UP") { VAULT_CURSOR++; showVaultCard(); }
-        if(dir === "LEFT") executeDump();
-        if(dir === "RIGHT") alert("Generating PDF...");
-    }, true, `${h}H ${m}M LEFT`);
+    // Ghost Sync
+    const lawMatch = (d.logic || "").match(/\b\w+ Law\b/i);
+    document.getElementById('g-law').innerText = lawMatch ? `CORE LAW: ${lawMatch[0].toUpperCase()}` : "CORE LAW: FUNDAMENTAL";
+    document.getElementById('g-hint').innerText = `HINT: ${d.hint || "CHECK THE COLLIGATIVE PROPERTY"}`;
+    
+    cont.appendChild(el);
+    new Physics(el, (dir) => { 
+        Q_IDX++; 
+        if(Q_IDX <= VOL) updateLiveLog(`ID: ${Math.floor(Math.random()*900)+100}`);
+        next(); 
+    });
 }
 
-function executeDump() {
-    if(DUMPS_USED >= MAX_DUMPS) { alert("DUMP LIMIT REACHED."); return; }
-    DUMPS_USED++; CREDITS += 0.5;
-    localStorage.setItem("K1_DUMPS", DUMPS_USED); localStorage.setItem("K1_CREDITS", CREDITS);
-    VAULT.splice(VAULT_CURSOR, 1); localStorage.setItem("K1_VAULT", JSON.stringify(VAULT));
-    begin();
+function next() {
+    render({
+        q: "What is the relation between Delta T b and molality m?", 
+        u: "Delta T b = Kb * m", 
+        l: "Delta T b = m / Kb", 
+        r: "Delta T b = Kb + m", 
+        dom: "PHYSICAL CHEMISTRY", 
+        topic: "SOLUTIONS", 
+        logic: "Molal Elevation of Boiling point obeys Raoults Law.", 
+        hint: "Elevation is directly proportional to molality."
+    });
 }
 
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
-
-async function init() {
-    const ld = localStorage.getItem(MASTER_KEY);
-    if(ld) RAW_DATA = JSON.parse(ld);
-    if(!RAW_DATA.length) {
-        try { const r = await fetch('master.json'); if(r.ok) RAW_DATA = await r.json(); } catch(e){}
-    }
-    // Field Mapping
-    RAW_DATA = RAW_DATA.map(d=>({id:d.Question_ID||d.id, q:d.Question_Text||d.q, u:d.Correct_Answer||d.u, l:d.Distractor_1||d.l, r:d.Distractor_2||d.r, correct:d.Correct_Direction||d.correct, dom:d.Domain||d.dom, hint:d.Explanation_Short||d.hint}));
-    begin();
-}
-init();
+// Start
+updateLiveLog("SELECT DATASET");
+next();
 </script>
 </body>
 </html>
