@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v140.0</title>
+<title>Alchemist | Kinetic v142.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -49,7 +49,7 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="kinetic-logger">
   <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
+  <div class="log-line" id="log-2">> CONNECTING BEACON...</div>
   <div class="log-line active" id="log-3">> ...</div>
 </div>
 
@@ -61,26 +61,26 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v140.0
+   VIA.STACK | KINETIC v142.0 (INTVL)
    ========================================= */
 
 // --- CONFIGURATION ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
-const DRIVE_FOLDER = "https://drive.google.com/drive/folders/14z8ugJINlbhyvp93byAK-UoUP92tpKnQ?usp=share_link";
-const WA_NUMBER = "919876543210"; 
+const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+const MAX_CREDITS = 10;
 
 // --- STATE ---
 let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
 let SET_CURSOR = 0, ACTIVE_SET = null, XP = 0, VOLUME_LIMIT = null;
 let ATTEMPTED = new Set(); 
 
-// --- BACKEND STATE (PERSISTENT) ---
+// --- TELEMETRY ---
+let Q_START_TIME = 0, SESSION_LOG = [], PIVOT_COUNT = 0;
+
+// --- BACKEND STATE ---
 let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
 let CURRENT_SES_ID = null;
-let SES_BEACON_SENT = false;
-
-// Load Credits & Vault
 let CREDITS = parseInt(localStorage.getItem("USER_CREDITS") || "10");
 let VAULT = [];
 try { VAULT = JSON.parse(localStorage.getItem("USER_VAULT") || "[]"); } catch(e) { VAULT = []; }
@@ -99,33 +99,41 @@ function generateSessionID() {
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     CURRENT_SES_ID = `SES_${hash}`;
     localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
-    sendBeacon();
     log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
 }
 
-function sendBeacon() {
-    if(SES_BEACON_SENT || !BEACON_URL) return;
-    
-    log("UPLINKING DATA...", "normal");
+function sendTelemetry() {
+    if(!BEACON_URL) return;
+    const totalLatency = SESSION_LOG.reduce((sum, item) => sum + item.latency, 0);
+    const avgLatency = SESSION_LOG.length > 0 ? Math.round(totalLatency / SESSION_LOG.length) : 0;
+    const accuracy = SESSION_ALL.length > 0 ? Math.round((XP / SESSION_ALL.length) * 100) : 0;
+
+    log("SYNCING TELEMETRY...", "normal");
     fetch(BEACON_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            ses_id: CURRENT_SES_ID,
-            mobile: USER_MOBILE,
-            score: XP,
-            meta: { set: ACTIVE_SET, total: SESSION_ALL.length }
+            action: "TELEMETRY", ses_id: CURRENT_SES_ID, mobile: USER_MOBILE || "GUEST",
+            score: XP, accuracy: accuracy, latency: avgLatency, pivots: PIVOT_COUNT, log: SESSION_LOG
         })
-    }).then(() => {
-        SES_BEACON_SENT = true;
-        log("UPLINK ESTABLISHED", "active");
-    }).catch(e => {
-        log("UPLINK FAILED (OFFLINE)", "danger");
-    });
+    }).then(() => log("DATA SYNC COMPLETE", "active")).catch(e => log("DATA SYNC FAILED", "danger"));
 }
 
-/* ================= PHYSICS & RENDER ================= */
+// --- NEW: INTVL MESSAGE FETCH ---
+async function fetchMOTD() {
+    try {
+        const response = await fetch(BEACON_URL);
+        const data = await response.json();
+        if(data.motd) {
+            log(data.motd, "primary"); // Display the INTVL message in Gold
+        } else {
+            log("SYSTEM ONLINE", "active");
+        }
+    } catch(e) {
+        log("OFFLINE MODE", "normal");
+    }
+}
+
+/* ================= PHYSICS ================= */
 const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔/g,"⇌");
 const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
@@ -146,7 +154,7 @@ class PhysicsController{
  end(){if(!this.active)return;this.active=false;
   const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform); const dx=m.m41,dy=m.m42;
   if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
-  else{this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";this.el.style.transform="translate(0,0)"}}
+  else{ if(Math.abs(dx)>20||Math.abs(dy)>20){PIVOT_COUNT++;} this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";this.el.style.transform="translate(0,0)" }}
  dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
 }
 
@@ -155,16 +163,17 @@ function card(text,labels,cb){
  UI.stack.innerHTML=""; const el=document.createElement("div"); el.className="card";
  el.innerHTML=`<div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
   <div class="swipe-label sl-up">${chemText(labels.up)||""}</div><div class="swipe-label sl-left">${chemText(labels.left)||""}</div><div class="swipe-label sl-right">${chemText(labels.right)||""}</div><div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
- UI.stack.appendChild(el); new PhysicsController(el,{onCommit:cb});
+ UI.stack.appendChild(el); Q_START_TIME = Date.now(); new PhysicsController(el,{onCommit:cb});
 }
 
 /* ================= APP FLOW ================= */
 function begin(){
- if(USER_MOBILE) log(`LOGIN: ${USER_MOBILE} | CREDITS: ${CREDITS}`, "primary");
- else log("LOGIN: GUEST | CREDITS: " + CREDITS, "normal");
+ if(CREDITS > MAX_CREDITS) CREDITS = MAX_CREDITS;
+ if(USER_MOBILE) log(`USER: ${USER_MOBILE} | FUEL: ${CREDITS}/${MAX_CREDITS}`, "primary");
+ else log(`USER: GUEST | FUEL: ${CREDITS}/${MAX_CREDITS}`, "normal");
+ 
  card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"QUIZ",down:"VAULT",left:"RAPID",right:"LEARN"},dir=>{
-  if(dir==="UP")setPick(); 
-  if(dir==="DOWN")checkLoginForVault(); 
+  if(dir==="UP")setPick(); if(dir==="DOWN")checkLoginForVault(); 
  });
 }
 
@@ -179,40 +188,26 @@ function checkLoginForVault(){
 
 function openVault(index){
     if(VAULT.length === 0){ 
-        // EMPTY VAULT: OFFER CLOUD LINK
-        card("LOCAL VAULT EMPTY\n\nCheck Cloud Archives?", {up:"OPEN DRIVE", down:"BACK"}, dir => {
-            if(dir==="UP") window.open(DRIVE_FOLDER, '_blank');
-            else begin();
+        card("LOCAL ARCHIVE EMPTY\n\nRecover from Cloud?", {down:"WHATSAPP", up:"MENU"}, dir => {
+            if(dir==="DOWN") {
+                const lastSes = localStorage.getItem("LAST_SES_ID") || "UNKNOWN";
+                const text = `VAULT_RECOVERY || MOB: ${USER_MOBILE || "UNKNOWN"} || LAST_ID: ${lastSes}`;
+                window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
+            } else begin();
         });
         return; 
     }
-    if(index < 0) { begin(); return; } 
-    if(index >= VAULT.length) index = VAULT.length - 1;
-
+    if(index < 0) { begin(); return; } if(index >= VAULT.length) index = VAULT.length - 1;
     const item = VAULT[index];
-    const isNewest = (index === 0);
-    const isOldest = (index === VAULT.length - 1);
+    const isNewest = (index === 0); const isOldest = (index === VAULT.length - 1);
     
-    // --- SMART RETRIEVAL LOGIC ---
-    // If we have a cloud link, show "CLOUD PDF". If not, "RE-GENERATE".
-    const hasCloud = !!item.cloud_url;
-    const upLabel = hasCloud ? "CLOUD PDF" : "RE-GEN";
-
     log(`ARCHIVE: ${item.id}`, "primary");
     card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
-        { up: upLabel, left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
+        { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
         dir => {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT" && !isOldest) openVault(index + 1);
-            if(dir === "UP") {
-                if(hasCloud) {
-                    log("RETRIEVING FROM CLOUD...", "active");
-                    window.open(item.cloud_url, '_blank');
-                } else {
-                    log("REGENERATING LOCAL PDF...", "normal");
-                    renderSessionPDF(item.data, item.id);
-                }
-            }
+            if(dir === "UP") { log("OPENING ARCHIVE...", "active"); renderSessionPDF(item.data, item.id); }
         }
     );
 }
@@ -237,27 +232,27 @@ function volumePick(){
 
 function startQuiz(){
  log("INITIATING QUIZ...", "active");
- let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
- base = shuffle(base); 
+ let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET); base = shuffle(base); 
  if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
  POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
- CURRENT_SES_ID = null; SES_BEACON_SENT = false; 
+ CURRENT_SES_ID = null; SESSION_LOG = []; PIVOT_COUNT = 0;
  nextQ();
 }
 
 function nextQ(){
  if(!CURRENT_SES_ID && SESSION_ALL.length > 0 && POOL.length <= SESSION_ALL.length){ generateSessionID(); }
  if(!POOL.length){ if(WRONG.length){ review(); return; } report(); return; }
- const d=POOL.shift();
- log(`ID: ${d.id}`, "normal");
+ const d=POOL.shift(); log(`ID: ${d.id}`, "normal");
  if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
- const opts = shuffle([d.u, d.l, d.r]);
- const map = { up: opts[0], left: opts[1], right: opts[2] };
+ const opts = shuffle([d.u, d.l, d.r]); const map = { up: opts[0], left: opts[1], right: opts[2] };
  card(d.q, map, dir=>{
-  let picked = null;
-  if(dir==="UP") picked = map.up; if(dir==="LEFT") picked = map.left; if(dir==="RIGHT") picked = map.right;
+  let picked = null; if(dir==="UP") picked = map.up; if(dir==="LEFT") picked = map.left; if(dir==="RIGHT") picked = map.right;
   let c = d.correct; if(c==="UP"||c==="A") c=d.u; else if(c==="LEFT"||c==="B") c=d.l; else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
   const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
+  
+  const latency = Date.now() - Q_START_TIME;
+  SESSION_LOG.push({ id: d.id, res: isCorrect ? "WIN" : "LOSS", latency: latency });
+
   if(!isCorrect){ WRONG.push(d); } else { if(!ATTEMPTED.has(d.id)){ XP+=1; } }
   ATTEMPTED.add(d.id);
   UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
@@ -268,12 +263,9 @@ function nextQ(){
 
 function review(){
  if(!WRONG.length){ report(); return; } 
- const d=WRONG[0]; 
- log("REVIEW MODE", "primary");
- log(`HINT: ${d.hint ? "ACTIVE" : "NONE"}`, "active");
+ const d=WRONG[0]; log("REVIEW MODE", "primary"); log(`HINT: ${d.hint ? "ACTIVE" : "NONE"}`, "active");
  card(`REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,{up:"RETRY", down:"SKIP"},dir=>{
-    if(dir==="UP"){ WRONG.shift(); POOL.unshift(d); } else { WRONG.shift(); }
-    nextQ();
+    if(dir==="UP"){ WRONG.shift(); POOL.unshift(d); } else { WRONG.shift(); } nextQ();
  });
 }
 
@@ -282,9 +274,7 @@ function report(){
  const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
  const statusText = USER_MOBILE ? `USER: ${USER_MOBILE}` : "GUEST (UNLINKED)";
  card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} Correct\n(${percent}%)\n\nID: ${CURRENT_SES_ID}\n${statusText}`,{down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},dir=>{
-    if(dir==="DOWN") handleDownloadRequest();
-    if(dir==="UP") startQuiz(); 
-    if(dir==="LEFT") begin();
+    if(dir==="DOWN") handleDownloadRequest(); if(dir==="UP") startQuiz(); if(dir==="LEFT") begin();
  });
 }
 
@@ -311,14 +301,31 @@ function handleDownloadRequest(){
     exportSessionPDF();
 }
 
+// --- MONETIZATION LOGIC ---
+function triggerRedemption() {
+    const code = prompt("ENTER RECHARGE CODE:\n(Get code via WhatsApp)");
+    if (!code) { begin(); return; }
+    if (code.trim().toUpperCase() === "VIA_50") { CREDITS = Math.min(CREDITS + 5, MAX_CREDITS); log(`RECHARGE SUCCESS: +5`, "active"); }
+    else if (code.trim().toUpperCase() === "MAX_100") { CREDITS = MAX_CREDITS; log(`RECHARGE SUCCESS: MAX`, "active"); }
+    else { log("INVALID CODE", "danger"); }
+    localStorage.setItem("USER_CREDITS", CREDITS); exportSessionPDF();
+}
+
 function exportSessionPDF(data=null, id=null){
- const renderData = data || SESSION_ALL;
- const renderID = id || CURRENT_SES_ID;
- 
+ const renderData = data || SESSION_ALL; const renderID = id || CURRENT_SES_ID;
  if(!data){ 
-    if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
-    CREDITS--;
-    localStorage.setItem("USER_CREDITS", CREDITS);
+    if(CREDITS < 1) { 
+        log("OUT OF FUEL", "danger");
+        const text = `RECHARGE REQUEST || MOB: ${USER_MOBILE || "GUEST"} || ID: ${CURRENT_SES_ID}`;
+        const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+        card(`SYSTEM DEPLETED\n\n0 / ${MAX_CREDITS} FUEL\nReload required to process data.`,
+            { up: "RECHARGE (WHATSAPP)", down: "ENTER CODE", left: "CANCEL" },
+            (dir) => { if(dir === "UP") window.open(waUrl, '_blank'); if(dir === "DOWN") triggerRedemption(); if(dir === "LEFT") begin(); }
+        ); return; 
+    }
+    CREDITS--; localStorage.setItem("USER_CREDITS", CREDITS);
+    VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
+    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
     log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
  }
 
@@ -326,111 +333,52 @@ function exportSessionPDF(data=null, id=null){
  const {jsPDF}=window.jspdf; const doc=new jsPDF();
  const unique=renderData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
  let y=20; const ML=15; const W=180;
- const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
- const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+ const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65; const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
 
- doc.setFont("times","bold"); doc.setFontSize(16);
- doc.text(`VIA.STACK // ${renderID}`,105,y,{align:"center"});
- doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"});
- doc.line(ML,y+8,195,y+8); y+=15;
-
+ doc.setFont("times","bold"); doc.setFontSize(16); doc.text(`VIA.STACK // ${renderID}`,105,y,{align:"center"}); doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"}); doc.line(ML,y+8,195,y+8); y+=15;
  unique.forEach((d,i)=>{
-  if(y>240){doc.addPage();y=20;}
-  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
-  doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
-  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
-  const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
-  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
-  
-  const startY=y;
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
+  if(y>240){doc.addPage();y=20;} doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100); doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5; doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3; doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+  const startY=y; doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
   const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
-  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
-  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
-  
-  let maxH=y; y=startY;
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4;
-  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
-  const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y);
-  if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4);
-  y=startY;
-  
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2; doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2; doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  let maxH=y; y=startY; doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4; doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y); if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4); y=startY;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
   const s1=`1. ${cleanPDF(d.step1||"-")}`; const s2=`2. ${cleanPDF(d.step2||"-")}`;
-  const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
-  const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y);
-  if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
-  
-  y=maxH+5;
-  if(d.trap){
-    doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
-    doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y);
-    doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8;
-  } else {y+=5;}
-  y+=5;
+  const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2; const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y); if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4); y=maxH+5;
+  if(d.trap){ doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4; doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y); doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8; } else {y+=5;} y+=5;
  });
 
  const fileName = `ALCHEMIST_${renderID}.pdf`;
  doc.save(fileName);
 
- // --- 2. UPLOAD TO CLOUD & SAVE LINK ---
- if(!data) {
+ if(!data) { 
      log("SYNCING TO CLOUD...", "normal");
-     const pdfBlob = doc.output('blob');
-     const reader = new FileReader();
-     reader.readAsDataURL(pdfBlob); 
+     const pdfBlob = doc.output('blob'); const reader = new FileReader(); reader.readAsDataURL(pdfBlob); 
      reader.onloadend = function() {
          const base64data = reader.result.split(',')[1];
+         fetch(BEACON_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "BACKUP", ses_id: renderID, mobile: USER_MOBILE || "GUEST", score: XP, filename: fileName, pdf: base64data })
+         }).then(() => log("SECURE ARCHIVE COMPLETE", "active")).catch(e => log("CLOUD SYNC FAILED", "danger"));
          
-         fetch(BEACON_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "BACKUP",
-                ses_id: renderID,
-                mobile: USER_MOBILE || "GUEST",
-                score: XP,
-                filename: fileName,
-                pdf: base64data
-            })
-         }).then(response => {
-             // NOTE: 'no-cors' mode is opaque, we can't read the response JSON directly here easily in standard fetch
-             // But we can assume it worked if no error. 
-             // To truly get the URL back for the Vault, we need a slight hack or just trust the folder structure.
-             // Given limitations, we will store the 'Expected' folder link for now.
-             
-             // UPDATE VAULT WITH FOLDER LINK (Since file link is hard to get in no-cors)
-             VAULT.unshift({ 
-                 id: renderID, date: new Date().toLocaleDateString(), 
-                 score: XP, total: SESSION_ALL.length, 
-                 data: [...SESSION_ALL],
-                 cloud_url: DRIVE_FOLDER // Store the Folder Link as the 'Cloud Link'
-             });
-             localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
-             log("SECURE ARCHIVE COMPLETE", "active");
-         }).catch(e => log("CLOUD SYNC FAILED", "danger"));
+         sendTelemetry(); // Also send stats
      }
  }
  setTimeout(begin,500);
 }
 
-/* ================= BOOT ================= */
 async function init(){
   log("SYSTEM BOOT", "active");
+  
+  // FETCH MOTD
+  fetchMOTD();
+
   const localData = localStorage.getItem(MASTER_KEY);
   if(localData && localData.length > 10){ try { RAW_DATA = JSON.parse(localData); await new Promise(r=>setTimeout(r,600)); } catch(e){RAW_DATA=[];} }
   if(!RAW_DATA.length){ try{const r=await fetch('master.json'); if(r.ok) RAW_DATA=await r.json();}catch(e){} }
   
-  RAW_DATA = RAW_DATA.map(d=>({
-      id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
-      q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
-      logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", step1:d.s1||d.step1||"", step2:d.s2||d.step2||""
-  })).filter(d=>d.id&&d.q&&d.u);
-
+  RAW_DATA = RAW_DATA.map(d=>({ id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"", q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct, logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", step1:d.s1||d.step1||"", step2:d.s2||d.step2||"" })).filter(d=>d.id&&d.q&&d.u);
   if(!RAW_DATA.length){ log("DATA ERROR", "active"); card("NO DATA FOUND", {down:"RETRY"}, ()=>location.reload()); return; }
   begin();
 }
