@@ -6,45 +6,33 @@
 <title>Alchemist | Kinetic v145.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600&family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* --- CORE RESTORATION --- */
+/* --- CORE & METALLIC THEME --- */
 :root{ --bg:#000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --silver:#c0c0c0; --font-code:'JetBrains Mono',monospace; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select: none;}
 body{margin:0; height:100vh; background:var(--bg); color:#fff; font-family:'Inter',sans-serif; overflow:hidden; display:flex; flex-direction:column;}
 
-/* --- HEADER & XP --- */
+/* --- HEADER & XP ROW --- */
 #header{width:90%; margin:25px auto 0; z-index:100;}
 .xp-row{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.85rem; color:#666; text-transform:uppercase;}
 #progress-bar{height:2px; background:var(--gold); width:0%; transition:width 0.4s ease; margin-top:10px;}
 .track{width:100%; height:2px; background:#1a1a1a; margin-top:2px;}
 
-/* --- METALLIC HUD (BIGGER AS PER VIDEO) --- */
-#hud-grid { 
-    display: grid; grid-template-columns: 1fr 1fr; width: 90%; 
-    margin: 20px auto 5px; font-family: var(--font-code); 
-    font-size: 0.75rem; line-height: 1.8; 
-}
-.hud-col { display: flex; flex-direction: column; }
+/* --- BIG HUD GRID (35/70/80 Opacity) --- */
+#hud-grid { display: grid; grid-template-columns: 1fr 1fr; width: 90%; margin: 20px auto 5px; font-family: var(--font-code); font-size: 0.75rem; line-height: 1.8; }
 .hud-right { text-align: right; }
-
-/* OPACITY RAMPS (35/70/80) */
 .h1 { opacity: 0.35; } .h2 { opacity: 0.70; } .h3 { opacity: 0.80; color: var(--silver); }
 
-/* --- LIVE LOG LINE (BOTTOM) --- */
-#live-log { width: 90%; margin: 5px auto; font-family: var(--font-code); font-size: 0.7rem; color: #666; }
+/* --- RESERVED LIVE LOG --- */
+#live-log { width: 90%; margin: 5px auto; font-family: var(--font-code); font-size: 0.7rem; color: #444; }
 #live-log .active { color: var(--gold); }
 
-/* --- GHOST HUD (HIDDEN BEHIND) --- */
-#ghost-layer {
-    position: absolute; inset: 0; top: 220px; width: 85%; margin: 0 auto;
-    display: flex; justify-content: space-between; align-items: flex-start;
-    z-index: 5; opacity: 0; transition: opacity 0.2s;
-}
+/* --- GHOST LAYER (BEHIND CARDS) --- */
+#ghost-layer { position: absolute; inset: 0; top: 220px; width: 85%; margin: 0 auto; display: flex; justify-content: space-between; z-index: 5; opacity: 0; transition: opacity 0.2s; }
 .ghost-text { width: 45%; font-family: var(--font-code); font-size: 0.7rem; color: var(--silver); line-height: 1.5; }
 
-/* --- THE STACK (VIDEO PHYSICS) --- */
+/* --- STACK & PHYSICS (v144.2 Restored) --- */
 .stack-container{position:absolute; inset:0; top:155px; width:92%; max-width:440px; height:calc(100vh - 280px); margin:0 auto; perspective:1200px; z-index: 20;}
 .card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:20px; border:1px solid var(--border); padding:40px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.95); will-change:transform;}
 .card-q{font-family:'Crimson Text',serif; font-size:1.7rem; text-align:center; color: #fff; line-height: 1.4;}
@@ -54,42 +42,31 @@ body{margin:0; height:100vh; background:var(--bg); color:#fff; font-family:'Inte
 <body>
 
 <div id="header">
-  <div class="xp-row">
-    <span>VIA.STACK</span>
-    <span id="xp-ui">0 XP</span>
-  </div>
-  <div id="progress-bar"></div>
-  <div class="track"></div>
+  <div class="xp-row"><span>KINETIC.v145</span><span id="xp-ui">0 XP</span></div>
+  <div id="progress-bar"></div><div class="track"></div>
 </div>
 
 <div id="hud-grid">
-    <div class="hud-col">
-        <div class="h1" id="l1">[ ONLINE ]</div>
-        <div class="h2" id="l2">[ FUEL: 10.0 ]</div>
-        <div class="h3" id="l3">[ DUMP: 0/20 ]</div>
-    </div>
-    <div class="hud-col hud-right">
-        <div class="h1" id="r1">00 / 00</div>
-        <div class="h2" id="r2">PHYSICAL CHEMISTRY</div>
-        <div class="h3" id="r3">SOLUTIONS</div>
-    </div>
+    <div class="hud-col"><div class="h1" id="l1">[ ONLINE ]</div><div class="h2" id="l2">[ FUEL: 10.0 ]</div><div class="h3" id="l3">[ DUMP: 0/20 ]</div></div>
+    <div class="hud-col hud-right"><div class="h1" id="r1">00 / 00</div><div class="h2" id="r2">DATABASE</div><div class="h3" id="r3">SUB TOPIC</div></div>
 </div>
 
-<div id="live-log">
-    <span class="active">> SELECT DATASET</span>
-</div>
+<div id="live-log"><span class="active">> SYSTEM READY</span></div>
 
 <div id="ghost-layer">
-    <div class="ghost-text" id="g-law">CORE LAW: PEEK TO VIEW</div>
-    <div class="ghost-text" style="text-align:right" id="g-hint">HINT: PEEK TO VIEW</div>
+    <div class="ghost-text" id="g-law">CORE LAW: N/A</div>
+    <div class="ghost-text" style="text-align:right" id="g-hint">HINT: N/A</div>
 </div>
 
-<div id="stack-game" class="stack-container">
-    <div class="card"><div class="card-q">DATA LOADED<br>20 UNITS</div></div>
-</div>
+<div id="stack-game" class="stack-container"></div>
 
 <script>
-let Q_IDX = 0, VOL = 10, XP = 0;
+// --- CORE ENGINE ---
+const BEACON_URL = "YOUR_APPS_SCRIPT_URL"; // Deploy Apps Script as Web App
+let RAW_DATA=[], POOL=[], SESSION_ALL=[], XP=0, VOL=10, Q_IDX=0;
+let CREDITS = parseFloat(localStorage.getItem("K1_CREDITS") || "10");
+let DUMPS = parseInt(localStorage.getItem("K1_DUMPS") || "0");
+let VAULT = JSON.parse(localStorage.getItem("K1_VAULT") || "[]");
 
 class Physics {
     constructor(el, cb) {
@@ -106,11 +83,8 @@ class Physics {
         if(!this.active) return;
         const dx = p.clientX - this.start.x, dy = p.clientY - this.start.y;
         this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/22}deg)`;
-        
-        // GHOST REVEAL ON DOWN-PEEK
         if(dy > 50) this.ghost.style.opacity = Math.min((dy-50)/100, 1);
         else this.ghost.style.opacity = 0;
-
         const d = Math.hypot(dx, dy);
         const ls = {UP:this.el.querySelector('.sl-up'), LEFT:this.el.querySelector('.sl-left'), RIGHT:this.el.querySelector('.sl-right')};
         Object.values(ls).forEach(l => {if(l) l.style.opacity = 0;});
@@ -145,12 +119,10 @@ function render(d) {
                     <div class="swipe-label sl-left">${d.l}</div>
                     <div class="swipe-label sl-right">${d.r}</div>`;
     
-    // HUD Sync
     document.getElementById('r1').innerText = `${Q_IDX.toString().padStart(2,'0')} / ${VOL}`;
-    document.getElementById('r2').innerText = d.dom || "PHYSICAL CHEMISTRY";
-    document.getElementById('r3').innerText = d.topic || "SOLUTIONS";
+    document.getElementById('r2').innerText = d.dom || "CHEMISTRY";
+    document.getElementById('r3').innerText = d.sub || d.topic || "THEORY";
     
-    // Ghost Sync
     const lawMatch = (d.logic || "").match(/\b\w+ Law\b/i);
     document.getElementById('g-law').innerText = lawMatch ? `CORE LAW: ${lawMatch[0].toUpperCase()}` : "CORE LAW: FUNDAMENTAL";
     document.getElementById('g-hint').innerText = `HINT: ${d.hint || "CHECK THE COLLIGATIVE PROPERTY"}`;
@@ -158,27 +130,24 @@ function render(d) {
     cont.appendChild(el);
     new Physics(el, (dir) => { 
         Q_IDX++; 
-        if(Q_IDX <= VOL) updateLiveLog(`ID: ${Math.floor(Math.random()*900)+100}`);
+        if(Q_IDX <= VOL) updateLiveLog(`ID: ${d.id}`);
         next(); 
     });
 }
 
 function next() {
-    render({
-        q: "What is the relation between Delta T b and molality m?", 
-        u: "Delta T b = Kb * m", 
-        l: "Delta T b = m / Kb", 
-        r: "Delta T b = Kb + m", 
-        dom: "PHYSICAL CHEMISTRY", 
-        topic: "SOLUTIONS", 
-        logic: "Molal Elevation of Boiling point obeys Raoults Law.", 
-        hint: "Elevation is directly proportional to molality."
-    });
+    if(POOL.length > 0) render(POOL.shift());
 }
 
-// Start
-updateLiveLog("SELECT DATASET");
-next();
+async function init() {
+    try { const r = await fetch('master.json'); if(r.ok) RAW_DATA = await r.json(); } catch(e){}
+    if(RAW_DATA.length) {
+        POOL = RAW_DATA.slice(0, VOL);
+        updateLiveLog("INITIATING QUIZ...");
+        next();
+    }
+}
+init();
 </script>
 </body>
 </html>
