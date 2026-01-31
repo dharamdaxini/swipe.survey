@@ -88,7 +88,7 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v144.2 (GOD MODE)
+   VIA.STACK | KINETIC v145.0 (MASTER SYNC)
    ========================================= */
 
 // --- CONFIGURATION ---
@@ -139,7 +139,6 @@ function renderGameCard(text,labels,cb){
 
 function renderVaultCard(id, text, labels, cb){
     UI.vault.innerHTML=""; const el=document.createElement("div"); el.className="card vault-card";
-    // SAFE ZONE BUTTON INTEGRATED
     el.innerHTML=`
         <div class="card-q">
             ${chemText(text).replace(/\n/g,"<br>")}
@@ -263,7 +262,10 @@ function nextQ(){
     const opts=shuffle([d.u,d.l,d.r]); const map={up:opts[0],left:opts[1],right:opts[2]};
     renderGameCard(d.q, map, dir=>{
         let picked=null; if(dir==="UP")picked=map.up;if(dir==="LEFT")picked=map.left;if(dir==="RIGHT")picked=map.right;
-        let c=d.correct; if(c==="UP"||c==="A")c=d.u;else if(c==="LEFT"||c==="B")c=d.l;else if(c==="RIGHT"||c==="R"||c==="C")c=d.r;
+        let c=d.correct; 
+        // Logic: if correct is "UP" (from adapter), we compare text to d.u
+        if(c==="UP"||c==="A")c=d.u;else if(c==="LEFT"||c==="B")c=d.l;else if(c==="RIGHT"||c==="R"||c==="C")c=d.r;
+        
         const isCorrect=String(picked).trim().toLowerCase()===String(c).trim().toLowerCase();
         const lat=Date.now()-Q_START_TIME;
         SESSION_LOG.push({id:d.id, res:isCorrect?"WIN":"LOSS", latency:lat});
@@ -356,7 +358,7 @@ function exportSessionPDF(data=null,id=null){
 
         if(!window.jspdf) { alert("PDF ENGINE LOADING... RETRY"); return; }
         const {jsPDF}=window.jspdf; const doc=new jsPDF();
-        const unique=rData.filter((q,i,self)=>i===self.findIndex(t=>(t && q && t.id===q.id))); // CRASH PROTECTION
+        const unique=rData.filter((q,i,self)=>i===self.findIndex(t=>(t && q && t.id===q.id))); 
         
         let y=20; const ML=15; const W=180;
         const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
@@ -445,7 +447,47 @@ async function init(){
     const ld=localStorage.getItem(MASTER_KEY);
     if(ld&&ld.length>10)try{RAW_DATA=JSON.parse(ld);await new Promise(r=>setTimeout(r,600));}catch(e){RAW_DATA=[];}
     if(!RAW_DATA.length)try{const r=await fetch('master.json');if(r.ok)RAW_DATA=await r.json();}catch(e){}
-    RAW_DATA=RAW_DATA.map(d=>({id:d.id,set:d.set||"DEFAULT",dom:d.dom||"GEN",topic:d.topic||"",q:d.q,u:d.u,l:d.l,r:d.r,correct:d.correct,logic:d.logic||"",hint:d.hint||"",trap:d.trap||"",step1:d.s1||d.step1||"",step2:d.s2||d.step2||""})).filter(d=>d.id&&d.q&&d.u);
+    
+    // --- ADAPTER: CONNECTS MASTER.JSON TO GAME ENGINE ---
+    RAW_DATA = RAW_DATA.map(d => {
+        // DETECT VERBOSE FORMAT (FROM ADMIN)
+        if(d.Question_ID) {
+            return {
+                id: d.Question_ID,
+                set: d.Set_Code,
+                dom: d.Domain,
+                topic: d.Topic_Label,
+                q: d.Question_Text,
+                u: d.Correct_Answer,     // "UP" = CORRECT
+                l: d.Distractor_1,       // "LEFT" = WRONG 1
+                r: d.Distractor_2,       // "RIGHT" = WRONG 2
+                correct: "UP",           // Force engine to recognize Correct_Answer in UP slot
+                logic: d.Explanation_Short || d.Explanation_Long,
+                trap: d.Trap_Explanation,
+                step1: d.Reasoning_Step_1,
+                step2: d.Reasoning_Step_2
+            };
+        }
+        // LEGACY FORMAT
+        return {
+            id: d.id,
+            set: d.set || "DEFAULT",
+            dom: d.dom || "GEN",
+            topic: d.topic || "",
+            q: d.q,
+            u: d.u,
+            l: d.l,
+            r: d.r,
+            correct: d.correct,
+            logic: d.logic || "",
+            hint: d.hint || "",
+            trap: d.trap || "",
+            step1: d.s1 || d.step1 || "",
+            step2: d.s2 || d.step2 || ""
+        };
+    }).filter(d => d.id && d.q && d.u);
+    // ----------------------------------------------------
+
     if(!RAW_DATA.length){sysLog("DATA ERR","warn");renderGameCard("NO DATA",{down:"RETRY"},()=>location.reload());return;}
     begin();
 }
