@@ -4,18 +4,18 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v144.5</title>
+<title>Alchemist | Kinetic v144.6</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-/* --- CORE VISUALS --- */
+/* --- 01. CORE VISUALS (v141.0 BASE) --- */
 :root{ --bg:#000000; --card:#0a0a0a; --border:#222; --gold:#ffd600; --green:#2ecc71; --cyan:#00e5ff; --red:#ff4444; --text-white:#ffffff; --font-serif:'Crimson Text',serif; --font-sans:'Inter',sans-serif; --font-code:'JetBrains Mono',monospace; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select: none;}
 body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font-family:var(--font-sans); overflow:hidden; display:flex; flex-direction:column;}
 
-/* --- DUAL HUD --- */
+/* --- 02. DUAL HUD SYSTEM --- */
 #header{width:90%; margin:25px auto 0; z-index:100; flex-shrink:0;}
 .header-meta{display:flex; justify-content:space-between; font-family:var(--font-code); font-size:0.75rem; color:#666; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:15px;}
 .progress-track{width:100%; height:3px; background:#222; border-radius:2px;}
@@ -32,17 +32,20 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 .log-line.warn { color: var(--gold); opacity: 1; }
 .log-line.danger { color: var(--red); opacity: 1; font-weight: 700; }
 
-/* --- PHYSICS STACK --- */
+/* --- 03. PHYSICS ENGINE UI --- */
 .stack-container{position:absolute; inset:0; top:120px; width:90%; max-width:420px; height:calc(100vh - 220px); margin:0 auto; perspective:1500px; display:flex; align-items:center; justify-content:center; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 10;}
 .stack-container.active { pointer-events: all; opacity: 1; z-index: 20; }
 
 .card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:14px; border:1px solid var(--border); padding:35px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.95); will-change:transform; transform-style:preserve-3d; overflow:hidden;}
+
+/* Variant: Vault Card */
 .card.vault-card { border-color: #333; background: #080808; }
 .card.vault-card .card-q { font-family: var(--font-code); letter-spacing: -1px; }
 
 .card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
 .swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-family:var(--font-sans); font-weight:900; font-size:1.8rem; text-transform:uppercase; letter-spacing:1px; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.15s ease; border-radius:14px; color:var(--text-grey); border:1px solid #333;}
 
+/* Viewer Bridge Button (v144.0 Upgrade) */
 .viewer-btn {
     margin-top: 20px; padding: 10px 20px; 
     border: 1px solid var(--cyan); color: var(--cyan); 
@@ -77,18 +80,18 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="stack-game" class="stack-container active">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">INITIALIZING CORE...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666;">INITIALIZING ENGINE...</div>
   </div>
 </div>
 
 <div id="stack-vault" class="stack-container"></div>
 
 <script>
-/* =========================================
-   VIA.STACK | KINETIC v144.5 (OPEN MASTER)
-   ========================================= */
+/* =================================================================
+   VIA.STACK | KINETIC v144.6 (CUMULATIVE MASTER)
+   ================================================================= */
 
-// --- CONFIGURATION ---
+// --- 01. CONFIG & STATE ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbzSxk_so64KtqwpvzvJSyTv2JydsD91BJEyl5jIKlzDopXRW-DOSoXbutfIARSDEiFE/exec"; 
 const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
@@ -103,7 +106,7 @@ let CREDITS=parseFloat(localStorage.getItem("USER_CREDITS")||"10");
 let VAULT=[]; try{VAULT=JSON.parse(localStorage.getItem("USER_VAULT")||"[]");}catch(e){VAULT=[];}
 let VAULT_CURSOR = 0; 
 
-// --- UTILITIES ---
+// --- 02. CORE LOGGING ---
 function sysLog(msg, type="active") {
     document.getElementById("sys-1").innerText = document.getElementById("sys-2").innerText;
     const l2 = document.getElementById("sys-2"); l2.innerText = `> ${msg}`; l2.className = `log-line ${type}`;
@@ -112,19 +115,41 @@ function nicLog(msg) {
     document.getElementById("nic-1").innerText = document.getElementById("nic-2").innerText;
     const l2 = document.getElementById("nic-2"); l2.innerText = `${msg} <`;
 }
+
+// --- 03. FORMATTERS ---
 const chemText=t=>String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔/g,"⇌");
 const cleanPDF=t=>String(t||"").replace(/<[^>]*>/g,"").replace(/&Delta;/g,"Δ");
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
 
-// --- PHYSICS ENGINE (v141) ---
-class PhysicsController{constructor(el,cbs){this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};this.labels={UP:el.querySelector(".sl-up"),LEFT:el.querySelector(".sl-left"),RIGHT:el.querySelector(".sl-right"),DOWN:el.querySelector(".sl-down")};const s=e=>this.startDrag(e.touches?e.touches[0]:e);const m=e=>this.move(e.touches?e.touches[0]:e);const e2=()=>this.end();el.addEventListener("mousedown",s);window.addEventListener("mousemove",m);window.addEventListener("mouseup",e2);el.addEventListener("touchstart",s,{passive:false});el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false});el.addEventListener("touchend",e2);}
- startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
- move(p){if(!this.active)return;const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y;const d=Math.hypot(dx,dy);this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));if(d>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));}}
- end(){if(!this.active)return;this.active=false;const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform);const dx=m.m41,dy=m.m42;if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));else{if(Math.abs(dx)>20||Math.abs(dy)>20)PIVOT_COUNT++;this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";this.el.style.transform="translate(0,0)"}}
- dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
+// --- 04. PHYSICS TOUCH CONTROLLER (v141.0) ---
+class PhysicsController{
+    constructor(el,cbs){
+        this.el=el;this.cbs=cbs;this.active=false;this.start={x:0,y:0};
+        this.labels={UP:el.querySelector(".sl-up"),LEFT:el.querySelector(".sl-left"),RIGHT:el.querySelector(".sl-right"),DOWN:el.querySelector(".sl-down")};
+        const s=e=>this.startDrag(e.touches?e.touches[0]:e);
+        const m=e=>this.move(e.touches?e.touches[0]:e);
+        const e2=()=>this.end();
+        el.addEventListener("mousedown",s); window.addEventListener("mousemove",m); window.addEventListener("mouseup",e2);
+        el.addEventListener("touchstart",s,{passive:false}); el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); el.addEventListener("touchend",e2);
+    }
+    startDrag(p){this.active=true;this.start={x:p.clientX,y:p.clientY};this.el.style.transition="none"}
+    move(p){
+        if(!this.active)return;
+        const dx=p.clientX-this.start.x,dy=p.clientY-this.start.y; const d=Math.hypot(dx,dy);
+        this.el.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/25}deg)`;
+        Object.values(this.labels).forEach(l=>l&&(l.style.opacity=0));
+        if(d>20){const dir=this.dir(dx,dy);this.labels[dir]&&(this.labels[dir].style.opacity=Math.min(d/50,1));}
+    }
+    end(){
+        if(!this.active)return;this.active=false;
+        const m=new WebKitCSSMatrix(getComputedStyle(this.el).transform); const dx=m.m41,dy=m.m42;
+        if(Math.hypot(dx,dy)>100)this.cbs.onCommit(this.dir(dx,dy));
+        else{if(Math.abs(dx)>20||Math.abs(dy)>20)PIVOT_COUNT++;this.el.style.transition=".4s cubic-bezier(0.2,0.8,0.2,1)";this.el.style.transform="translate(0,0)"}
+    }
+    dir(dx,dy){const a=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;if(a>45&&a<135)return"UP";if(a>135&&a<225)return"LEFT";if(a>225&&a<315)return"DOWN";return"RIGHT";}
 }
 
-// --- CARD RENDERERS ---
+// --- 05. UI RENDERERS ---
 const UI={game:document.getElementById("stack-game"), vault:document.getElementById("stack-vault"), xp:document.getElementById("xp-ui"), bar:document.getElementById("progress-bar")};
 
 function renderGameCard(text,labels,cb){
@@ -146,7 +171,7 @@ function switchStack(mode){
     else { UI.game.classList.remove("active"); UI.vault.classList.add("active"); nicLog("ARCHIVE"); }
 }
 
-// --- GAME FLOW (NO GATEKEEPER) ---
+// --- 06. GAME FLOW ---
 function begin(){
     if(CREDITS>MAX_CREDITS) sysLog("FUEL OVERFLOW", "warn"); else sysLog(`FUEL: ${CREDITS.toFixed(1)}`, "active");
     switchStack("GAME");
@@ -155,7 +180,7 @@ function begin(){
     });
 }
 
-// --- VAULT FLOW ---
+// --- 07. VAULT & RECOVERY LOGIC (v144.0) ---
 function openVault(){
     if(VAULT.length===0){ sysLog("VAULT EMPTY", "warn"); setTimeout(begin, 500); return; }
     VAULT_CURSOR = 0; switchStack("VAULT"); showVaultCard();
@@ -187,7 +212,7 @@ function showVaultCard(){
     });
 }
 
-// --- OMNI-SET LOGIC ---
+// --- 08. OMNI-SET SELECTION (v144.1) ---
 function setPick(){
     const sets = [...new Set(RAW_DATA.map(d=>d.set))]; sets.unshift("MIXED: ALL");
     renderGameCard(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
@@ -204,6 +229,7 @@ function setPick(){
 
 function volumePick(){renderGameCard(`VOLUME`,{up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},dir=>{if(dir==="UP")VOLUME_LIMIT=10;if(dir==="LEFT")VOLUME_LIMIT=25;if(dir==="RIGHT")VOLUME_LIMIT=50;if(dir==="DOWN")VOLUME_LIMIT=null;startQuiz();});}
 
+// --- 09. QUIZ MECHANICS ---
 function startQuiz(){
     sysLog("SEQUENCE START", "active");
     let base = []; if(ACTIVE_SET === "ALL") base = [...RAW_DATA]; else base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
@@ -228,6 +254,7 @@ function nextQ(){
         UI.xp.textContent=`${XP}/${SESSION_ALL.length}`; UI.bar.style.width=((SESSION_ALL.length-POOL.length)/SESSION_ALL.length)*100+"%"; nextQ();
     });
 }
+
 function review(){
     if(!WRONG.length){report();return;} const d=WRONG[0]; sysLog("REVIEW MODE", "warn");
     renderGameCard(`REVIEW\n\n${d.logic||"Observe logic."}`,{up:"RETRY",down:"SKIP"},dir=>{
@@ -269,7 +296,7 @@ function sendTelemetry(){
 
 async function fetchMOTD(){ try{const r=await fetch(BEACON_URL);const d=await r.json();if(d.motd)sysLog(d.motd,"warn");}catch(e){} }
 
-// --- GOD MODE PDF ENGINE (v143) ---
+// --- 10. GOD MODE PDF ENGINE (v143.0) ---
 function exportSessionPDF(data=null,id=null){
     try {
         const rData=data||SESSION_ALL; const rID=id||CURRENT_SES_ID;
@@ -291,4 +318,62 @@ function exportSessionPDF(data=null,id=null){
             doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0); const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3; doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
             const startY=y;
             doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
-            const optA=`(A) ${cleanPDF
+            const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
+            doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2; doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2; doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+            let maxH=y; y=startY; 
+            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4; doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50); const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y); if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4); y=startY; 
+            doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4; doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0); const s1=`1. ${cleanPDF(d.step1||d.s1||"-")}`; const s2=`2. ${cleanPDF(d.step2||d.s2||"-")}`; const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2; const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y); if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
+            y=maxH+5;
+            if(d.trap){ doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4; doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y); doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8; } else {y+=5;} y+=5;
+        });
+        const fn=`ALCHEMIST_${rID}.pdf`; doc.save(fn);
+        if(!data){ const blob=doc.output('blob'); const r=new FileReader(); r.readAsDataURL(blob); r.onloadend=function(){ const b64=r.result.split(',')[1]; fetch(BEACON_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"BACKUP",ses_id:rID,mobile:USER_MOBILE||"GUEST",score:XP,filename:fn,pdf:b64})}).catch(e=>sysLog("CLOUD ERROR","danger")); sendTelemetry(); } }
+        setTimeout(begin,1000);
+    } catch(e) { console.error(e); sysLog("PDF FAILED", "danger"); alert("PDF ERROR. Data preserved in Vault."); }
+}
+
+// --- 11. HYBRID LOADER & INITIALIZATION (v144.4 BASE) ---
+async function init(){
+    sysLog("SYSTEM BOOT", "active"); fetchMOTD();
+    
+    // 1. CHECK LOCALSTORAGE (Admin Push Priority)
+    let ld=localStorage.getItem(MASTER_KEY);
+    if(ld && ld.length > 50) {
+        sysLog("LOCAL DATA FOUND", "active");
+        try { RAW_DATA = JSON.parse(ld); } catch(e){ RAW_DATA=[]; }
+    }
+    
+    // 2. FALLBACK TO master.json (File Fallback)
+    if(!RAW_DATA.length) {
+        sysLog("FETCHING JSON...", "warn");
+        try {
+            const r = await fetch('master.json');
+            if(r.ok) {
+                RAW_DATA = await r.json();
+                sysLog("JSON LOADED", "success");
+            }
+        } catch(e) { console.log("FETCH FAILED"); }
+    }
+
+    // 3. NORMALIZE & FILTER
+    RAW_DATA = RAW_DATA.map(d=>({
+        id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
+        q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
+        logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", 
+        step1:d.s1||d.step1||"", step2:d.s2||d.step2||""
+    })).filter(d=>d.id&&d.q&&d.u);
+
+    // 4. FAIL STATE
+    if(!RAW_DATA.length){
+        sysLog("DATA ERROR","danger"); 
+        renderGameCard("NO DATA FOUND\n\n1. PUSH VIA ADMIN\nOR\n2. UPLOAD master.json", {down:"RETRY"}, () => location.reload()); 
+        return;
+    }
+
+    // 5. BOOT GAME
+    begin();
+}
+init();
+</script>
+</body>
+</html>
