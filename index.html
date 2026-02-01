@@ -100,6 +100,7 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbzpjvS1NODyITSe3O7F5Y6y4rTSVBfyK5A9aTj4DMa-CWFwTv7nX38bjjzoUy55JScf/exec"; 
 const WA_NUMBER = "919876543210"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+// LINKED GITHUB SOURCE
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
 
 // --- SPHERICAL PHYSICS CONFIG ---
@@ -631,26 +632,25 @@ const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, 
 async function init(){
   log("SYSTEM BOOT", "active");
   
-  // 1. CHECK LOCAL STORAGE
-  const localData = localStorage.getItem(MASTER_KEY);
-  if(localData && localData.length > 10){ 
-      try { 
-          RAW_DATA = JSON.parse(localData); 
-          await new Promise(r=>setTimeout(r,600)); 
-      } catch(e){RAW_DATA=[];} 
+  // UPGRADE: PRIORITIZE GITHUB LINK FOR LIVE DATA
+  try {
+      log("SYNCING CLOUD...", "primary");
+      const r = await fetch(GITHUB_RAW_URL); 
+      if(r.ok) {
+          RAW_DATA = await r.json();
+          // UPDATE CACHE WITH LATEST LINKED DATA
+          localStorage.setItem(MASTER_KEY, JSON.stringify(RAW_DATA));
+          log("DATA UPDATED", "active");
+      } else {
+          throw new Error("Cloud offline");
+      }
+  } catch(e) {
+      log("OFFLINE MODE", "danger");
+      const local = localStorage.getItem(MASTER_KEY);
+      if(local) RAW_DATA = JSON.parse(local);
   }
   
-  // 2. FETCH FROM GITHUB IF LOCAL EMPTY
-  if(!RAW_DATA.length){ 
-      try{
-          log("FETCHING GITHUB...", "primary");
-          const r = await fetch(GITHUB_RAW_URL); 
-          if(r.ok) RAW_DATA = await r.json();
-      }catch(e){
-          log("FETCH ERROR", "danger");
-      } 
-  }
-  
+  // DATA MAPPING
   RAW_DATA = RAW_DATA.map(d=>({
       id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
       q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
