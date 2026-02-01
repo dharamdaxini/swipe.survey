@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v147.3 SYSTEM LINK</title>
+<title>Alchemist | Kinetic v147.5 STATIC</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -53,17 +53,16 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 /* LOCKED STATE */
 .card.locked { opacity: 0.2; transform: scale(0.96); transition: opacity 0.3s, transform 0.3s; filter: grayscale(100%); }
 
-/* PARALLAX TEXT CONTAINER */
 .card-q{
     font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; 
     text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; 
     word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;
-    transition: transform 0.1s ease-out; 
+    transition: transform 0.1s ease-out; /* Parallax */
 }
 .card-q::-webkit-scrollbar{width:0px;} 
 .card-q sub{font-size:0.7em; vertical-align:-0.3em;} .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
-/* SWIPE LABELS (Boundary Aligned) */
+/* SWIPE LABELS */
 .swipe-label{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center; 
     background:rgba(0,0,0,0.85); font-family:var(--font-sans); font-weight:900; 
@@ -88,39 +87,132 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="kinetic-logger">
   <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-  <div class="log-line" id="log-2">> INITIATING UPLINK...</div>
+  <div class="log-line" id="log-2">> INJECTING DATA...</div>
   <div class="log-line active" id="log-3">> ...</div>
 </div>
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">SYNCING ADMIN v146.2...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">LOADING STATIC CORE...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v147.3 SYSTEM LINK
+   VIA.STACK | KINETIC v147.5 STATIC
    ========================================= */
 
 // --- CONFIGURATION ---
-// ✅ STRICTLY CONNECTED TO ADMIN v146.2 ID
-const BEACON_URL = "https://script.google.com/macros/s/AKfycbzSxk_so64KtqwpvzvJSyTv2JydsD91BJEyl5jIKlzDopXRW-DOSoXbutfIARSDEiFE/exec"; 
+const BEACON_URL = "https://script.google.com/macros/s/AKfycbzpjvS1NODyITSe3O7F5Y6y4rTSVBfyK5A9aTj4DMa-CWFwTv7nX38bjjzoUy55JScf/exec"; 
 const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
-// ✅ RAW GITHUB SOURCE
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/d31a518619f879858bbfefc98b8151c4647fb75c/master.json";
-const DATASET_VERSION = "d31a5186"; 
-
 // --- SPHERICAL PHYSICS CONFIG ---
-const BALL_WEIGHT = 0.08;      // Heavy Inertia
+const BALL_WEIGHT = 0.08;
 const SPHERE_RADIUS_PX = 1000; 
-const HOVER_ANGLE_DEG = 10;    // Visual Lock
-const CLICK_ANGLE_DEG = 15;    // Commit Trigger
-const UNLOCK_ANGLE_DEG = 2.0;  // Dead-still to unlock
+const HOVER_ANGLE_DEG = 10; 
+const CLICK_ANGLE_DEG = 15; 
+const UNLOCK_ANGLE_DEG = 2.0;
 
 let SENSORS_ENABLED = false;
+
+// --- ✅ STATIC DATA INJECTION ---
+const INJECTED_DATA = [
+  {
+    "id": "001",
+    "set": "SET_A",
+    "dom": "Physical Chemistry",
+    "sub": "Solutions",
+    "diff": "3",
+    "q": "According to Henrys Law what is the mathematical relationship between the partial pressure p of a gas and its mole fraction chi in the solution",
+    "u": "p equals K H times chi",
+    "l": "p equals K H divided by chi",
+    "r": "p equals chi divided by K H",
+    "correct": "UP",
+    "logic": "Henrys Law states that at a constant temperature, the solubility of a gas in a liquid is directly proportional to the partial pressure of that gas. The modern equation is p equals K H times chi, where K H is Henrys Law constant.",
+    "hint": "Pressure is the product of Henrys constant and mole fraction.",
+    "topic": "Henrys Law"
+  },
+  {
+    "id": "002",
+    "set": "SET_AA",
+    "dom": "Physical Chemistry",
+    "sub": "Solutions",
+    "diff": "5",
+    "q": "Why does the solubility of gases in liquids generally decrease with an increase in temperature",
+    "u": "Dissolution is an exothermic process",
+    "l": "Dissolution is an endothermic process",
+    "r": "Gases become less dense at high temperatures",
+    "correct": "UP",
+    "logic": "Dissolving a gas in a liquid is essentially a condensation process, which is exothermic (Delta H sol is negative). According to Le Chateliers Principle, increasing temperature shifts the equilibrium backward favor of the gas phase, reducing solubility.",
+    "hint": "Exothermic dissolution implies heat hinders solubility.",
+    "topic": "Solubility Factors"
+  },
+  {
+    "id": "023",
+    "set": "SET_A",
+    "dom": "Physical Chemistry",
+    "sub": "Electrochemistry",
+    "diff": "3",
+    "q": "What happens to the lead sulfate PbSO4 at the electrodes during the recharging of a lead acid battery",
+    "u": "It converts back to Pb and PbO2",
+    "l": "It dissolves into the electrolyte",
+    "r": "It oxidizes to PbO",
+    "correct": "UP",
+    "logic": "During recharge, the cell operates as an electrolytic cell. The solid Lead Sulfate (PbSO4) on the electrodes is converted back into Lead (Pb) at the anode and Lead Dioxide (PbO2) at the cathode, regenerating the active materials.",
+    "hint": "PbSO4 reverts to original electrode materials.",
+    "topic": "Battery Recharge"
+  },
+  {
+    "id": "024",
+    "set": "SET_AA",
+    "dom": "Physical Chemistry",
+    "sub": "Electrochemistry",
+    "diff": "5",
+    "q": "Why is a voltage greater than 2.04V per cell required to recharge a lead acid battery",
+    "u": "To overcome the equilibrium potential and drive the non spontaneous reverse reaction",
+    "l": "To heat the electrolyte for faster reaction",
+    "r": "To prevent the formation of hydrogen gas",
+    "correct": "UP",
+    "logic": "The standard cell potential of a lead-acid battery is approx 2V. To reverse the spontaneous discharge reaction (recharge), an external voltage exceeding this internal potential (greater than 2.04V) must be applied to force the non-spontaneous reaction.",
+    "hint": "External voltage must exceed internal EMF to reverse flow.",
+    "topic": "Recharging Mechanics"
+  },
+  {
+    "id": "224",
+    "set": "SET_AA",
+    "dom": "Physical Chemistry",
+    "sub": "Electrochemistry",
+    "diff": "5",
+    "q": "How many Coulombs are required to reduce 1 mole of MnO4 minus to Mn2 plus",
+    "u": "5 times 96500 Coulombs",
+    "l": "2 times 96500 Coulombs",
+    "r": "1 times 96500 Coulombs",
+    "correct": "UP",
+    "logic": "The oxidation state of Mn changes from +7 in MnO4- to +2 in Mn2+. This requires a gain of 5 electrons per ion. For 1 mole, 5 moles of electrons are needed. Total Charge = 5 * F = 5 * 96500 C.",
+    "hint": "Change in oxidation state (+7 to +2) determines Charge.",
+    "trap": "Miscalculating the oxidation state change.",
+    "s1": "Determine initial and final oxidation states.",
+    "s2": "Calculate electrons gained (Delta = 5).",
+    "topic": "Faradays Law"
+  },
+  {
+    "id": "225",
+    "set": "SET_A",
+    "dom": "Physical Chemistry",
+    "sub": "Solutions",
+    "diff": "3",
+    "q": "What is the definition of Mole Fraction of a component",
+    "u": "Moles of the component divided by total moles of solution",
+    "l": "Moles of component divided by volume of solution",
+    "r": "Mass of component divided by total mass",
+    "correct": "UP",
+    "logic": "Mole fraction (denoted by x or chi) is the ratio of the number of moles of a specific component to the total number of moles of all components in the solution.",
+    "hint": "Ratio of part moles to total moles.",
+    "trap": "Confusing with Molarity.",
+    "topic": "Mole Fraction Definition"
+  }
+];
 
 // --- STATE ---
 let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
@@ -132,7 +224,7 @@ let Q_START_TIME = 0;
 let SESSION_LOG = []; 
 let PIVOT_COUNT = 0;
 
-// --- USER ---
+// --- BACKEND ---
 let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
 let CURRENT_SES_ID = null;
 let CREDITS = parseInt(localStorage.getItem("USER_CREDITS") || "10");
@@ -201,29 +293,24 @@ class PhysicsController {
      window.removeEventListener("deviceorientation", this.handleOrientation);
  }
 
- // --- SPHERICAL PHYSICS LOOP ---
+ // --- PHYSICS LOOP ---
  loop() {
      if(this.active || this.locked) return; 
 
-     // Heavy Inertia
      this.current.x += (this.target.x - this.current.x) * BALL_WEIGHT;
      this.current.y += (this.target.y - this.current.y) * BALL_WEIGHT;
 
-     // Dead-Still Unlock
      if(this.awaitingRecenter && SENSORS_ENABLED) {
          const tiltMag = Math.hypot(this.target.x, this.target.y);
          const unlockThresh = SPHERE_RADIUS_PX * Math.tan(UNLOCK_ANGLE_DEG * Math.PI / 180);
          if(tiltMag < unlockThresh) this.unlockCard();
      }
 
-     // Visuals & Logic
      if(!this.awaitingRecenter) {
          this.updateVisuals(this.current.x, this.current.y);
          
-         // CLICK LOGIC (4-Way)
          if(SENSORS_ENABLED) {
              const clickThresh = SPHERE_RADIUS_PX * Math.tan(CLICK_ANGLE_DEG * Math.PI / 180);
-             
              if(Math.abs(this.current.x) > clickThresh) {
                  this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
              } 
@@ -236,7 +323,6 @@ class PhysicsController {
      this.raf = requestAnimationFrame(this.loop);
  }
 
- // --- INPUT HANDLERS ---
  handleMouseTether(e) {
      if(this.active || this.locked) return; 
      const cx = window.innerWidth / 2;
@@ -261,12 +347,10 @@ class PhysicsController {
      let radX = (g * Math.PI) / 180;
      let radY = (b * Math.PI) / 180;
 
-     // Clamp Swing (Limit rotation to Click Point + 5 degrees)
      const MAX_RAD = 20 * Math.PI / 180;
      radX = Math.max(-MAX_RAD, Math.min(MAX_RAD, radX));
      radY = Math.max(-MAX_RAD, Math.min(MAX_RAD, radY));
 
-     // Spherical Mapping
      if(Math.abs(g) > 0.5) this.target.x = SPHERE_RADIUS_PX * Math.tan(radX);
      else this.target.x = 0;
 
@@ -309,14 +393,12 @@ class PhysicsController {
 
  updateVisuals(dx, dy) {
      this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/25}deg)`;
-     // Parallax
      if(this.qEl) this.qEl.style.transform = `translate(${-dx/8}px, ${-dy/8}px)`;
 
      const d = Math.hypot(dx, dy);
      
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
      
-     // Hover Projection
      if(d > 30) {
          const dir = this.dir(dx, dy);
          if(this.labels[dir]) {
@@ -344,8 +426,7 @@ function card(text, labels, cb, allowSensors = true) {
  new PhysicsController(el, {onCommit:cb}, allowSensors);
 }
 
-/* ================= APP FLOW ================= */
-// ✅ ADMIN HANDSHAKE
+// ✅ ADMIN PING
 function pingAdmin() {
     log("PINGING ADMIN...", "primary");
     fetch(BEACON_URL, { method: "GET" }) 
@@ -458,7 +539,7 @@ function startQuiz(){
  if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
  POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
  CURRENT_SES_ID = null; SES_BEACON_SENT = false; 
- SESSION_LOG = []; PIVOT_COUNT = 0; // RESET TELEMETRY
+ SESSION_LOG = []; PIVOT_COUNT = 0; 
  nextQ();
 }
 
@@ -476,7 +557,6 @@ function nextQ(){
   let c = d.correct; if(c==="UP"||c==="A") c=d.u; else if(c==="LEFT"||c==="B") c=d.l; else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
   const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
   
-  // TELEMETRY LOGGING
   const latency = Date.now() - Q_START_TIME;
   SESSION_LOG.push({ id: d.id, res: isCorrect ? "WIN" : "LOSS", latency: latency });
 
@@ -504,12 +584,11 @@ function report(){
  const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
  const statusText = USER_MOBILE ? `USER: ${USER_MOBILE}` : "GUEST (UNLINKED)";
  
- // DISABLED SENSORS FOR REPORT CARD
  card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} Correct\n(${percent}%)\n\nID: ${CURRENT_SES_ID}\n${statusText}`,{down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},dir=>{
     if(dir==="DOWN") handleDownloadRequest();
     if(dir==="UP") startQuiz(); 
     if(dir==="LEFT") begin();
- }, false); // <--- SENSORS DISABLED HERE
+ }, false);
 }
 
 function handleDownloadRequest(){
@@ -528,7 +607,7 @@ function handleDownloadRequest(){
                         log("IDENTITY LINKED", "active"); report();
                     } else { log("INVALID INPUT", "normal"); handleDownloadRequest(); }
                 }
-            }, false // Disable Sensors for Modal
+            }, false
         );
         return;
     }
@@ -602,67 +681,62 @@ function exportSessionPDF(data=null, id=null){
  const fileName = `ALCHEMIST_${renderID}.pdf`;
  doc.save(fileName);
 
- // --- 2. UPLOAD DATA ONLY (NO FILE) ---
  if(!data) {
-     sendTelemetry(); // Sends JSON, not PDF
+     sendTelemetry(); 
  }
  setTimeout(begin,500);
+}
+
+function sendTelemetry(sid) {
+    if(!BEACON_URL) return;
+    const totalLatency = SESSION_LOG.reduce((sum, item) => sum + item.latency, 0);
+    const avgLatency = SESSION_LOG.length > 0 ? Math.round(totalLatency / SESSION_LOG.length) : 0;
+    const accuracy = SESSION_ALL.length > 0 ? Math.round((XP / SESSION_ALL.length) * 100) : 0;
+
+    log("UPLOADING SESSION...", "primary");
+    
+    fetch(BEACON_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            ses_id: CURRENT_SES_ID,
+            mobile: USER_MOBILE || "GUEST",
+            credits: CREDITS,
+            score: XP,
+            accuracy: accuracy,
+            latency: avgLatency,
+            pivots: PIVOT_COUNT,
+            log: SESSION_LOG
+        })
+    }).then(() => {
+        log("DATA SECURED", "active");
+    }).catch(e => {
+        log("DATA SYNC FAILED", "danger");
+    });
 }
 
 function generateSessionID() {
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     CURRENT_SES_ID = `SES_${hash}`;
     localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
-    // Silent beacon disabled to save quota, will send at end
     log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
 }
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
 const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 
-// ✅ LIVE GITHUB SYNC + ADMIN HANDSHAKE
+// ✅ BOOT SEQUENCE (STATIC)
 async function init() {
   log("SYSTEM BOOT", "active");
-
-  // HANDSHAKE STEP
   pingAdmin();
 
-  const cachedVersion = localStorage.getItem("DATASET_VERSION");
-  if (cachedVersion !== DATASET_VERSION) {
-    localStorage.removeItem(MASTER_KEY);
-    localStorage.setItem("DATASET_VERSION", DATASET_VERSION);
-    log("CACHE PURGED (NEW VERSION)", "primary");
-  }
-
-  try {
-    log("SYNCING GITHUB MASTER.JSON", "primary");
-    const r = await fetch(GITHUB_RAW_URL, { cache: "no-store" });
-
-    if (r.ok) {
-        RAW_DATA = await r.json();
-        localStorage.setItem(MASTER_KEY, JSON.stringify(RAW_DATA));
-        log(`LIVE DATA LINKED (${RAW_DATA.length})`, "active");
-    } else {
-        throw new Error("GitHub fetch failed");
-    }
-
-  } catch (e) {
-    log("GITHUB OFFLINE — CACHE RETRY", "danger");
-    const local = localStorage.getItem(MASTER_KEY);
-    if (local) RAW_DATA = JSON.parse(local);
-  }
-
-  if (!RAW_DATA || !RAW_DATA.length) {
-    log("FATAL: NO DATA SOURCE", "danger");
-    card("NO DATA AVAILABLE\nCHECK GITHUB LINK", { down: "RETRY" }, () => location.reload());
-    return;
-  }
-
-  RAW_DATA = RAW_DATA.map(d => ({
+  // Use INJECTED_DATA instead of fetching
+  RAW_DATA = INJECTED_DATA.map(d => ({
     id: d.id,
     set: d.set || "DEFAULT",
     dom: d.dom || "GEN",
-    topic: d.topic || "",
+    topic: d.topic || "", // Mapped from your JSON which might have 'sub' or 'topic'
     q: d.q,
     u: d.u,
     l: d.l,
@@ -675,6 +749,7 @@ async function init() {
     step2: d.s2 || d.step2 || ""
   })).filter(d => d.id); 
 
+  log(`STATIC DATA LOADED (${RAW_DATA.length})`, "active");
   begin();
 }
 init();
