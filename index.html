@@ -101,8 +101,12 @@ const BEACON_URL = "https://script.google.com/macros/s/AKfycbzpjvS1NODyITSe3O7F5
 const WA_NUMBER = "919876543210"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 
-// LINKED GITHUB SOURCE (Updated to commit bb6836b)
+// ✅ PATCH 1: LINKED GITHUB SOURCE (PINNED COMMIT)
+// This is the authoritative source. Change this URL to cut a new release.
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/bb6836b2af7339a5f0b26bb376e0a0dae801cbba/master.json";
+
+// ✅ PATCH 3: VERSION CONTROL FOR CACHE
+const DATASET_VERSION = "bb6836b"; // Must match commit hash to trigger auto-flush
 
 // --- SPHERICAL PHYSICS CONFIG ---
 const BALL_WEIGHT = 0.08;
@@ -630,35 +634,73 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 
 /* ================= BOOT ================= */
-async function init(){
+// ✅ PATCH 2: MAKE GITHUB THE SINGLE SOURCE OF TRUTH
+async function init() {
   log("SYSTEM BOOT", "active");
-  
-  // UPGRADE: PRIORITIZE GITHUB LINK FOR LIVE DATA
-  try {
-      log("SYNCING CLOUD...", "primary");
-      const r = await fetch(GITHUB_RAW_URL); 
-      if(r.ok) {
-          RAW_DATA = await r.json();
-          // UPDATE CACHE WITH LATEST LINKED DATA
-          localStorage.setItem(MASTER_KEY, JSON.stringify(RAW_DATA));
-          log("DATA UPDATED", "active");
-      } else {
-          throw new Error("Cloud offline");
-      }
-  } catch(e) {
-      log("OFFLINE MODE", "danger");
-      const local = localStorage.getItem(MASTER_KEY);
-      if(local) RAW_DATA = JSON.parse(local);
-  }
-  
-  // DATA MAPPING
-  RAW_DATA = RAW_DATA.map(d=>({
-      id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
-      q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
-      logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", step1:d.s1||d.step1||"", step2:d.s2||d.step2||""
-  })).filter(d=>d.id&&d.q&&d.u);
 
-  if(!RAW_DATA.length){ log("DATA ERROR", "active"); card("NO DATA FOUND", {down:"RETRY"}, ()=>location.reload()); return; }
+  // PATCH 3: CHECK DATASET VERSION TO PREVENT STALE CACHE
+  const cachedVersion = localStorage.getItem("DATASET_VERSION");
+  if (cachedVersion !== DATASET_VERSION) {
+    localStorage.removeItem(MASTER_KEY);
+    localStorage.setItem("DATASET_VERSION", DATASET_VERSION);
+    log("CACHE PURGED (NEW VERSION)", "primary");
+  }
+
+  // 1. ALWAYS TRY GITHUB FIRST (AUTHORITATIVE)
+  try {
+    log("SYNCING GITHUB MASTER.JSON", "primary");
+    // no-store forces the browser to fetch fresh data
+    const r = await fetch(GITHUB_RAW_URL, { cache: "no-store" });
+
+    if (r.ok) {
+        RAW_DATA = await r.json();
+        // UPDATE CACHE WITH LATEST
+        localStorage.setItem(MASTER_KEY, JSON.stringify(RAW_DATA));
+        log(`LIVE DATA LINKED (${RAW_DATA.length})`, "active");
+    } else {
+        throw new Error("GitHub fetch failed");
+    }
+
+  } catch (e) {
+    log("GITHUB OFFLINE — USING CACHE", "danger");
+
+    // FALLBACK TO CACHE
+    const local = localStorage.getItem(MASTER_KEY);
+    if (local) {
+      try {
+        RAW_DATA = JSON.parse(local);
+        log(`CACHE RESTORED (${RAW_DATA.length})`, "active");
+      } catch {
+        RAW_DATA = [];
+      }
+    }
+  }
+
+  // 2. HARD FAIL IF NO DATA
+  if (!RAW_DATA || !RAW_DATA.length) {
+    log("FATAL: NO DATA SOURCE", "danger");
+    card("NO DATA AVAILABLE\nCHECK GITHUB LINK", { down: "RETRY" }, () => location.reload());
+    return;
+  }
+
+  // 3. NORMALIZE DATA SHAPE
+  RAW_DATA = RAW_DATA.map(d => ({
+    id: d.id,
+    set: d.set || "DEFAULT",
+    dom: d.dom || "GEN",
+    topic: d.topic || "",
+    q: d.q,
+    u: d.u,
+    l: d.l,
+    r: d.r,
+    correct: d.correct,
+    logic: d.logic || "",
+    hint: d.hint || "",
+    trap: d.trap || "",
+    step1: d.s1 || d.step1 || "",
+    step2: d.s2 || d.step2 || ""
+  })).filter(d => d.id && d.q && d.u); // Basic filter
+
   begin();
 }
 init();
