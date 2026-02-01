@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v147.0 TARGET LINK</title>
+<title>Alchemist | Kinetic v147.0 ADMIN LINK</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -62,14 +63,14 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 .card-q::-webkit-scrollbar{width:0px;} 
 .card-q sub{font-size:0.7em; vertical-align:-0.3em;} .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
-/* SWIPE LABELS (Boundary Aligned) */
+/* SWIPE LABELS */
 .swipe-label{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center; 
     background:rgba(0,0,0,0.85); font-family:var(--font-sans); font-weight:900; 
     font-size:1.6rem; text-transform:uppercase; letter-spacing:1px; text-align:center; 
     padding:40px; opacity:0; pointer-events:none; transition:opacity 0.1s ease, transform 0.1s ease; 
     border-radius:14px; color:var(--text-white); border:1px solid #444;
-    transform: scale(0.9); /* Start slightly zoomed out */
+    transform: scale(0.9);
 }
 </style>
 </head>
@@ -87,31 +88,28 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="kinetic-logger">
   <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
+  <div class="log-line" id="log-2">> CONNECTING TO ADMIN...</div>
   <div class="log-line active" id="log-3">> ...</div>
 </div>
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING SYSTEM...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">ESTABLISHING UPLINK...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v147.0 TARGET LINK
+   VIA.STACK | KINETIC v147.0 ADMIN LINK
    ========================================= */
 
 // --- CONFIGURATION ---
+// ✅ ADMIN v146.1 ENDPOINT
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbzpjvS1NODyITSe3O7F5Y6y4rTSVBfyK5A9aTj4DMa-CWFwTv7nX38bjjzoUy55JScf/exec"; 
 const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
-
-// ✅ FIX: UPDATED TO TARGET COMMIT (RAW)
-const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/ac83f8466613ecca3ef7303915c6331d0cd22068/master.json";
-
-// ✅ FIX: UPDATED HASH FOR CACHE BUSTING
-const DATASET_VERSION = "ac83f846"; 
+const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/d31a518619f879858bbfefc98b8151c4647fb75c/master.json";
+const DATASET_VERSION = "d31a5186"; 
 
 // --- SPHERICAL PHYSICS CONFIG ---
 const BALL_WEIGHT = 0.08;
@@ -154,7 +152,7 @@ const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/
 class PhysicsController {
  constructor(el, cbs, sensorsActive = true) {
   this.el = el; this.cbs = cbs; 
-  this.qEl = el.querySelector(".card-q"); // Access for Parallax
+  this.qEl = el.querySelector(".card-q"); 
   this.active = false; 
   this.locked = false; 
   this.awaitingRecenter = true; 
@@ -208,11 +206,11 @@ class PhysicsController {
      window.removeEventListener("deviceorientation", this.handleOrientation);
  }
 
- // --- PHYSICS LOOP (The Ball Simulation) ---
+ // --- PHYSICS LOOP ---
  loop() {
      if(this.active || this.locked) return; 
 
-     // HEAVY LERP (Ball Weight)
+     // HEAVY LERP
      this.current.x += (this.target.x - this.current.x) * BALL_WEIGHT;
      this.current.y += (this.target.y - this.current.y) * BALL_WEIGHT;
 
@@ -231,6 +229,7 @@ class PhysicsController {
          if(SENSORS_ENABLED) {
              const clickThresh = SPHERE_RADIUS_PX * Math.tan(CLICK_ANGLE_DEG * Math.PI / 180);
              
+             // 4-Way Click Logic
              if(Math.abs(this.current.x) > clickThresh) {
                  this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
              } 
@@ -243,7 +242,7 @@ class PhysicsController {
      this.raf = requestAnimationFrame(this.loop);
  }
 
- // --- 1. MOUSE LOGIC (Desktop) ---
+ // --- 1. MOUSE LOGIC ---
  handleMouseTether(e) {
      if(this.active || this.locked) return; 
      const cx = window.innerWidth / 2;
@@ -259,7 +258,7 @@ class PhysicsController {
      }
  }
 
- // --- 2. SPHERICAL GYRO LOGIC (Mobile) ---
+ // --- 2. GYRO LOGIC ---
  handleOrientation(event) {
      if(this.active || this.locked) return;
 
@@ -325,15 +324,12 @@ class PhysicsController {
      
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
      
-     // 3. TEXT PROJECTION (Hover Zone)
+     // HOVER ZONE PROJECTION
      if(d > 30) {
          const dir = this.dir(dx, dy);
          if(this.labels[dir]) {
-             // Opacity Ramp: 0% at 30px -> 100% at 170px (10 Degrees)
              const opacity = Math.min((d-30)/140, 1);
              this.labels[dir].style.opacity = opacity;
-             
-             // Scale Ramp: Text grows slightly as it "approaches"
              this.labels[dir].style.transform = `scale(${0.9 + (opacity * 0.1)})`;
          }
      }
@@ -357,6 +353,23 @@ function card(text, labels, cb, allowSensors = true) {
 }
 
 /* ================= APP FLOW ================= */
+// ✅ NEW: ADMIN HANDSHAKE
+function pingAdmin() {
+    log("PINGING ADMIN...", "primary");
+    fetch(BEACON_URL, { method: "GET" }) // The doGet function on backend
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === "ONLINE") {
+                log("ADMIN v146.1 CONNECTED", "active");
+            } else {
+                log("ADMIN STATUS: UNKNOWN", "danger");
+            }
+        })
+        .catch(e => {
+            log("ADMIN DISCONNECTED", "danger");
+        });
+}
+
 function begin(){
  if(USER_MOBILE) log(`LOGIN: ${USER_MOBILE} | CREDITS: ${CREDITS}`, "primary");
  else log("LOGIN: GUEST | CREDITS: " + CREDITS, "normal");
@@ -649,6 +662,9 @@ const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, 
 // ✅ LIVE GITHUB SYNC
 async function init() {
   log("SYSTEM BOOT", "active");
+
+  // HANDSHAKE STEP
+  pingAdmin();
 
   const cachedVersion = localStorage.getItem("DATASET_VERSION");
   if (cachedVersion !== DATASET_VERSION) {
