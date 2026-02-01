@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v146.1 PRECISION</title>
+<title>Alchemist | Kinetic v146.2 SPHERICAL</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -36,14 +36,8 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 }
 #gyro-status.active { opacity: 1; color: var(--gold); border-color: var(--gold); }
 
-/* RE-CENTERING HINT */
-#center-hint {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-family: var(--font-sans); font-size: 0.8rem; color: var(--text-grey);
-    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50;
-    text-transform: uppercase; letter-spacing: 2px;
-}
-#center-hint.visible { opacity: 0.5; }
+/* RE-CENTERING HINT (Visual Only - Opacity) */
+#center-hint { display: none; } 
 
 /* PHYSICS STACK */
 #stack{position:relative; width:90%; max-width:420px; height:calc(100vh - 220px - env(safe-area-inset-bottom)); margin:10px auto 20px; perspective:1500px; display:flex; align-items:center; justify-content:center;}
@@ -56,20 +50,26 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
     transform-style:preserve-3d; overflow:hidden;
 }
 
-/* LOCKED STATE */
+/* LOCKED STATE (Heavy Damping) */
 .card.locked { opacity: 0.2; transform: scale(0.96); transition: opacity 0.3s, transform 0.3s; filter: grayscale(100%); }
 
 .card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
 .card-q::-webkit-scrollbar{width:0px;} 
 .card-q sub{font-size:0.7em; vertical-align:-0.3em;} .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
-.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); font-family:var(--font-sans); font-weight:900; font-size:1.8rem; text-transform:uppercase; letter-spacing:1px; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.15s ease; border-radius:14px; color:var(--text-white); border:1px solid #333; z-index:10;}
+/* SWIPE LABELS (Now Visible) */
+.swipe-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; 
+    background:rgba(0,0,0,0.7); font-family:var(--font-sans); font-weight:900; 
+    font-size:1.5rem; text-transform:uppercase; letter-spacing:1px; text-align:center; 
+    padding:40px; opacity:0; pointer-events:none; transition:opacity 0.1s ease; 
+    border-radius:14px; color:var(--text-white);
+}
 </style>
 </head>
 <body>
 
 <div id="gyro-status">HYBRID SENSORS READY</div>
-<div id="center-hint"></div> 
 
 <div id="header">
   <div class="header-meta">
@@ -87,13 +87,13 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING PRECISION CORE...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING SPHERICAL CORE...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v146.1 PRECISION
+   VIA.STACK | KINETIC v146.2 SPHERICAL
    ========================================= */
 
 // --- CONFIGURATION ---
@@ -102,16 +102,11 @@ const WA_NUMBER = "919876543210";
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
 
-// --- PRECISION SENSOR CONFIG ---
-// 1.5cm Radius (~56px) / 2.9 Degrees = ~20px per degree
-const MICRO_SENSITIVITY = 20; 
-const MICRO_THRESHOLD_PX = 60; // 1.5cm approx (The Bottle Cap)
-const MICRO_LOCK_DEG = 2.9;    // Dead-Still requirement to unlock
-
-// Desktop remains standard
-const MOUSE_SENSITIVITY = 0.8;
-const MOUSE_THRESHOLD_PX = 80;
-const MOUSE_RECENTER_ZONE = 40;
+// --- SPHERICAL PHYSICS CONFIG ---
+const BALL_WEIGHT = 0.08;    // Inertia Factor (Lower = Heavier/Smoother)
+const SPHERE_RADIUS_PX = 1000; // Virtual Sphere Radius
+const COMMIT_ANGLE_DEG = 3;  // The 1.5cm Threshold (~3 Degrees)
+const UNLOCK_ANGLE_DEG = 2.0; // Precision required to unlock
 
 let SENSORS_ENABLED = false;
 
@@ -152,8 +147,8 @@ class PhysicsController {
   this.awaitingRecenter = true; 
   
   // Physics Vectors
-  this.current = {x:0, y:0}; 
-  this.target = {x:0, y:0};  
+  this.current = {x:0, y:0}; // The "Ball"
+  this.target = {x:0, y:0};  // The "Hand"
   
   this.labels = {UP:el.querySelector(".sl-up"), LEFT:el.querySelector(".sl-left"), RIGHT:el.querySelector(".sl-right"), DOWN:el.querySelector(".sl-down")};
   
@@ -179,7 +174,7 @@ class PhysicsController {
       this.handleOrientation = this.handleOrientation.bind(this);
       if(window.DeviceOrientationEvent) window.addEventListener("deviceorientation", this.handleOrientation);
       
-      // INERTIA LOOP (The "Ball" Physics)
+      // PHYSICS LOOP
       this.loop = this.loop.bind(this);
       this.raf = requestAnimationFrame(this.loop);
   } else {
@@ -200,32 +195,41 @@ class PhysicsController {
      window.removeEventListener("deviceorientation", this.handleOrientation);
  }
 
- // --- PHYSICS LOOP ---
+ // --- PHYSICS LOOP (The Ball Simulation) ---
  loop() {
      if(this.active || this.locked) return; 
 
-     // HEAVY INERTIA (Ball Physics)
-     // 0.15 Factor gives it weight
-     this.current.x += (this.target.x - this.current.x) * 0.15;
-     this.current.y += (this.target.y - this.current.y) * 0.15;
+     // HEAVY LERP (Ball Weight)
+     // Moves gradually towards the tilt target
+     this.current.x += (this.target.x - this.current.x) * BALL_WEIGHT;
+     this.current.y += (this.target.y - this.current.y) * BALL_WEIGHT;
 
-     // RE-CENTER CHECK (Desktop Mouse Only - Gyro handled in event)
-     if(this.awaitingRecenter && !SENSORS_ENABLED) { 
-         // Logic for mouse re-center check happens in mousemove
+     // RE-CENTER CHECK (Angular Unlock)
+     if(this.awaitingRecenter && SENSORS_ENABLED) {
+         // Check if raw tilt is basically flat (Dead Still)
+         // We use the Target vector because that represents the Hand Position
+         // Logic: If Hand is flat, Unlock.
+         const tiltMag = Math.hypot(this.target.x, this.target.y);
+         // Threshold check: 1000px * tan(2deg) ~= 35px
+         const unlockThresh = SPHERE_RADIUS_PX * Math.tan(UNLOCK_ANGLE_DEG * Math.PI / 180);
+         
+         if(tiltMag < unlockThresh) this.unlockCard();
      }
 
-     // UPDATE VISUALS & COMMIT CHECK (MOBILE)
-     if(!this.awaitingRecenter && SENSORS_ENABLED) {
+     // UPDATE VISUALS
+     if(!this.awaitingRecenter) {
          this.updateVisuals(this.current.x, this.current.y);
          
-         // MOBILE COMMIT (Bottle Cap Edge)
-         // If physical distance > 1.5cm (approx 60px), fire.
-         if(Math.abs(this.current.x) > MICRO_THRESHOLD_PX) this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
-         else if(Math.abs(this.current.y) > MICRO_THRESHOLD_PX) this.commitWithAnimation(0, Math.sign(this.current.y)*100);
-     }
-     // DESKTOP VISUALS
-     else if(!this.awaitingRecenter) {
-         this.updateVisuals(this.current.x, this.current.y);
+         // MOBILE COMMIT (Pizza Edge)
+         if(SENSORS_ENABLED) {
+             // Calculate threshold for 3 degrees
+             const commitThresh = SPHERE_RADIUS_PX * Math.tan(COMMIT_ANGLE_DEG * Math.PI / 180);
+             
+             if(Math.abs(this.current.x) > commitThresh) 
+                 this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
+             else if(Math.abs(this.current.y) > commitThresh) 
+                 this.commitWithAnimation(0, Math.sign(this.current.y)*100);
+         }
      }
      
      this.raf = requestAnimationFrame(this.loop);
@@ -236,44 +240,35 @@ class PhysicsController {
      if(this.active || this.locked) return; 
      const cx = window.innerWidth / 2;
      const cy = window.innerHeight / 2;
-     const dx = (e.clientX - cx);
-     const dy = (e.clientY - cy);
-     
-     if(this.awaitingRecenter) {
-         if(Math.hypot(dx, dy) < MOUSE_RECENTER_ZONE) this.unlockCard();
-         return;
-     }
-
-     this.target.x = dx * MOUSE_SENSITIVITY;
-     this.target.y = dy * MOUSE_SENSITIVITY;
+     this.target.x = (e.clientX - cx) * 0.8;
+     this.target.y = (e.clientY - cy) * 0.8;
  }
 
  handleMouseCommit(e) {
      if(this.active || this.locked || this.awaitingRecenter) return;
-     if(Math.abs(this.target.x) > MOUSE_THRESHOLD_PX || Math.abs(this.target.y) > MOUSE_THRESHOLD_PX) {
+     if(Math.abs(this.target.x) > 80 || Math.abs(this.target.y) > 80) {
          this.commitWithAnimation(this.target.x, this.target.y);
      }
  }
 
- // --- 2. MICRO-TILT LOGIC (Mobile - Updated) ---
+ // --- 2. SPHERICAL GYRO LOGIC (Mobile) ---
  handleOrientation(event) {
      if(this.active || this.locked) return;
 
-     let g = event.gamma; 
-     let b = event.beta - 45; 
+     let g = event.gamma; // Roll (Left/Right)
+     let b = event.beta - 45; // Pitch (Up/Down) - Calibrated to 45deg hold
 
-     // DEAD-STILL UNLOCK (2.9 Deg)
-     if(this.awaitingRecenter) {
-         if(Math.abs(g) < MICRO_LOCK_DEG && Math.abs(b) < MICRO_LOCK_DEG) this.unlockCard();
-         return;
-     }
+     // Convert Degrees to Spherical Projection
+     // This creates the "Pizza Slice" curve mapping
+     let radX = (g * Math.PI) / 180;
+     let radY = (b * Math.PI) / 180;
 
-     // MICRO MAPPING (1 Deg = 20px)
-     // Deadzone of 0.5 degrees to prevent drift
-     if(Math.abs(g) > 0.5) this.target.x = g * MICRO_SENSITIVITY;
+     // Apply Non-Linear Mapping (Sine Wave) for "Curved Surface" feel
+     // Deadzone of 0.5 degrees
+     if(Math.abs(g) > 0.5) this.target.x = SPHERE_RADIUS_PX * Math.sin(radX);
      else this.target.x = 0;
 
-     if(Math.abs(b) > 0.5) this.target.y = b * MICRO_SENSITIVITY;
+     if(Math.abs(b) > 0.5) this.target.y = SPHERE_RADIUS_PX * Math.sin(radY);
      else this.target.y = 0;
  }
 
@@ -317,10 +312,10 @@ class PhysicsController {
      const d = Math.hypot(dx, dy);
      
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
-     if(d > 30) {
+     if(d > 20) {
          const dir = this.dir(dx, dy);
-         // Visual Fade-In for Labels
-         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min((d-30)/40, 1);
+         // Fade in Text Labels (0 to 1 opacity)
+         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min((d-20)/50, 1);
      }
  }
 
@@ -409,7 +404,7 @@ function openVault(index){
                 log("OPENING ARCHIVE...", "active");
                 renderSessionPDF(item.data, item.id);
             }
-        }, false // Disable Sensors in Vault
+        }, false 
     );
 }
 
