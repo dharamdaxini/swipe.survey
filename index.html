@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v146.6 FULL AXIS</title>
+<title>Alchemist | Kinetic v146.7 PRECISION UI</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -53,17 +53,23 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 /* LOCKED STATE */
 .card.locked { opacity: 0.2; transform: scale(0.96); transition: opacity 0.3s, transform 0.3s; filter: grayscale(100%); }
 
-.card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
+.card-q{
+    font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; 
+    text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; 
+    word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;
+    transition: transform 0.1s ease-out; /* Parallax Smoothness */
+}
 .card-q::-webkit-scrollbar{width:0px;} 
 .card-q sub{font-size:0.7em; vertical-align:-0.3em;} .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
-/* SWIPE LABELS */
+/* SWIPE LABELS (Boundary Aligned) */
 .swipe-label{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center; 
-    background:rgba(0,0,0,0.7); font-family:var(--font-sans); font-weight:900; 
-    font-size:1.5rem; text-transform:uppercase; letter-spacing:1px; text-align:center; 
-    padding:40px; opacity:0; pointer-events:none; transition:opacity 0.1s ease; 
-    border-radius:14px; color:var(--text-white);
+    background:rgba(0,0,0,0.85); font-family:var(--font-sans); font-weight:900; 
+    font-size:1.6rem; text-transform:uppercase; letter-spacing:1px; text-align:center; 
+    padding:40px; opacity:0; pointer-events:none; transition:opacity 0.1s ease, transform 0.1s ease; 
+    border-radius:14px; color:var(--text-white); border:1px solid #444;
+    transform: scale(0.9); /* Start slightly zoomed out */
 }
 </style>
 </head>
@@ -87,32 +93,27 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING FULL AXIS CORE...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING PRECISION UI...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v146.6 FULL AXIS
+   VIA.STACK | KINETIC v146.7 PRECISION UI
    ========================================= */
 
 // --- CONFIGURATION ---
 const BEACON_URL = "https://script.google.com/macros/s/AKfycbzpjvS1NODyITSe3O7F5Y6y4rTSVBfyK5A9aTj4DMa-CWFwTv7nX38bjjzoUy55JScf/exec"; 
-// ✅ UPDATE: NEW WHATSAPP NUMBER
 const WA_NUMBER = "916351537770"; 
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
-
-// ✅ UPDATE: LINKED GITHUB SOURCE (PINNED COMMIT)
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/bb6836b2af7339a5f0b26bb376e0a0dae801cbba/master.json";
-
-// ✅ UPDATE: VERSION CONTROL FOR CACHE
-const DATASET_VERSION = "bb6836b"; // Must match commit hash to trigger auto-flush
+const DATASET_VERSION = "bb6836b"; 
 
 // --- SPHERICAL PHYSICS CONFIG ---
 const BALL_WEIGHT = 0.08;
 const SPHERE_RADIUS_PX = 1000; 
-const HOVER_ANGLE_DEG = 10; // Lock Threshold
-const CLICK_ANGLE_DEG = 15; // Commit Threshold
+const HOVER_ANGLE_DEG = 10; 
+const CLICK_ANGLE_DEG = 15; 
 const UNLOCK_ANGLE_DEG = 2.0;
 
 let SENSORS_ENABLED = false;
@@ -149,6 +150,7 @@ const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/
 class PhysicsController {
  constructor(el, cbs, sensorsActive = true) {
   this.el = el; this.cbs = cbs; 
+  this.qEl = el.querySelector(".card-q"); // Access for Parallax
   this.active = false; 
   this.locked = false; 
   this.awaitingRecenter = true; 
@@ -210,7 +212,7 @@ class PhysicsController {
      this.current.x += (this.target.x - this.current.x) * BALL_WEIGHT;
      this.current.y += (this.target.y - this.current.y) * BALL_WEIGHT;
 
-     // RE-CENTER CHECK (Angular Unlock)
+     // RE-CENTER CHECK
      if(this.awaitingRecenter && SENSORS_ENABLED) {
          const tiltMag = Math.hypot(this.target.x, this.target.y);
          const unlockThresh = SPHERE_RADIUS_PX * Math.tan(UNLOCK_ANGLE_DEG * Math.PI / 180);
@@ -221,15 +223,13 @@ class PhysicsController {
      if(!this.awaitingRecenter) {
          this.updateVisuals(this.current.x, this.current.y);
          
-         // MOBILE COMMIT LOGIC (Full 4-Way Click)
+         // MOBILE COMMIT LOGIC
          if(SENSORS_ENABLED) {
              const clickThresh = SPHERE_RADIUS_PX * Math.tan(CLICK_ANGLE_DEG * Math.PI / 180);
              
-             // X-Axis (Left/Right)
              if(Math.abs(this.current.x) > clickThresh) {
                  this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
              } 
-             // Y-Axis (Up/Down) - Now Active!
              else if(Math.abs(this.current.y) > clickThresh) {
                  this.commitWithAnimation(0, Math.sign(this.current.y)*100);
              }
@@ -265,12 +265,12 @@ class PhysicsController {
      let radX = (g * Math.PI) / 180;
      let radY = (b * Math.PI) / 180;
 
-     // CLAMP SWING (Limit rotation to Click Point + a bit)
+     // CLAMP SWING
      const MAX_RAD = 20 * Math.PI / 180;
      radX = Math.max(-MAX_RAD, Math.min(MAX_RAD, radX));
      radY = Math.max(-MAX_RAD, Math.min(MAX_RAD, radY));
 
-     // FULL MAPPING (X and Y Equal Power)
+     // FULL MAPPING
      if(Math.abs(g) > 0.5) this.target.x = SPHERE_RADIUS_PX * Math.tan(radX);
      else this.target.x = 0;
 
@@ -314,15 +314,28 @@ class PhysicsController {
  }
 
  updateVisuals(dx, dy) {
+     // 1. SPHERICAL CARD ROTATION
      this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/25}deg)`;
+     
+     // 2. PARALLAX TEXT EFFECT
+     // Shifts text slightly opposite to card movement for depth
+     if(this.qEl) this.qEl.style.transform = `translate(${-dx/8}px, ${-dy/8}px)`;
+
      const d = Math.hypot(dx, dy);
      
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
      
-     // HOVER ZONE (10 Degrees ~= 170px)
+     // 3. TEXT PROJECTION (Hover Zone)
      if(d > 30) {
          const dir = this.dir(dx, dy);
-         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min((d-30)/140, 1);
+         if(this.labels[dir]) {
+             // Opacity Ramp: 0% at 30px -> 100% at 170px (10 Degrees)
+             const opacity = Math.min((d-30)/140, 1);
+             this.labels[dir].style.opacity = opacity;
+             
+             // Scale Ramp: Text grows slightly as it "approaches"
+             this.labels[dir].style.transform = `scale(${0.9 + (opacity * 0.1)})`;
+         }
      }
  }
 
@@ -634,74 +647,36 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 
 /* ================= BOOT ================= */
-// ✅ PATCH 2: MAKE GITHUB THE SINGLE SOURCE OF TRUTH
-async function init() {
+async function init(){
   log("SYSTEM BOOT", "active");
-
-  // PATCH 3: CHECK DATASET VERSION TO PREVENT STALE CACHE
-  const cachedVersion = localStorage.getItem("DATASET_VERSION");
-  if (cachedVersion !== DATASET_VERSION) {
-    localStorage.removeItem(MASTER_KEY);
-    localStorage.setItem("DATASET_VERSION", DATASET_VERSION);
-    log("CACHE PURGED (NEW VERSION)", "primary");
+  
+  // 1. CHECK LOCAL STORAGE
+  const localData = localStorage.getItem(MASTER_KEY);
+  if(localData && localData.length > 10){ 
+      try { 
+          RAW_DATA = JSON.parse(localData); 
+          await new Promise(r=>setTimeout(r,600)); 
+      } catch(e){RAW_DATA=[];} 
   }
-
-  // 1. ALWAYS TRY GITHUB FIRST (AUTHORITATIVE)
-  try {
-    log("SYNCING GITHUB MASTER.JSON", "primary");
-    // no-store forces the browser to fetch fresh data
-    const r = await fetch(GITHUB_RAW_URL, { cache: "no-store" });
-
-    if (r.ok) {
-        RAW_DATA = await r.json();
-        // UPDATE CACHE WITH LATEST
-        localStorage.setItem(MASTER_KEY, JSON.stringify(RAW_DATA));
-        log(`LIVE DATA LINKED (${RAW_DATA.length})`, "active");
-    } else {
-        throw new Error("GitHub fetch failed");
-    }
-
-  } catch (e) {
-    log("GITHUB OFFLINE — USING CACHE", "danger");
-
-    // FALLBACK TO CACHE
-    const local = localStorage.getItem(MASTER_KEY);
-    if (local) {
-      try {
-        RAW_DATA = JSON.parse(local);
-        log(`CACHE RESTORED (${RAW_DATA.length})`, "active");
-      } catch {
-        RAW_DATA = [];
-      }
-    }
+  
+  // 2. FETCH FROM GITHUB IF LOCAL EMPTY
+  if(!RAW_DATA.length){ 
+      try{
+          log("FETCHING GITHUB...", "primary");
+          const r = await fetch(GITHUB_RAW_URL); 
+          if(r.ok) RAW_DATA = await r.json();
+      }catch(e){
+          log("FETCH ERROR", "danger");
+      } 
   }
+  
+  RAW_DATA = RAW_DATA.map(d=>({
+      id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
+      q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
+      logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", step1:d.s1||d.step1||"", step2:d.s2||d.step2||""
+  })).filter(d=>d.id&&d.q&&d.u);
 
-  // 2. HARD FAIL IF NO DATA
-  if (!RAW_DATA || !RAW_DATA.length) {
-    log("FATAL: NO DATA SOURCE", "danger");
-    card("NO DATA AVAILABLE\nCHECK GITHUB LINK", { down: "RETRY" }, () => location.reload());
-    return;
-  }
-
-  // 3. NORMALIZE DATA SHAPE
-  // ✅ UPDATED FILTER: Only checks 'd.id' to ensure ALL units load, solving "0 UNITS" bug
-  RAW_DATA = RAW_DATA.map(d => ({
-    id: d.id,
-    set: d.set || "DEFAULT",
-    dom: d.dom || "GEN",
-    topic: d.topic || "",
-    q: d.q,
-    u: d.u,
-    l: d.l,
-    r: d.r,
-    correct: d.correct,
-    logic: d.logic || "",
-    hint: d.hint || "",
-    trap: d.trap || "",
-    step1: d.s1 || d.step1 || "",
-    step2: d.s2 || d.step2 || ""
-  })).filter(d => d.id); 
-
+  if(!RAW_DATA.length){ log("DATA ERROR", "active"); card("NO DATA FOUND", {down:"RETRY"}, ()=>location.reload()); return; }
   begin();
 }
 init();
