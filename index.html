@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v146.3 PENDULUM</title>
+<title>Alchemist | Kinetic v146.4 SPHERICAL CLICK</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -87,13 +87,13 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING PENDULUM CORE...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING SPHERICAL CLICK...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v146.3 PENDULUM
+   VIA.STACK | KINETIC v146.4 SPHERICAL CLICK
    ========================================= */
 
 // --- CONFIGURATION ---
@@ -102,11 +102,12 @@ const WA_NUMBER = "919876543210";
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
 
-// --- PENDULUM PHYSICS CONFIG ---
-const BALL_WEIGHT = 0.08;    // Inertia Factor (Lower = Heavier/Smoother)
-const SPHERE_RADIUS_PX = 1000; // Virtual Sphere Radius
-const COMMIT_ANGLE_DEG = 10;  // 1️⃣ PATCH: Increased to 10 degrees
-const UNLOCK_ANGLE_DEG = 2.0; // Precision required to unlock
+// --- SPHERICAL PHYSICS CONFIG ---
+const BALL_WEIGHT = 0.08;
+const SPHERE_RADIUS_PX = 1000; 
+const HOVER_ANGLE_DEG = 10; // "Mouse Hover" Zone
+const CLICK_ANGLE_DEG = 15; // "Mouse Click" Trigger
+const UNLOCK_ANGLE_DEG = 2.0;
 
 let SENSORS_ENABLED = false;
 
@@ -200,16 +201,13 @@ class PhysicsController {
      if(this.active || this.locked) return; 
 
      // HEAVY LERP (Ball Weight)
-     // Moves gradually towards the tilt target
      this.current.x += (this.target.x - this.current.x) * BALL_WEIGHT;
      this.current.y += (this.target.y - this.current.y) * BALL_WEIGHT;
 
      // RE-CENTER CHECK (Angular Unlock)
      if(this.awaitingRecenter && SENSORS_ENABLED) {
-         // Check if raw tilt is basically flat (Dead Still)
          const tiltMag = Math.hypot(this.target.x, this.target.y);
          const unlockThresh = SPHERE_RADIUS_PX * Math.tan(UNLOCK_ANGLE_DEG * Math.PI / 180);
-         
          if(tiltMag < unlockThresh) this.unlockCard();
      }
 
@@ -217,12 +215,17 @@ class PhysicsController {
      if(!this.awaitingRecenter) {
          this.updateVisuals(this.current.x, this.current.y);
          
-         // MOBILE COMMIT (2️⃣ PATCH: Pendulum Lock - X Axis Only)
+         // MOBILE COMMIT LOGIC (The "Click")
          if(SENSORS_ENABLED) {
-             const commitThresh = SPHERE_RADIUS_PX * Math.tan(COMMIT_ANGLE_DEG * Math.PI / 180);
+             const hoverThresh = SPHERE_RADIUS_PX * Math.tan(HOVER_ANGLE_DEG * Math.PI / 180);
+             const clickThresh = SPHERE_RADIUS_PX * Math.tan(CLICK_ANGLE_DEG * Math.PI / 180);
              
-             // Only X-Axis movement can trigger the animation
-             if(Math.abs(this.current.x) > commitThresh) {
+             // 1. VISUAL HOVER LOCK (10 Degrees)
+             // This doesn't stop physics, but visual feedback implies "Selected"
+             // (Handled in updateVisuals opacity)
+
+             // 2. CLICK TRIGGER (15 Degrees - X Axis Only)
+             if(Math.abs(this.current.x) > clickThresh) {
                  this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
              }
          }
@@ -231,7 +234,7 @@ class PhysicsController {
      this.raf = requestAnimationFrame(this.loop);
  }
 
- // --- 1. MOUSE LOGIC (Desktop - Unchanged) ---
+ // --- 1. MOUSE LOGIC (Desktop) ---
  handleMouseTether(e) {
      if(this.active || this.locked) return; 
      const cx = window.innerWidth / 2;
@@ -247,27 +250,26 @@ class PhysicsController {
      }
  }
 
- // --- 2. LIGHTHOUSE GYRO LOGIC (Mobile) ---
+ // --- 2. SPHERICAL GYRO LOGIC (Mobile) ---
  handleOrientation(event) {
      if(this.active || this.locked) return;
 
-     let g = event.gamma; // Roll (Left/Right)
-     let b = event.beta - 45; // Pitch (Up/Down)
+     let g = event.gamma; 
+     let b = event.beta - 45; 
 
-     // Convert Degrees to Radians
      let radX = (g * Math.PI) / 180;
      let radY = (b * Math.PI) / 180;
 
-     // 3️⃣ PATCH: Clamp Swing to ±10° (Hard Mechanical Stop)
-     const MAX_RAD = 10 * Math.PI / 180;
+     // CLAMP SWING (The "Click" Limit)
+     // Allow up to 20 degrees so user can "push through" to click
+     const MAX_RAD = 20 * Math.PI / 180;
      radX = Math.max(-MAX_RAD, Math.min(MAX_RAD, radX));
 
-     // X MAPPING (Lighthouse / Tan Projection)
+     // X MAPPING
      if(Math.abs(g) > 0.5) this.target.x = SPHERE_RADIUS_PX * Math.tan(radX);
      else this.target.x = 0;
 
-     // 4️⃣ PATCH: Y MAPPING (Damping 0.15)
-     // Y acts only as micro-feedback/gravity, never controls the swipe
+     // Y MAPPING (Damped)
      this.target.y = SPHERE_RADIUS_PX * Math.sin(radY) * 0.15;
  }
 
@@ -311,10 +313,13 @@ class PhysicsController {
      const d = Math.hypot(dx, dy);
      
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
-     if(d > 20) {
+     
+     // 1. HOVER ZONE (10 Degrees ~= 170px)
+     // Fades in text to indicate "Selection"
+     if(d > 30) {
          const dir = this.dir(dx, dy);
-         // Fade in Text Labels (0 to 1 opacity)
-         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min((d-20)/50, 1);
+         // Map 30px-170px range to 0-1 opacity
+         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min((d-30)/140, 1);
      }
  }
 
