@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v145.5 LIVE</title>
+<title>Alchemist | Kinetic v145.5 FINAL</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -36,11 +36,27 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 }
 #gyro-status.active { opacity: 1; color: var(--gold); border-color: var(--gold); }
 
+/* RE-CENTERING HINT */
+#center-hint {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: var(--font-sans); font-size: 0.8rem; color: var(--text-grey);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50;
+    text-transform: uppercase; letter-spacing: 2px;
+}
+#center-hint.visible { opacity: 0.5; }
+
 /* PHYSICS STACK */
 #stack{position:relative; width:90%; max-width:420px; height:calc(100vh - 220px - env(safe-area-inset-bottom)); margin:10px auto 20px; perspective:1500px; display:flex; align-items:center; justify-content:center;}
-.card{position:absolute; width:100%; height:100%; background:var(--card); border-radius:14px; border:1px solid var(--border); padding:35px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 20px 60px rgba(0,0,0,0.95); will-change:transform; transform-style:preserve-3d; overflow:hidden;}
+.card{
+    position:absolute; width:100%; height:100%; background:var(--card); 
+    border-radius:14px; border:1px solid var(--border); padding:35px; 
+    display:flex; flex-direction:column; justify-content:center; align-items:center; 
+    box-shadow:0 20px 60px rgba(0,0,0,0.95); 
+    will-change: transform; /* SMOOTHING UPGRADE */
+    transform-style:preserve-3d; overflow:hidden;
+}
 
-/* LOCKED STATE (No Text, Just Visual Damping) */
+/* LOCKED STATE VISUAL */
 .card.locked { opacity: 0.2; transform: scale(0.96); transition: opacity 0.3s, transform 0.3s; filter: grayscale(100%); }
 
 .card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
@@ -53,8 +69,7 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 <body>
 
 <div id="gyro-status">HYBRID SENSORS READY</div>
-
-<div id="header">
+<div id="center-hint"></div> <div id="header">
   <div class="header-meta">
     <span id="id-ui">VIA.STACK</span> 
     <span id="xp-ui">0 XP</span>
@@ -86,10 +101,10 @@ const MASTER_KEY = "ALCHEMIST_MASTER_V1";
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
 
 // --- SENSOR CONFIG ---
-const GYRO_SENSITIVITY = 15;
+const GYRO_SENSITIVITY = 6; // Reduced from 15 for "Mouse-Like" Weight
 const MOUSE_THRESHOLD_PX = 80; 
 const RECENTER_ZONE = 40; 
-const GYRO_THRESHOLD_DEG = 25; 
+const GYRO_THRESHOLD_DEG = 20; // Adjusted for lower sensitivity
 const GYRO_RECENTER_DEG = 5; 
 let SENSORS_ENABLED = false;
 
@@ -131,10 +146,11 @@ class PhysicsController {
   
   this.start = {x:0, y:0};
   this.mouseTilt = {x:0, y:0}; 
+  this.centerHint = document.getElementById("center-hint");
   
   this.labels = {UP:el.querySelector(".sl-up"), LEFT:el.querySelector(".sl-left"), RIGHT:el.querySelector(".sl-right"), DOWN:el.querySelector(".sl-down")};
   
-  // LOCK VISUAL (No Text)
+  // LOCK VISUAL
   this.el.classList.add('locked');
   
   // TOUCH LISTENERS
@@ -144,7 +160,7 @@ class PhysicsController {
   el.addEventListener("mousedown",s); window.addEventListener("mousemove",m); window.addEventListener("mouseup",e2);
   el.addEventListener("touchstart",s,{passive:false}); el.addEventListener("touchmove",ev=>{if(this.active)ev.preventDefault();m(ev)},{passive:false}); el.addEventListener("touchend",e2);
 
-  // SENSOR LISTENERS (Conditional)
+  // SENSOR LISTENERS
   if(SENSORS_ENABLED && sensorsActive) {
       this.handleMouseTether = this.handleMouseTether.bind(this);
       this.handleMouseCommit = this.handleMouseCommit.bind(this);
@@ -154,7 +170,6 @@ class PhysicsController {
       window.addEventListener("mousedown", this.handleMouseCommit);
       if(window.DeviceOrientationEvent) window.addEventListener("deviceorientation", this.handleOrientation);
   } else {
-      // If sensors inactive (Report Slide), remove lock immediately
       this.unlockCard();
   }
  }
@@ -163,6 +178,7 @@ class PhysicsController {
      if(!this.awaitingRecenter) return;
      this.awaitingRecenter = false;
      this.el.classList.remove('locked');
+     this.centerHint.classList.remove('visible');
  }
 
  // --- 1. MOUSE LOGIC ---
@@ -177,6 +193,7 @@ class PhysicsController {
 
      if(this.awaitingRecenter) {
          if(dist < RECENTER_ZONE) this.unlockCard();
+         else this.centerHint.classList.add('visible');
          return; 
      }
 
@@ -204,12 +221,14 @@ class PhysicsController {
 
      if(this.awaitingRecenter) {
          if(Math.abs(g) < GYRO_RECENTER_DEG && Math.abs(b) < GYRO_RECENTER_DEG) this.unlockCard();
+         else this.centerHint.classList.add('visible');
          return;
      }
 
+     // SMOOTHED GYRO MAPPING
      let dx = 0, dy = 0;
-     if(Math.abs(g) > 5) dx = g * GYRO_SENSITIVITY;
-     if(Math.abs(b) > 5) dy = b * GYRO_SENSITIVITY;
+     if(Math.abs(g) > 2) dx = g * GYRO_SENSITIVITY;
+     if(Math.abs(b) > 2) dy = b * GYRO_SENSITIVITY;
 
      this.updateVisuals(dx, dy);
 
@@ -223,7 +242,7 @@ class PhysicsController {
      }
  }
 
- // --- ANIMATION & CLEANUP ---
+ // --- ANIMATION ---
  commitWithAnimation(dx, dy) {
      this.locked = true;
      
@@ -243,7 +262,7 @@ class PhysicsController {
      }, 300);
  }
 
- // --- PHYSICAL TOUCH ---
+ // --- TOUCH LOGIC ---
  startDrag(p){ 
      this.active=true; 
      this.unlockCard(); 
@@ -279,7 +298,6 @@ class PhysicsController {
 
 const UI = {stack:document.getElementById("stack"), id:document.getElementById("id-ui"), xp:document.getElementById("xp-ui"), bar:document.getElementById("progress-bar"), gyro:document.getElementById("gyro-status")};
 
-// ADDED: allowSensors FLAG
 function card(text, labels, cb, allowSensors = true) {
  UI.stack.innerHTML=""; const el=document.createElement("div"); el.className="card";
  el.innerHTML=`<div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
@@ -346,12 +364,10 @@ function openVault(index){
     if(index >= VAULT.length) index = VAULT.length - 1;
 
     const item = VAULT[index];
-    const isNewest = (index === 0);
-    const isOldest = (index === VAULT.length - 1);
     
     log(`ARCHIVE: ${item.id}`, "primary");
     card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
-        { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
+        { up: "OPEN PDF", left: "PREV", right: "NEXT" }, // Removed circular menu nav for clarity
         dir => {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT") openVault(index + 1);
@@ -359,7 +375,7 @@ function openVault(index){
                 log("OPENING ARCHIVE...", "active");
                 renderSessionPDF(item.data, item.id);
             }
-        }
+        }, false // Disable Sensors in Vault
     );
 }
 
