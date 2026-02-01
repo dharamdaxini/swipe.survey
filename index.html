@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Alchemist | Kinetic v145.5 FINAL</title>
+<title>Alchemist | Kinetic v146.0 LIGHTHOUSE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -52,24 +52,26 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
     border-radius:14px; border:1px solid var(--border); padding:35px; 
     display:flex; flex-direction:column; justify-content:center; align-items:center; 
     box-shadow:0 20px 60px rgba(0,0,0,0.95); 
-    will-change: transform; /* SMOOTHING UPGRADE */
+    will-change: transform; 
     transform-style:preserve-3d; overflow:hidden;
 }
 
-/* LOCKED STATE VISUAL */
+/* LOCKED STATE */
 .card.locked { opacity: 0.2; transform: scale(0.96); transition: opacity 0.3s, transform 0.3s; filter: grayscale(100%); }
 
 .card-q{font-family:var(--font-serif); font-size:clamp(1.4rem, 5vw, 1.9rem); line-height:1.4; font-weight:600; text-align:center; color:var(--text-white); width:100%; max-height:100%; overflow-y:auto; word-wrap:break-word; padding:0 5px; display:flex; flex-direction:column; justify-content:center;}
 .card-q::-webkit-scrollbar{width:0px;} 
 .card-q sub{font-size:0.7em; vertical-align:-0.3em;} .card-q sup{font-size:0.7em; vertical-align:0.5em;}
 
-.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#000; font-family:var(--font-sans); font-weight:900; font-size:1.8rem; text-transform:uppercase; letter-spacing:1px; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.15s ease; border-radius:14px; color:var(--text-grey); border:1px solid #333;}
+.swipe-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); font-family:var(--font-sans); font-weight:900; font-size:1.8rem; text-transform:uppercase; letter-spacing:1px; text-align:center; padding:40px; opacity:0; pointer-events:none; transition:opacity 0.15s ease; border-radius:14px; color:var(--text-white); border:1px solid #333; z-index:10;}
 </style>
 </head>
 <body>
 
 <div id="gyro-status">HYBRID SENSORS READY</div>
-<div id="center-hint"></div> <div id="header">
+<div id="center-hint"></div> 
+
+<div id="header">
   <div class="header-meta">
     <span id="id-ui">VIA.STACK</span> 
     <span id="xp-ui">0 XP</span>
@@ -85,13 +87,13 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING v145.5...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING LIGHTHOUSE PHYSICS...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v145.5 FINAL
+   VIA.STACK | KINETIC v146.0 LIGHTHOUSE
    ========================================= */
 
 // --- CONFIGURATION ---
@@ -100,12 +102,12 @@ const WA_NUMBER = "919876543210";
 const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
 
-// --- SENSOR CONFIG ---
-const GYRO_SENSITIVITY = 6; // Reduced from 15 for "Mouse-Like" Weight
+// --- LIGHTHOUSE PHYSICS CONFIG (Cone Model) ---
+const CONE_HEIGHT_PX = 600; // Virtual distance from screen (The Lighthouse Height)
+const CONE_ANGLE_LIMIT = 10; // Degrees (The Limit)
+const BALL_INERTIA = 0.15;   // 0.1 = Very Heavy, 0.5 = Light. 0.15 is "Ball in Hand".
 const MOUSE_THRESHOLD_PX = 80; 
 const RECENTER_ZONE = 40; 
-const GYRO_THRESHOLD_DEG = 20; // Adjusted for lower sensitivity
-const GYRO_RECENTER_DEG = 5; 
 let SENSORS_ENABLED = false;
 
 // --- STATE ---
@@ -144,9 +146,9 @@ class PhysicsController {
   this.locked = false; 
   this.awaitingRecenter = true; 
   
-  this.start = {x:0, y:0};
-  this.mouseTilt = {x:0, y:0}; 
-  this.centerHint = document.getElementById("center-hint");
+  // Physics Vectors
+  this.current = {x:0, y:0}; // The "Ball" actual position
+  this.target = {x:0, y:0};  // The "Hand" tilt target
   
   this.labels = {UP:el.querySelector(".sl-up"), LEFT:el.querySelector(".sl-left"), RIGHT:el.querySelector(".sl-right"), DOWN:el.querySelector(".sl-down")};
   
@@ -162,13 +164,19 @@ class PhysicsController {
 
   // SENSOR LISTENERS
   if(SENSORS_ENABLED && sensorsActive) {
+      // Desktop
       this.handleMouseTether = this.handleMouseTether.bind(this);
       this.handleMouseCommit = this.handleMouseCommit.bind(this);
-      this.handleOrientation = this.handleOrientation.bind(this);
-      
       window.addEventListener("mousemove", this.handleMouseTether);
       window.addEventListener("mousedown", this.handleMouseCommit);
+      
+      // Mobile
+      this.handleOrientation = this.handleOrientation.bind(this);
       if(window.DeviceOrientationEvent) window.addEventListener("deviceorientation", this.handleOrientation);
+      
+      // INERTIA LOOP (The "Ball" Physics)
+      this.loop = this.loop.bind(this);
+      this.raf = requestAnimationFrame(this.loop);
   } else {
       this.unlockCard();
   }
@@ -178,77 +186,89 @@ class PhysicsController {
      if(!this.awaitingRecenter) return;
      this.awaitingRecenter = false;
      this.el.classList.remove('locked');
-     this.centerHint.classList.remove('visible');
  }
 
- // --- 1. MOUSE LOGIC ---
- handleMouseTether(e) {
-     if(this.active || this.locked) return; 
-     
-     const cx = window.innerWidth / 2;
-     const cy = window.innerHeight / 2;
-     const dx = (e.clientX - cx);
-     const dy = (e.clientY - cy);
-     const dist = Math.hypot(dx, dy);
+ cleanup() {
+     cancelAnimationFrame(this.raf);
+     window.removeEventListener("mousemove", this.handleMouseTether);
+     window.removeEventListener("mousedown", this.handleMouseCommit);
+     window.removeEventListener("deviceorientation", this.handleOrientation);
+ }
 
+ // --- PHYSICS LOOP (The Smoothness) ---
+ loop() {
+     if(this.active || this.locked) return; // Physics paused during interaction/lock
+
+     // LERP: Move Current towards Target
+     // This creates the "Weight"
+     this.current.x += (this.target.x - this.current.x) * BALL_INERTIA;
+     this.current.y += (this.target.y - this.current.y) * BALL_INERTIA;
+
+     // RE-CENTER CHECK
      if(this.awaitingRecenter) {
+         const dist = Math.hypot(this.current.x, this.current.y);
          if(dist < RECENTER_ZONE) this.unlockCard();
-         else this.centerHint.classList.add('visible');
-         return; 
      }
 
-     this.mouseTilt = {x: dx, y: dy};
-     this.updateVisuals(dx * 0.8, dy * 0.8); 
+     // UPDATE VISUALS
+     if(!this.awaitingRecenter) {
+         this.updateVisuals(this.current.x, this.current.y);
+         
+         // LIGHTHOUSE COMMIT CHECK (Cone Edge)
+         // If projected distance exceeds threshold, commit
+         // Threshold = CONE_HEIGHT * tan(10deg) ~= 105px
+         const threshold = CONE_HEIGHT_PX * Math.tan(CONE_ANGLE_LIMIT * Math.PI / 180);
+         
+         // Need slight debounce to prevent instant fire after unlock
+         if(Math.abs(this.current.x) > threshold) this.commitWithAnimation(Math.sign(this.current.x)*100, 0);
+         else if(Math.abs(this.current.y) > threshold) this.commitWithAnimation(0, Math.sign(this.current.y)*100);
+     }
+     
+     this.raf = requestAnimationFrame(this.loop);
+ }
+
+ // --- 1. MOUSE LOGIC (Desktop) ---
+ handleMouseTether(e) {
+     if(this.active || this.locked) return; 
+     const cx = window.innerWidth / 2;
+     const cy = window.innerHeight / 2;
+     // Direct mapping for mouse
+     this.target.x = (e.clientX - cx) * 0.8;
+     this.target.y = (e.clientY - cy) * 0.8;
  }
 
  handleMouseCommit(e) {
      if(this.active || this.locked || this.awaitingRecenter) return;
-     
-     const dx = this.mouseTilt.x;
-     const dy = this.mouseTilt.y;
-     
-     if(Math.abs(dx) > MOUSE_THRESHOLD_PX || Math.abs(dy) > MOUSE_THRESHOLD_PX) {
-         this.commitWithAnimation(dx, dy);
+     if(Math.abs(this.target.x) > MOUSE_THRESHOLD_PX || Math.abs(this.target.y) > MOUSE_THRESHOLD_PX) {
+         this.commitWithAnimation(this.target.x, this.target.y);
      }
  }
 
- // --- 2. DEVICE GYRO LOGIC ---
+ // --- 2. LIGHTHOUSE GYRO LOGIC (Mobile) ---
  handleOrientation(event) {
      if(this.active || this.locked) return;
 
-     let g = event.gamma; 
-     let b = event.beta - 45; 
+     let g = event.gamma; // X Tilt
+     let b = event.beta - 45; // Y Tilt (Calibrated)
 
-     if(this.awaitingRecenter) {
-         if(Math.abs(g) < GYRO_RECENTER_DEG && Math.abs(b) < GYRO_RECENTER_DEG) this.unlockCard();
-         else this.centerHint.classList.add('visible');
-         return;
-     }
+     // THE LIGHTHOUSE MATH: Distance = Height * tan(Angle)
+     // Convert deg to rad
+     let radX = (g * Math.PI) / 180;
+     let radY = (b * Math.PI) / 180;
 
-     // SMOOTHED GYRO MAPPING
-     let dx = 0, dy = 0;
-     if(Math.abs(g) > 2) dx = g * GYRO_SENSITIVITY;
-     if(Math.abs(b) > 2) dy = b * GYRO_SENSITIVITY;
+     // Calculate Projection
+     // Deadzone of 2 degrees for stability
+     if(Math.abs(g) > 2) this.target.x = CONE_HEIGHT_PX * Math.tan(radX);
+     else this.target.x = 0;
 
-     this.updateVisuals(dx, dy);
-
-     if (g > GYRO_THRESHOLD_DEG || g < -GYRO_THRESHOLD_DEG || b < -GYRO_THRESHOLD_DEG || b > GYRO_THRESHOLD_DEG) {
-         if(!this.gyroDebounce) {
-             this.gyroDebounce = setTimeout(() => this.commitWithAnimation(dx, dy), 200);
-         }
-     } else {
-         clearTimeout(this.gyroDebounce);
-         this.gyroDebounce = null;
-     }
+     if(Math.abs(b) > 2) this.target.y = CONE_HEIGHT_PX * Math.tan(radY);
+     else this.target.y = 0;
  }
 
  // --- ANIMATION ---
  commitWithAnimation(dx, dy) {
      this.locked = true;
-     
-     window.removeEventListener("mousemove", this.handleMouseTether);
-     window.removeEventListener("mousedown", this.handleMouseCommit);
-     window.removeEventListener("deviceorientation", this.handleOrientation);
+     this.cleanup(); // Stop physics loop
      
      const flyX = dx * 6;
      const flyY = dy * 6;
@@ -283,10 +303,13 @@ class PhysicsController {
  updateVisuals(dx, dy) {
      this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/25}deg)`;
      const d = Math.hypot(dx, dy);
+     
+     // Update Text Opacity based on distance
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
      if(d > 30) {
          const dir = this.dir(dx, dy);
-         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min(d/80, 1);
+         // Map 30px-100px range to 0-1 opacity
+         if(this.labels[dir]) this.labels[dir].style.opacity = Math.min((d-30)/70, 1);
      }
  }
 
@@ -367,7 +390,7 @@ function openVault(index){
     
     log(`ARCHIVE: ${item.id}`, "primary");
     card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
-        { up: "OPEN PDF", left: "PREV", right: "NEXT" }, // Removed circular menu nav for clarity
+        { up: "OPEN PDF", left: "PREV", right: "NEXT" }, 
         dir => {
             if(dir === "LEFT") openVault(index - 1);
             if(dir === "RIGHT") openVault(index + 1);
