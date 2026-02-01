@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,9 +28,14 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 .log-line.primary{color:var(--gold); opacity:1; font-weight:700;}
 .log-line.danger{color:var(--red); opacity:1; font-weight:700;}
 
-/* GYRO UI INDICATOR */
-#gyro-status { position: absolute; top: 25px; left: 50%; transform: translateX(-50%); font-family: var(--font-code); font-size: 0.65rem; color: #444; border: 1px solid #333; padding: 4px 8px; border-radius: 4px; z-index: 101; display: none; }
-#gyro-status.active { color: var(--gold); border-color: var(--gold); display: block; }
+/* GYRO STATUS PILL */
+#gyro-status { 
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+    font-family: var(--font-code); font-size: 0.6rem; color: #444; 
+    border: 1px solid #333; padding: 4px 8px; border-radius: 4px; 
+    opacity: 0; transition: opacity 0.5s; pointer-events: none;
+}
+#gyro-status.active { opacity: 1; color: var(--gold); border-color: var(--gold); }
 
 /* PHYSICS STACK */
 #stack{position:relative; width:90%; max-width:420px; height:calc(100vh - 220px - env(safe-area-inset-bottom)); margin:10px auto 20px; perspective:1500px; display:flex; align-items:center; justify-content:center;}
@@ -43,7 +49,7 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 </head>
 <body>
 
-<div id="gyro-status">GYRO ACTIVE</div>
+<div id="gyro-status">GYRO ON</div>
 
 <div id="header">
   <div class="header-meta">
@@ -55,39 +61,48 @@ body{margin:0; height:100vh; background:var(--bg); color:var(--text-white); font
 
 <div id="kinetic-logger">
   <div class="log-line" id="log-1">> SYSTEM BOOT</div>
-  <div class="log-line" id="log-2">> GYRO SENSORS: STANDBY</div>
+  <div class="log-line" id="log-2">> WAITING FOR DATA</div>
   <div class="log-line active" id="log-3">> ...</div>
 </div>
 
 <div id="stack">
   <div class="card">
-    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING GYRO PHYSICS...</div>
+    <div class="card-q" style="font-family:var(--font-code); font-size:0.9rem; color:#666; font-style:normal;">INITIALIZING KERNEL v145...</div>
   </div>
 </div>
 
 <script>
 /* =========================================
-   VIA.STACK | KINETIC v145.0 GYRO
+   VIA.STACK | KINETIC v145.0 GYRO EDITION
    ========================================= */
 
-const CONFIG = {
-    BEACON: "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec",
-    GITHUB: "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json",
-    TILT_SENSITIVITY: 12, // Pixels per degree
-    TILT_DEADZONE: 5,     // Ignore small shakes
-    TILT_COMMIT: 25       // Degrees to trigger swipe
-};
+// --- CONFIGURATION ---
+const BEACON_URL = "https://script.google.com/macros/s/AKfycbwV8ALtVlLe31BcEi6AIq7MBNlu498vzU-kNpvaHl1zCafZVpffJe-1NtYkJtEKCT8m/exec"; 
+const WA_NUMBER = "919876543210"; 
+const MASTER_KEY = "ALCHEMIST_MASTER_V1"; 
+const GITHUB_RAW_URL = "https://raw.githubusercontent.com/dharamdaxini/swipe.survey/a02e6e66410562062a98e8f96183aec7227a5819/master.json";
+
+// --- GYRO CONFIG ---
+const TILT_SENSITIVITY = 15; // Movement pixels per degree
+const TILT_THRESHOLD = 25;   // Degrees to trigger swipe
+let GYRO_ENABLED = false;
 
 // --- STATE ---
-let RAW_DATA=[], POOL=[], SESSION_ALL=[], XP=0, VOLUME_LIMIT=null;
-let GYRO_ENABLED = false;
-let BASE_ORIENTATION = { alpha:0, beta:0, gamma:0 }; // Calibration point
+let RAW_DATA = [], POOL = [], WRONG = [], SESSION_ALL = [];
+let SET_CURSOR = 0, ACTIVE_SET = null, XP = 0, VOLUME_LIMIT = null;
+let ATTEMPTED = new Set(); 
+
+// --- TELEMETRY STATE ---
+let Q_START_TIME = 0;
+let SESSION_LOG = []; 
+let PIVOT_COUNT = 0;
 
 // --- BACKEND STATE ---
-let USER_MOBILE = localStorage.getItem("USER_MOBILE");
-let CREDITS = parseFloat(localStorage.getItem("K1_CREDITS") || "10.0");
-let DUMPS = parseInt(localStorage.getItem("K1_DUMPS") || "0");
-let VAULT = []; try { VAULT = JSON.parse(localStorage.getItem("K1_VAULT") || "[]"); } catch(e){}
+let USER_MOBILE = localStorage.getItem("USER_MOBILE") || null;
+let CURRENT_SES_ID = null;
+let CREDITS = parseInt(localStorage.getItem("USER_CREDITS") || "10");
+let VAULT = [];
+try { VAULT = JSON.parse(localStorage.getItem("USER_VAULT") || "[]"); } catch(e) { VAULT = []; }
 
 /* ================= UTILS ================= */
 function log(msg, type="normal") {
@@ -98,7 +113,7 @@ function log(msg, type="normal") {
     l3.className = type === "active" ? "log-line active" : type === "primary" ? "log-line primary" : type === "danger" ? "log-line danger" : "log-line";
 }
 
-/* ================= PHYSICS & GYRO ENGINE ================= */
+/* ================= PHYSICS & GYRO CONTROLLER ================= */
 const chemText = t => String(t||"").replace(/_(\d+)/g,"<sub>$1</sub>").replace(/\^([0-9+\-]+)/g,"<sup>$1</sup>").replace(/<->|↔/g,"⇌");
 
 class PhysicsController {
@@ -125,28 +140,27 @@ class PhysicsController {
 
  // --- GYRO LOGIC ---
  handleOrientation(event) {
-     if(this.active || this.gyroLocked) return; // Touch overrides tilt
+     if(this.active || this.gyroLocked) return;
+
+     // Gamma: Left/Right tilt (-90 to 90)
+     // Beta: Front/Back tilt (-180 to 180). Calibrated approx 45deg holding angle.
+     let g = event.gamma; 
+     let b = event.beta - 45; // Normalize relative to holding position
 
      let dx = 0, dy = 0;
      
-     // Gamma (Left/Right Tilt): -90 to 90
-     let g = event.gamma; 
-     if(Math.abs(g) > CONFIG.TILT_DEADZONE) dx = g * CONFIG.TILT_SENSITIVITY;
+     // Deadzone filter (ignore small shakes)
+     if(Math.abs(g) > 5) dx = g * TILT_SENSITIVITY;
+     if(Math.abs(b) > 5) dy = b * TILT_SENSITIVITY;
 
-     // Beta (Front/Back Tilt): -180 to 180. Beta < 90 is upright.
-     // Calibrate: 45deg is comfortable holding position.
-     // Tilt Forward (Top away) -> Beta decreases -> UP Swipe
-     // Tilt Back (Top towards) -> Beta increases -> DOWN Swipe
-     let b = event.beta - 45; // Normalize to holding angle
-     if(Math.abs(b) > CONFIG.TILT_DEADZONE) dy = b * CONFIG.TILT_SENSITIVITY;
-
+     // Update visual physics
      this.updateVisuals(dx, dy);
 
-     // GYRO COMMIT CHECK
-     if (g > CONFIG.TILT_COMMIT) this.gyroCommit("RIGHT");
-     else if (g < -CONFIG.TILT_COMMIT) this.gyroCommit("LEFT");
-     else if (b < -CONFIG.TILT_COMMIT) this.gyroCommit("UP");
-     else if (b > CONFIG.TILT_COMMIT) this.gyroCommit("DOWN");
+     // Commit Check
+     if (g > TILT_THRESHOLD) this.gyroCommit("RIGHT");
+     else if (g < -TILT_THRESHOLD) this.gyroCommit("LEFT");
+     else if (b < -TILT_THRESHOLD) this.gyroCommit("UP");
+     else if (b > TILT_THRESHOLD) this.gyroCommit("DOWN");
  }
 
  gyroCommit(dir) {
@@ -170,7 +184,7 @@ class PhysicsController {
 
  // --- SHARED VISUALS ---
  updateVisuals(dx, dy) {
-     this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/20}deg)`;
+     this.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx/25}deg)`;
      const d = Math.hypot(dx, dy);
      Object.values(this.labels).forEach(l => l && (l.style.opacity = 0));
      if(d > 30) {
@@ -192,17 +206,18 @@ function card(text, labels, cb) {
  el.innerHTML=`<div class="card-q">${chemText(text).replace(/\n/g,"<br>")}</div>
   <div class="swipe-label sl-up">${chemText(labels.up)||""}</div><div class="swipe-label sl-left">${chemText(labels.left)||""}</div><div class="swipe-label sl-right">${chemText(labels.right)||""}</div><div class="swipe-label sl-down">${chemText(labels.down)||""}</div>`;
  UI.stack.appendChild(el); 
+ Q_START_TIME = Date.now();
  new PhysicsController(el, {onCommit:cb});
 }
 
 /* ================= APP FLOW ================= */
 function begin(){
- log(USER_MOBILE ? `LOGIN: ${USER_MOBILE} | GYRO: ${GYRO_ENABLED?"ON":"OFF"}` : "GUEST MODE", "normal");
+ if(USER_MOBILE) log(`LOGIN: ${USER_MOBILE} | CREDITS: ${CREDITS}`, "primary");
+ else log("LOGIN: GUEST | CREDITS: " + CREDITS, "normal");
  
- // ADD ENABLE TILT BUTTON IF NOT ACTIVE
  const tiltLabel = GYRO_ENABLED ? "TILT ACTIVE" : "ENABLE TILT";
  
- card(`DATA LOADED\n${RAW_DATA.length} UNITS`, {up:"START QUIZ", down:tiltLabel, left:"VAULT", right:"RELOAD"}, dir => {
+ card(`DATA LOADED\n${RAW_DATA.length} UNITS`,{up:"START QUIZ", down:tiltLabel, left:"VAULT", right:"RELOAD"}, dir=>{
   if(dir==="UP") setPick(); 
   if(dir==="DOWN") requestGyroAccess(); 
   if(dir==="LEFT") checkLoginForVault();
@@ -212,7 +227,7 @@ function begin(){
 
 function requestGyroAccess() {
     // iOS 13+ Permission Request
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
             .then(state => {
                 if (state === 'granted') {
@@ -227,7 +242,7 @@ function requestGyroAccess() {
             })
             .catch(console.error);
     } else {
-        // Non-iOS or older devices (usually auto-granted)
+        // Android/Non-iOS
         GYRO_ENABLED = true;
         UI.gyro.classList.add('active');
         log("GYRO ENABLED", "active");
@@ -235,18 +250,52 @@ function requestGyroAccess() {
     }
 }
 
-// ... [REMAINING FUNCTIONS: checkLoginForVault, openVault, setPick, volumePick, startQuiz, nextQ, etc. from v144 GOLD] ...
-// I will include minimal necessary flow to make it functional immediately.
-
 function checkLoginForVault(){
     if(USER_MOBILE && USER_MOBILE.length > 5){ openVault(0); return; }
-    const mob = prompt("ENTER MOBILE:");
-    if(mob){ localStorage.setItem("USER_MOBILE", mob); USER_MOBILE=mob; openVault(0); } else begin();
+    const mob = prompt("SECURE VAULT ACCESS\n\nEnter your Registered Mobile Number to unlock:");
+    if(mob && mob.length >= 10){
+        localStorage.setItem("USER_MOBILE", mob); USER_MOBILE = mob;
+        log(`LOGIN SUCCESS: ${mob}`, "active"); openVault(0);
+    } else { log("ACCESS DENIED", "danger"); begin(); }
+}
+
+function openVault(index){
+    if(VAULT.length === 0){ 
+        card("LOCAL ARCHIVE EMPTY\n\nRecover from Cloud?", {down:"WHATSAPP", up:"MENU"}, dir => {
+            if(dir==="DOWN") {
+                const lastSes = localStorage.getItem("LAST_SES_ID") || "UNKNOWN";
+                const text = `VAULT_RECOVERY || MOB: ${USER_MOBILE || "UNKNOWN"} || LAST_ID: ${lastSes}`;
+                window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`, '_blank');
+            }
+            else begin();
+        });
+        return; 
+    }
+    if(index < 0) { begin(); return; } 
+    if(index >= VAULT.length) index = VAULT.length - 1;
+
+    const item = VAULT[index];
+    const isNewest = (index === 0);
+    const isOldest = (index === VAULT.length - 1);
+    
+    log(`ARCHIVE: ${item.id}`, "primary");
+    card(`VAULT // ${item.id}\n\nSCORE: ${item.score}/${item.total}\n${item.date}`,
+        { up: "OPEN PDF", left: isNewest ? "MENU" : "PREV", right: isOldest ? "" : "NEXT" },
+        dir => {
+            if(dir === "LEFT") openVault(index - 1);
+            if(dir === "RIGHT") openVault(index + 1);
+            if(dir === "UP") {
+                log("OPENING ARCHIVE...", "active");
+                renderSessionPDF(item.data, item.id);
+            }
+        }
+    );
 }
 
 function setPick(){
  const sets=[...new Set(RAW_DATA.map(d=>d.set))];
- card(sets[SET_CURSOR],{left:"<",right:">",up:"SELECT",down:"BACK"},dir=>{
+ if(sets.length===0){card("NO DATA FOUND",{down:"RETRY"},()=>location.reload());return;}
+ card(sets[SET_CURSOR],{left:"",right:"",up:"SELECT",down:"BACK"},dir=>{
   if(dir==="LEFT"){SET_CURSOR=(SET_CURSOR-1+sets.length)%sets.length;setPick();}
   if(dir==="RIGHT"){SET_CURSOR=(SET_CURSOR+1)%sets.length;setPick();}
   if(dir==="UP"){ACTIVE_SET=sets[SET_CURSOR];volumePick();}
@@ -255,54 +304,241 @@ function setPick(){
 }
 
 function volumePick(){
- card("SELECT VOLUME", {up:"10", left:"20", right:"30", down:"ALL"}, dir=>{ startQuiz(); });
+ card(`QUESTION VOLUME`,{up:"10 Q",left:"25 Q",right:"50 Q",down:"ALL"},dir=>{
+    if(dir==="UP")VOLUME_LIMIT=10; if(dir==="LEFT")VOLUME_LIMIT=25; if(dir==="RIGHT")VOLUME_LIMIT=50; if(dir==="DOWN")VOLUME_LIMIT=null;
+    startQuiz();
+ });
 }
 
 function startQuiz(){
+ log("INITIATING QUIZ...", "active");
  let base = RAW_DATA.filter(d=>d.set===ACTIVE_SET);
- POOL = base; XP=0; SESSION_ALL=[];
+ base = shuffle(base); 
+ if(VOLUME_LIMIT && VOLUME_LIMIT < base.length) base = base.slice(0, VOLUME_LIMIT);
+ POOL=base; WRONG=[]; SESSION_ALL=[]; XP=0; ATTEMPTED=new Set();
+ CURRENT_SES_ID = null; SES_BEACON_SENT = false; 
+ SESSION_LOG = []; PIVOT_COUNT = 0; // RESET TELEMETRY
  nextQ();
 }
 
 function nextQ(){
- if(!POOL.length) { card("DONE", {down:"MENU"}, ()=>begin()); return; }
- const d = POOL.shift();
- const opts = [d.u, d.l, d.r].sort(()=>Math.random()-0.5);
- 
- card(d.q, {up:opts[0], left:opts[1], right:opts[2]}, dir=>{
-     let picked = null;
-     if(dir==="UP") picked=opts[0]; if(dir==="LEFT") picked=opts[1]; if(dir==="RIGHT") picked=opts[2];
-     const isCorrect = String(picked) === String(d.correct); // Simplified check
-     if(isCorrect) XP++;
-     UI.xp.innerText = `${XP} XP`;
-     nextQ();
+ if(!CURRENT_SES_ID && SESSION_ALL.length > 0 && POOL.length <= SESSION_ALL.length){ generateSessionID(); }
+ if(!POOL.length){ if(WRONG.length){ review(); return; } report(); return; }
+ const d=POOL.shift();
+ log(`ID: ${d.id}`, "normal");
+ if(!SESSION_ALL.includes(d)) SESSION_ALL.push(d); 
+ const opts = shuffle([d.u, d.l, d.r]);
+ const map = { up: opts[0], left: opts[1], right: opts[2] };
+ card(d.q, map, dir=>{
+  let picked = null;
+  if(dir==="UP") picked = map.up; if(dir==="LEFT") picked = map.left; if(dir==="RIGHT") picked = map.right;
+  let c = d.correct; if(c==="UP"||c==="A") c=d.u; else if(c==="LEFT"||c==="B") c=d.l; else if(c==="RIGHT"||c==="R"||c==="C") c=d.r;
+  const isCorrect = String(picked).trim().toLowerCase() === String(c).trim().toLowerCase();
+  
+  // TELEMETRY LOGGING
+  const latency = Date.now() - Q_START_TIME;
+  SESSION_LOG.push({ id: d.id, res: isCorrect ? "WIN" : "LOSS", latency: latency });
+
+  if(!isCorrect){ WRONG.push(d); } else { if(!ATTEMPTED.has(d.id)){ XP+=1; } }
+  ATTEMPTED.add(d.id);
+  UI.xp.textContent=`${XP} / ${SESSION_ALL.length}`;
+  UI.bar.style.width = ((SESSION_ALL.length - POOL.length) / SESSION_ALL.length) * 100 + "%";
+  nextQ();
  });
 }
 
-function openVault(i) {
-    card("VAULT (PLACEHOLDER)", {down:"BACK"}, ()=>begin());
+function review(){
+ if(!WRONG.length){ report(); return; } 
+ const d=WRONG[0]; 
+ log("REVIEW MODE", "primary");
+ log(`HINT: ${d.hint ? "ACTIVE" : "NONE"}`, "active");
+ card(`REVIEW NOTE\n\n${d.logic || "Review the core principles."}`,{up:"RETRY", down:"SKIP"},dir=>{
+    if(dir==="UP"){ WRONG.shift(); POOL.unshift(d); } else { WRONG.shift(); }
+    nextQ();
+ });
 }
+
+function report(){
+ if(!CURRENT_SES_ID) generateSessionID();
+ const percent = Math.round((XP / SESSION_ALL.length) * 100) || 0;
+ const statusText = USER_MOBILE ? `USER: ${USER_MOBILE}` : "GUEST (UNLINKED)";
+ card(`SUMMARY\n\n${XP} / ${SESSION_ALL.length} Correct\n(${percent}%)\n\nID: ${CURRENT_SES_ID}\n${statusText}`,{down:"DOWNLOAD PDF", up:"RESTART", left:"MENU"},dir=>{
+    if(dir==="DOWN") handleDownloadRequest();
+    if(dir==="UP") startQuiz(); 
+    if(dir==="LEFT") begin();
+ });
+}
+
+function handleDownloadRequest(){
+    if(!USER_MOBILE){
+        log("IDENTITY UNLINKED", "danger");
+        const text = `REGISTERING ACCOUNT.\nLINK MY ID: ${CURRENT_SES_ID}`;
+        const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+        card(`ACCOUNT REQUIRED\n\nTo save this PDF, you must link your device.\n\nID: ${CURRENT_SES_ID}`,
+            { up: "LINK VIA WHATSAPP", down: "I HAVE LINKED" },
+            (dir) => {
+                if(dir === "UP") { window.open(url, '_blank'); }
+                if(dir === "DOWN") {
+                    const mob = prompt("ENTER REGISTERED MOBILE (For PDF Stamping):\n\nEnter your mobile number here...");
+                    if(mob && mob.length >= 10) {
+                        localStorage.setItem("USER_MOBILE", mob); USER_MOBILE = mob;
+                        log("IDENTITY LINKED", "active"); report();
+                    } else { log("INVALID INPUT", "normal"); handleDownloadRequest(); }
+                }
+            }
+        );
+        return;
+    }
+    exportSessionPDF();
+}
+
+function exportSessionPDF(data=null, id=null){
+ const renderData = data || SESSION_ALL;
+ const renderID = id || CURRENT_SES_ID;
+ 
+ if(!data){ 
+    if(CREDITS < 1) { log("INSUFFICIENT CREDITS", "danger"); return; }
+    CREDITS--;
+    localStorage.setItem("USER_CREDITS", CREDITS);
+    VAULT.unshift({ id: renderID, date: new Date().toLocaleDateString(), score: XP, total: SESSION_ALL.length, data: [...SESSION_ALL] });
+    localStorage.setItem("USER_VAULT", JSON.stringify(VAULT));
+    log(`UNIT SPENT // BAL: ${CREDITS}`, "primary");
+ }
+
+ log("GENERATING PDF...", "active");
+ const {jsPDF}=window.jspdf; const doc=new jsPDF();
+ const unique=renderData.filter((q,i,self)=>i===self.findIndex(t=>(t.id===q.id)));
+ let y=20; const ML=15; const W=180;
+ const COL_OPT_W=45; const COL_LOG_W=65; const COL_EXE_W=65;
+ const COL_LOG_X=ML+COL_OPT_W+5; const COL_EXE_X=COL_LOG_X+COL_LOG_W+5;
+
+ doc.setFont("times","bold"); doc.setFontSize(16);
+ doc.text(`VIA.STACK // ${renderID}`,105,y,{align:"center"});
+ doc.setFontSize(10); doc.text(`USER: ${USER_MOBILE || "GUEST"}`, 105, y+5, {align:"center"});
+ doc.line(ML,y+8,195,y+8); y+=15;
+
+ unique.forEach((d,i)=>{
+  if(y>240){doc.addPage();y=20;}
+  doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(100);
+  doc.text(`${d.id} // ${d.dom||"GEN"}`,ML,y); y+=5;
+  doc.setFont("times","bold"); doc.setFontSize(12); doc.setTextColor(0);
+  const qLines = doc.splitTextToSize(cleanPDF(d.q),W); doc.text(qLines,ML,y); y+=(qLines.length*5)+3;
+  doc.setDrawColor(200); doc.setLineWidth(0.1); doc.line(ML,y,195,y); y+=5;
+  
+  const startY=y;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("OPTIONS",ML,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(80,80,80); 
+  const optA=`(A) ${cleanPDF(d.u)}`; const optB=`(B) ${cleanPDF(d.l)}`; const optC=`(C) ${cleanPDF(d.r)}`;
+  doc.text(doc.splitTextToSize(optA,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optA,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optB,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optB,COL_OPT_W).length*4+2;
+  doc.text(doc.splitTextToSize(optC,COL_OPT_W),ML,y); y+=doc.splitTextToSize(optC,COL_OPT_W).length*4+2;
+  
+  let maxH=y; y=startY;
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("THEORY",COL_LOG_X,y); y+=4;
+  doc.setFont("times","italic"); doc.setFontSize(9); doc.setTextColor(50);
+  const logT=doc.splitTextToSize(cleanPDF(d.logic||"-"),COL_LOG_W); doc.text(logT,COL_LOG_X,y);
+  if(y+(logT.length*4)>maxH) maxH=y+(logT.length*4);
+  y=startY;
+  
+  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(150); doc.text("EXECUTION",COL_EXE_X,y); y+=4;
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(0);
+  const s1=`1. ${cleanPDF(d.step1||"-")}`; const s2=`2. ${cleanPDF(d.step2||"-")}`;
+  const s1L=doc.splitTextToSize(s1,COL_EXE_W); doc.text(s1L,COL_EXE_X,y); y+=(s1L.length*4)+2;
+  const s2L=doc.splitTextToSize(s2,COL_EXE_W); doc.text(s2L,COL_EXE_X,y);
+  if(y+(s2L.length*4)>maxH) maxH=y+(s2L.length*4);
+  
+  y=maxH+5;
+  if(d.trap){
+   doc.setLineDash([1,1],0); doc.line(ML,y,195,y); doc.setLineDash([]); y+=4;
+   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(200,50,50); doc.text("TRAP:",ML,y);
+   doc.setFont("times","italic"); doc.setTextColor(80); doc.text(cleanPDF(d.trap),ML+35,y); y+=8;
+  } else {y+=5;}
+  y+=5;
+ });
+
+ const fileName = `ALCHEMIST_${renderID}.pdf`;
+ doc.save(fileName);
+
+ // --- 2. UPLOAD DATA ONLY (NO FILE) ---
+ if(!data) {
+     sendTelemetry(); // Sends JSON, not PDF
+ }
+ setTimeout(begin,500);
+}
+
+function sendTelemetry(sid) {
+    if(!BEACON_URL) return;
+    
+    // Calculate Stats
+    const totalLatency = SESSION_LOG.reduce((sum, item) => sum + item.latency, 0);
+    const avgLatency = SESSION_LOG.length > 0 ? Math.round(totalLatency / SESSION_LOG.length) : 0;
+    const accuracy = SESSION_ALL.length > 0 ? Math.round((XP / SESSION_ALL.length) * 100) : 0;
+
+    log("SYNCING TELEMETRY...", "normal");
+    
+    fetch(BEACON_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            action: "TELEMETRY",
+            ses_id: CURRENT_SES_ID,
+            mobile: USER_MOBILE || "GUEST",
+            score: XP,
+            accuracy: accuracy,
+            latency: avgLatency,
+            pivots: PIVOT_COUNT,
+            log: SESSION_LOG
+        })
+    }).then(() => {
+        log("DATA SYNC COMPLETE", "active");
+    }).catch(e => {
+        log("DATA SYNC FAILED", "danger");
+    });
+}
+
+function generateSessionID() {
+    const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
+    CURRENT_SES_ID = `SES_${hash}`;
+    localStorage.setItem("LAST_SES_ID", CURRENT_SES_ID);
+    // Silent beacon disabled to save quota, will send at end
+    log(`SESSION HASH: ${CURRENT_SES_ID}`, "primary");
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
+const cleanPDF = t => String(t||"").replace(/<[^>]*>/g, "").replace(/&Delta;/g, "Δ");
 
 /* ================= BOOT ================= */
 async function init(){
-  const local = localStorage.getItem("ALCHEMIST_MASTER_V1");
-  if(local && local.length > 10) { try{ RAW_DATA = JSON.parse(local); } catch(e){} }
+  log("SYSTEM BOOT", "active");
   
-  if(!RAW_DATA.length){
-      try{
-          log("SYNCING GITHUB...", "primary");
-          const r = await fetch(CONFIG.GITHUB);
-          if(r.ok) RAW_DATA = await r.json();
-      } catch(e){ log("SYNC FAILED", "danger"); }
+  // 1. CHECK LOCAL STORAGE
+  const localData = localStorage.getItem(MASTER_KEY);
+  if(localData && localData.length > 10){ 
+      try { 
+          RAW_DATA = JSON.parse(localData); 
+          await new Promise(r=>setTimeout(r,600)); 
+      } catch(e){RAW_DATA=[];} 
   }
-
-  // Map Data
+  
+  // 2. FETCH FROM GITHUB IF LOCAL EMPTY
+  if(!RAW_DATA.length){ 
+      try{
+          log("FETCHING GITHUB...", "primary");
+          const r = await fetch(GITHUB_RAW_URL); 
+          if(r.ok) RAW_DATA = await r.json();
+      }catch(e){
+          log("FETCH ERROR", "danger");
+      } 
+  }
+  
   RAW_DATA = RAW_DATA.map(d=>({
       id:d.id, set:d.set||"DEFAULT", dom:d.dom||"GEN", topic:d.topic||"",
-      q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct
-  })).filter(d=>d.id&&d.q);
+      q:d.q, u:d.u, l:d.l, r:d.r, correct:d.correct,
+      logic:d.logic||"", hint:d.hint||"", trap:d.trap||"", step1:d.s1||d.step1||"", step2:d.s2||d.step2||""
+  })).filter(d=>d.id&&d.q&&d.u);
 
-  if(!RAW_DATA.length) { card("NO DATA", {down:"RETRY"}, ()=>location.reload()); return; }
+  if(!RAW_DATA.length){ log("DATA ERROR", "active"); card("NO DATA FOUND", {down:"RETRY"}, ()=>location.reload()); return; }
   begin();
 }
 init();
